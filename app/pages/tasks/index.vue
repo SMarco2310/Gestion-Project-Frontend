@@ -170,8 +170,9 @@ const doneItems = ref([
 </script>
 
 <template>
-  <header class="flex flex-row justify-between w-full">
-    <div class="p-5">
+  <div class="flex flex-col h-full w-full max-h-full">
+    <header class="flex flex-row justify-between w-full flex-shrink-0">
+    <div class="py-2">
       <h1 class="text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
       <p class="text-secondary dark:text-gray-400 py-3 ">Gérer et suivre l'avancement de toutes vos tâches.</p>
     </div>
@@ -184,7 +185,7 @@ const doneItems = ref([
         </div>
   </header>
     <!-- Kanban Board Columns -->
-    <div class="flex gap-6 h-[85vh]">
+    <div class="flex gap-6 flex-1 min-h-0 pb-4">
       <!-- Empty State Column -->
       <BoardColumn 
         title="À faire" 
@@ -215,4 +216,5 @@ const doneItems = ref([
       :task-id="selectedTaskId" 
       @close="handleCloseTaskModal" 
     />
+  </div>
 </template>

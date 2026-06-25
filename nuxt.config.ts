@@ -5,6 +5,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint', '@nuxt/icon'],
   css: ['~/assets/css/main.css'],
+  app: {
+    pageTransition: { name: 'fade', mode: 'out-in' },
+    layoutTransition: { name: 'fade', mode: 'out-in' }
+  },
   runtimeConfig: {
     public: {
       // If calling Laravel directly instead of server/api/*,

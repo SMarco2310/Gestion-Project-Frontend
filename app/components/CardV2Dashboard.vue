@@ -114,7 +114,7 @@ const epics = [
         <div 
           v-for="epic in epics" 
           :key="epic.id"
-          class="neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] rounded-lg p-4 flex flex-col gap-3"
+          class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5"
         >
           <div class="flex items-center gap-3">
             <span :class="['text-[10px] font-bold px-2 py-0.5 rounded', epic.badgeBg, epic.badgeText]">

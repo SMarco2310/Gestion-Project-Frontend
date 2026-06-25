@@ -11,7 +11,7 @@ const isProfileOpen = ref(false)
 <template>
     <div>
         <!-- Top Horizontal Bar -->
-        <header class="fixed top-0 md:left-64 left-0 right-0 h-20 bg-card dark:bg-[#1D1D1D] border-b border-form-border dark:border-gray-800 z-40 flex justify-end items-center px-8">
+        <header class="fixed top-0 md:left-64 left-0 right-0 h-20  dark:bg-[#1D1D1D]  z-40 flex justify-end items-center px-8">
             <!-- User Actions -->
             <div class="flex items-center gap-5">
                 <!-- Notifications Dropdown -->
@@ -68,31 +68,31 @@ const isProfileOpen = ref(false)
 
             <nav class="flex flex-col gap-2 p-4 pt-6 overflow-y-auto custom-scrollbar">
                 <NuxtLink to="/dashboard" :class="[
-                    'px-4 py-3 text-sm rounded-lg transition-all flex items-center gap-3',
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/dashboard') 
-                        ? 'font-semibold text-white bg-primary dark:bg-primary shadow-lg shadow-primary/20 dark:shadow-primary/20' 
-                        : 'font-medium text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:home" class="w-5 h-5" />
-                    Tableau de bord
+                    <Icon name="heroicons:home" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Tableau de bord</span>
                 </NuxtLink>
                 <NuxtLink to="/projets" :class="[
-                    'px-4 py-3 text-sm rounded-lg transition-all flex items-center gap-3',
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/projets') 
-                        ? 'font-semibold text-white bg-primary dark:bg-primary shadow-lg shadow-primary/20 dark:shadow-primary/20' 
-                        : 'font-medium text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:folder" class="w-5 h-5" />
-                    Projets
+                    <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Projets</span>
                 </NuxtLink>
                 <NuxtLink to="/tasks" :class="[
-                    'px-4 py-3 text-sm rounded-lg transition-all flex items-center gap-3',
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/tasks') 
-                        ? 'font-semibold text-white bg-primary dark:bg-primary shadow-lg shadow-primary/20 dark:shadow-primary/20' 
-                        : 'font-medium text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5" />
-                    Tâches
+                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Tâches</span>
                 </NuxtLink>
                 <!-- <NuxtLink to="/manage_members" :class="[
                     'px-4 py-3 text-sm rounded-lg transition-all flex items-center gap-3',
@@ -104,6 +104,14 @@ const isProfileOpen = ref(false)
                     Membres
                 </NuxtLink> -->
             </nav>
+            
+            <!-- Bottom Actions -->
+            <div class="mt-auto p-4 shrink-0 border-t border-form-border dark:border-gray-800">
+                <NuxtLink to="/auth/login" class="w-full px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 group">
+                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                    <span class="tracking-wide font-medium">Déconnexion</span>
+                </NuxtLink>
+            </div>
         </aside>
     </div>
 </template>

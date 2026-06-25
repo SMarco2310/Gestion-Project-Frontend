@@ -15,6 +15,13 @@ const user = ref({
     timezone: 'UTC-08:00',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah'
 })
+
+const isPasswordModalOpen = ref(false)
+
+const handlePasswordChange = (data: any) => {
+    // Implement API call logic here
+    console.log("Password change requested", data)
+}
 </script>
 
 <template>
@@ -70,7 +77,7 @@ const user = ref({
                         <h3 class="font-bold text-main dark:text-gray-200">Sécurité</h3>
                     </div>
                     
-                    <button class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 mb-3 transition-colors">
+                    <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 mb-3 transition-colors">
                         <span class="text-main dark:text-gray-300 text-sm font-medium">Changer le mot de passe</span>
                         <Icon name="heroicons:chevron-right" class="w-4 h-4 text-gray-500" />
                     </button>
@@ -106,5 +113,12 @@ const user = ref({
                 </div>
             </div>
         </div>
+        
+        <!-- Modals -->
+        <ChangePasswordModal 
+            :is-open="isPasswordModalOpen" 
+            @close="isPasswordModalOpen = false"
+            @submit="handlePasswordChange"
+        />
     </div>
 </template>

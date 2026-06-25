@@ -27,11 +27,19 @@ const projects = ref([
 
 const isProjectSheetOpen = ref(false)
 const selectedProjectId = ref<number | null>(null)
+const startSheetInEditMode = ref(false)
 
 const isCreateModalOpen = ref(false)
 
 const handleProjectClick = (projectId: number) => {
   selectedProjectId.value = projectId
+  startSheetInEditMode.value = false
+  isProjectSheetOpen.value = true
+}
+
+const handleProjectEdit = (projectId: number) => {
+  selectedProjectId.value = projectId
+  startSheetInEditMode.value = true
   isProjectSheetOpen.value = true
 }
 
@@ -58,6 +66,7 @@ const handleCreateProjectSubmit = (data: any) => {
 </script>
 
 <template>
+  <div>
     <header>
         <div class="pb-5"> 
             <h1 class="text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
@@ -92,6 +101,7 @@ const handleCreateProjectSubmit = (data: any) => {
             :status="p.status"
             :end_date="p.end_date"
             @cardClick="handleProjectClick"
+            @edit="handleProjectEdit"
         />    
     </section>
 
@@ -99,6 +109,7 @@ const handleCreateProjectSubmit = (data: any) => {
     <ProjectSideSheet 
       :isOpen="isProjectSheetOpen" 
       :project-id="selectedProjectId" 
+      :startInEditMode="startSheetInEditMode"
       @close="handleCloseProjectSheet" 
     />
 
@@ -108,4 +119,5 @@ const handleCreateProjectSubmit = (data: any) => {
       @close="isCreateModalOpen = false" 
       @submit="handleCreateProjectSubmit"
     />
+  </div>
 </template>

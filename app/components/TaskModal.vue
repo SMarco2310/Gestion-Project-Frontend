@@ -13,12 +13,49 @@ const close = () => {
 }
 
 const activeTab = ref('comments')
+
+const isEditing = ref(false)
+const taskTitle = ref('Write Sprint 3 report — goal, completed stories, velocity, retrospective notes')
+const taskDescription = ref('Ajouter une description...')
+const editTitle = ref('')
+const editDescription = ref('')
+
+const startEditing = () => {
+  editTitle.value = taskTitle.value
+  editDescription.value = taskDescription.value
+  isEditing.value = true
+}
+
+const saveEdit = () => {
+  taskTitle.value = editTitle.value
+  taskDescription.value = editDescription.value
+  isEditing.value = false
+}
+
+const cancelEdit = () => {
+  isEditing.value = false
+}
+
+const isStatusDropdownOpen = ref(false)
+const taskStatus = ref('TERMINÉ')
+
+const statusConfig: Record<string, { label: string; colorClass: string }> = {
+  'À FAIRE': { label: 'À FAIRE', colorClass: 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
+  'EN COURS': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
+  'TERMINÉ': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
+}
+
+const updateStatus = (status: string) => {
+  taskStatus.value = status
+  isStatusDropdownOpen.value = false
+}
 </script>
 
 <template>
-  <Teleport to="body">
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
+  <ClientOnly>
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
       leave-active-class="transition duration-150 ease-in"
@@ -45,7 +82,10 @@ const activeTab = ref('comments')
               <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:lock-closed" class="w-5 h-5" /></button>
               <button class="flex items-center gap-1.5 px-3 py-1.5 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm"><Icon name="heroicons:eye" class="w-4 h-4" /> 1</button>
               <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:share" class="w-5 h-5" /></button>
-              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:ellipsis-horizontal" class="w-5 h-5" /></button>
+              <button v-if="!isEditing" @click="startEditing" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier"><Icon name="heroicons:pencil" class="w-5 h-5" /></button>
+              <button v-if="!isEditing" class="p-1.5 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer"><Icon name="heroicons:trash" class="w-5 h-5" /></button>
+              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
+              <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> Annuler</button>
               <div class="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
               <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
             </div>
@@ -55,21 +95,22 @@ const activeTab = ref('comments')
           <div class="flex flex-1 overflow-hidden">
             <!-- Main Column (Left) -->
             <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
-              <h1 class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
-                Write Sprint 3 report — goal, completed stories, velocity, retrospective notes
+              <h1 v-if="!isEditing" class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
+                {{ taskTitle }}
               </h1>
+              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 bg-transparent focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 rounded-lg py-2 px-3 -ml-3" />
               
               <div class="flex items-center gap-2 mb-8">
                 <button class="p-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors"><Icon name="heroicons:plus" class="w-4 h-4" /></button>
                 <button class="p-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors"><Icon name="heroicons:ellipsis-horizontal" class="w-4 h-4" /></button>
               </div>
 
-              <!-- Description -->
               <div class="mb-8">
                 <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Description</h3>
-                <div class="p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-text transition-colors">
-                  Ajouter une description...
+                <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-text transition-colors whitespace-pre-wrap min-h-[60px]">
+                  {{ taskDescription }}
                 </div>
+                <textarea v-else v-model="editDescription" class="w-full h-32 p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
               </div>
 
               <!-- Subtasks -->
@@ -153,10 +194,21 @@ const activeTab = ref('comments')
               
               <!-- Status Dropdown -->
               <div class="mb-6 flex gap-2">
-                <button class="flex items-center justify-between gap-2 px-3 py-1.5 neo-metallic bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500 rounded font-bold text-sm w-full hover:brightness-105 transition-colors">
-                  TERMINÉ <Icon name="heroicons:chevron-down" class="w-4 h-4" />
-                </button>
-                <button class="p-1.5 rounded neo-emboss bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] text-secondary dark:text-gray-400 hover:brightness-105 active:neo-inset transition-colors">
+                <div class="relative w-full">
+                  <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['flex items-center justify-between gap-2 px-3 py-1.5 neo-metallic rounded font-bold text-sm w-full hover:brightness-105 transition-colors', statusConfig[taskStatus]?.colorClass || '']">
+                    {{ statusConfig[taskStatus]?.label || taskStatus }} <Icon name="heroicons:chevron-down" class="w-4 h-4" />
+                  </button>
+                  
+                  <!-- Dropdown Menu -->
+                  <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                  <div v-if="isStatusDropdownOpen" class="absolute left-0 top-full mt-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
+                    <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
+                      {{ config.label }}
+                      <Icon v-if="taskStatus === key" name="heroicons:check" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                <button class="p-1.5 rounded neo-emboss bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] text-secondary dark:text-gray-400 hover:brightness-105 active:neo-inset transition-colors shrink-0">
                   <Icon name="heroicons:bolt" class="w-5 h-5" />
                 </button>
               </div>
@@ -248,8 +300,9 @@ const activeTab = ref('comments')
           </div>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+      </Transition>
+    </Teleport>
+  </ClientOnly>
 </template>
 
 <style scoped>

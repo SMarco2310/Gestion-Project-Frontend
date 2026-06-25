@@ -42,6 +42,14 @@ const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask'])
 
 const isCreating = ref(false)
 const newTaskTitle = ref('')
+const newTaskDueDate = ref('')
+const newTaskProject = ref('')
+
+const availableProjects = [
+  { id: 'PRJ-101', name: 'Refonte UI' },
+  { id: 'PRJ-102', name: 'Backend API' },
+  { id: 'PRJ-103', name: 'Mobile App' }
+]
 
 const submitNewTask = () => {
   if (!newTaskTitle.value.trim()) return
@@ -65,13 +73,20 @@ const submitNewTask = () => {
   
   // Fire a toast notification!
   const { addToast } = useToast()
+  
+  let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée.`
+  if (newTaskProject.value) successMsg += ` Projet: ${availableProjects.find(p => p.id === newTaskProject.value)?.name}.`
+  if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
+  
   addToast({
     type: 'success',
     title: 'Tâche créée',
-    message: `La tâche "${newTaskTitle.value.trim()}" a été ajoutée avec succès.`,
+    message: successMsg,
   })
   
   newTaskTitle.value = ''
+  newTaskDueDate.value = ''
+  newTaskProject.value = ''
   isCreating.value = false
 }
 
@@ -94,7 +109,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col w-[340px] bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none h-full max-h-[85vh]">
+  <div class="flex flex-col w-[340px] bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none h-full">
     <!-- Header -->
     <div class="px-4 py-4 flex items-center gap-3">
       <h2 class="text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider">{{ title }}</h2>
@@ -127,16 +142,16 @@ onUnmounted(() => {
         
         <div class="flex items-center justify-between mt-1">
           <div class="flex items-center gap-2.5">
-            <!-- Checkbox with chevron -->
-            <button class="flex items-center gap-0.5 text-primary dark:text-blue-500 bg-blue-500/10 hover:bg-blue-500/20 px-1 py-0.5 rounded transition-colors">
-              <Icon name="ph:check-square-fill" class="w-4 h-4" />
-              <Icon name="heroicons:chevron-down" class="w-3 h-3" />
-            </button>
+            <!-- Project Select -->
+            <select v-model="newTaskProject" class="text-xs font-medium text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer max-w-[100px] truncate">
+              <option value="" disabled selected>Projet</option>
+              <option v-for="proj in availableProjects" :key="proj.id" :value="proj.id">{{ proj.name }}</option>
+            </select>
             
-            <!-- Calendar -->
-            <button class="text-secondary dark:text-gray-500 hover:text-main dark:hover:text-gray-300 transition-colors">
-              <Icon name="ph:calendar-blank" class="w-4 h-4" />
-            </button>
+            <!-- Calendar Date Picker -->
+            <div class="relative flex items-center">
+              <input type="date" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
+            </div>
             
             <!-- User -->
             <button class="w-5 h-5 rounded-full bg-form-border dark:bg-[#3A3A3D] text-secondary dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">

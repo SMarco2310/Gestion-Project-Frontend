@@ -45,13 +45,13 @@ const togglePassword = () => {
       </div>
 
       <!-- Right Panel - Large Floating Form Card -->
-      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-[1.5rem] shadow-2xl p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto">
+      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-[1.5rem] neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border border-white/50 dark:border-white/5">
         
         <div class="w-full space-y-8">
           
           <!-- Header -->
           <div class="flex flex-col items-left text-left mb-12">
-            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Welcome !</h2>
+            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Welcome!</h2>
             <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
           </div>
 
@@ -60,18 +60,18 @@ const togglePassword = () => {
             
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
-              <input type="text" id="name" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none text-base" />
+              <input type="text" id="name" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
             </div>
 
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-              <input type="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none text-base" />
+              <input type="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
             </div>
 
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none pr-12 text-base" />
+                <input :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
@@ -81,14 +81,14 @@ const togglePassword = () => {
             <div>
               <label for="password-confirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmer le mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none pr-12 text-base" />
+                <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <button type="submit" class="w-full py-4 px-4 bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white font-semibold text-lg rounded-full transition-all mt-8 transform active:scale-[0.98]">
+            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all">
               Créer un compte
             </button>
 

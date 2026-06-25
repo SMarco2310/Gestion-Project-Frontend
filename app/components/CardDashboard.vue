@@ -51,7 +51,7 @@ const cards: DashboardCard[] = [
     <div 
       v-for="(card, index) in cards" 
       :key="index"
-      class="relative bg-card dark:bg-[#1A1A1C] border border-form-border dark:border-[#2A2A2D] rounded-xl p-5 flex flex-col gap-3 overflow-hidden shadow-sm hover:border-form-border dark:hover:border-[#3A3A3D] transition-colors"
+      class="relative neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors"
     >
 
       <!-- Header: Title and Icon -->

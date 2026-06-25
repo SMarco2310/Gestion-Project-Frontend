@@ -160,7 +160,7 @@ onUnmounted(() => {
       >
         <template #item="{ element: item }">
           <div 
-            class="bg-card dark:bg-[#222224] hover:bg-[#F7F9FA] dark:hover:bg-[#2A2A2D] transition-colors rounded-lg p-3.5 cursor-pointer border border-form-border dark:border-transparent hover:border-primary dark:hover:border-[#3A3A3D] flex flex-col gap-3 group"
+            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] p-4 rounded-xl cursor-pointer hover:brightness-105 transition-all group"
             @click="emit('taskClick', item.id)"
           >
             <!-- Header (Title & Actions) -->
@@ -193,8 +193,7 @@ onUnmounted(() => {
 
             <!-- Tag -->
             <div class="flex items-start">
-               <div :class="['inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider', item.tag.colorClass]">
-                  <Icon :name="item.tag.icon" class="text-sm" />
+               <div :class="['inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge', item.tag.colorClass]">
                   {{ item.tag.label }}
                </div>
             </div>

@@ -46,11 +46,11 @@ const formatDate = (dateString: string) => {
 
 <template>
     <!-- ProjetCard Component -->
-    <div id="project-card" @click="emit('cardClick', props.id)" class="cursor-pointer flex gap-5 flex-col w-full bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-600 rounded-lg p-5 shadow-sm shadow-shadow-color dark:shadow-lg hover:shadow-md hover:border-primary dark:hover:border-blue-500 transition-all">
+    <div id="project-card" @click="emit('cardClick', props.id)" class="neo-card cursor-pointer flex gap-5 flex-col w-full bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 hover:brightness-105 transition-all">
         <div id="project-card-header" class="flex justify-between items-center text-secondary dark:text-gray-400 text-sm font-bold">
             <span>{{ props.reference_code }}</span>
             <div class="flex items-center gap-3">
-                <span :class="{ 'px-3 py-1 rounded-md border border-red-600 bg-red-600/20' : props.status == 'EN_COURS' , 'px-3 py-1 rounded-md border border-blue-600 bg-blue-600/20' : props.status == 'IS_DONE' , 'px-3 py-1 rounded-md border border-yellow-600 bg-yellow-600/20' : props.status == 'TO_DO'}"><Icon name="HeroIcons:circle-dotted" class="w-3 h-3 mr-1 inline-block"/>{{ props.status }}</span>
+                <span :class="{ 'neo-badge px-3 py-1 rounded-md bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 font-bold' : props.status == 'EN_COURS' , 'neo-badge px-3 py-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-bold' : props.status == 'IS_DONE' , 'neo-badge px-3 py-1 rounded-md bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 font-bold' : props.status == 'TO_DO'}">{{ props.status }}</span>
                 <div class="relative">
                     <div @click.stop="isDropdownOpen = !isDropdownOpen" class="cursor-pointer p-1 -mr-2 hover:bg-canvas dark:hover:bg-gray-700 rounded-md transition-colors">
                         <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5 text-secondary dark:text-gray-400" />

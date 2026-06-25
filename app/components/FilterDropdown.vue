@@ -50,10 +50,9 @@ onUnmounted(() => {
 
 <template>
   <div class="relative" ref="dropdownRef">
-    <!-- Trigger Button -->
     <button 
       @click="toggleDropdown" 
-      class="bg-card dark:bg-[#222224] text-main dark:text-gray-300 border border-form-border dark:border-gray-700 hover:bg-canvas dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap shadow-sm"
+      class="bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] text-main dark:text-gray-300 transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-105"
       :class="{ 'ring-2 ring-primary dark:ring-blue-500': isOpen }"
     >
       <Icon name="heroicons:adjustments-horizontal" class="w-5 h-5 text-secondary dark:text-gray-400" /> 
@@ -69,7 +68,7 @@ onUnmounted(() => {
       leave-from-class="transform scale-100 opacity-100"
       leave-to-class="transform scale-95 opacity-0"
     >
-      <div v-if="isOpen" class="absolute right-0 mt-2 w-64 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-800 rounded-lg shadow-xl z-50 overflow-hidden flex flex-col divide-y divide-form-border dark:divide-gray-800">
+      <div v-if="isOpen" class="neo-card absolute right-0 mt-2 w-64 bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-lg z-50 overflow-hidden flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
         
         <!-- Priority Filter -->
         <div v-if="showPriority" class="p-3">

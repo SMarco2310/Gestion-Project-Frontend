@@ -24,7 +24,7 @@ const close = () => {
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
-      <div v-if="isOpen" class="fixed top-20 md:left-64 left-0 right-0 bottom-0 z-[100] bg-black/60" @click="close"></div>
+      <div v-if="isOpen" class="fixed top-20 md:left-72 left-0 right-0 bottom-0 z-[100] bg-black/60" @click="close"></div>
     </Transition>
 
     <!-- Side-sheet -->
@@ -38,14 +38,14 @@ const close = () => {
     >
       <div 
         v-if="isOpen" 
-        class="fixed top-20 bottom-0 right-0 z-[110] w-full max-w-md md:max-w-xl bg-card dark:bg-[#1D1D1D] shadow-2xl flex flex-col border-l border-form-border dark:border-gray-800"
+        class="fixed top-20 bottom-0 right-0 z-[110] w-full max-w-md md:max-w-xl bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] shadow-2xl flex flex-col"
         role="dialog"
         aria-modal="true"
       >
         <!-- Header -->
-        <header class="flex items-center justify-between px-6 py-5 border-b border-form-border dark:border-gray-800 shrink-0">
+        <header class="flex items-center justify-between px-6 py-5 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-primary dark:bg-blue-600 flex items-center justify-center text-white">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-b from-blue-400 to-blue-500 neo-emboss flex items-center justify-center text-white">
               <Icon name="heroicons:briefcase" class="w-5 h-5" />
             </div>
             <div>
@@ -68,8 +68,8 @@ const close = () => {
         <div class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar">
           
           <div class="flex items-center gap-3 mb-8">
-            <span class="px-3 py-1 rounded-md border border-blue-600 bg-blue-600/20 text-blue-600 dark:text-blue-400 font-bold text-sm flex items-center gap-1.5">
-              <Icon name="heroicons:circle-dotted" class="w-4 h-4" /> EN COURS
+            <span class="px-3 py-1 rounded-md neo-metallic bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-bold text-sm flex items-center gap-1.5">
+              EN COURS
             </span>
             <span class="text-sm text-secondary dark:text-gray-500 font-medium">Fin prévue: 15 Oct 2026</span>
           </div>
@@ -85,7 +85,7 @@ const close = () => {
           </div>
 
           <!-- Progress -->
-          <div class="mb-8 p-5 rounded-xl border border-form-border dark:border-gray-800 bg-[#FAFAFA] dark:bg-[#161618]">
+          <div class="mb-8 p-5 rounded-xl neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224]">
             <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Progression globale</h3>
             
             <div class="flex flex-col gap-4">
@@ -94,8 +94,8 @@ const close = () => {
                   <span class="text-secondary dark:text-gray-400">Tâches accomplies</span>
                   <span class="text-main dark:text-gray-200">75%</span>
                 </div>
-                <div class="w-full h-2 bg-form-border dark:bg-gray-700 rounded-lg overflow-hidden">
-                  <div class="h-full bg-primary dark:bg-blue-600 rounded-r-lg" style="width: 75%"></div>
+                <div class="w-full h-2 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 rounded-r-lg" style="width: 75%"></div>
                 </div>
               </div>
               
@@ -104,10 +104,10 @@ const close = () => {
                   <span class="text-secondary dark:text-gray-400">Tickets</span>
                   <span class="text-main dark:text-gray-200">30 total</span>
                 </div>
-                <div class="flex h-2 w-full gap-1">
-                  <div class="bg-emerald-500 h-full rounded-l-full" style="width: 40%" title="Terminés"></div>
-                  <div class="bg-blue-500 h-full" style="width: 27%" title="En cours"></div>
-                  <div class="bg-gray-400 dark:bg-gray-600 h-full rounded-r-full" style="width: 33%" title="À faire"></div>
+                <div class="flex h-2 w-full gap-1 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
+                  <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-l-full" style="width: 40%" title="Terminés"></div>
+                  <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full" style="width: 27%" title="En cours"></div>
+                  <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-r-full" style="width: 33%" title="À faire"></div>
                 </div>
                 <div class="flex justify-between text-[11px] font-bold text-secondary dark:text-gray-500 pt-2 uppercase tracking-wider">
                   <span class="text-emerald-600 dark:text-emerald-500">12 Terminés</span>

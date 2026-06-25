@@ -1,5 +1,11 @@
 <script setup lang="ts">
-// import { Icon } from "@iconify/vue";
+definePageMeta({
+  pageTransition: {
+    name: 'fade',
+    mode: 'out-in'
+  }
+})
+
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
@@ -7,100 +13,105 @@ const togglePassword = () => {
 </script>
 
 <template>
-    <section class="flex flex-col gap-10 justify-center items-center px-10 py-40 max-h-screen min-h-screen bg-canvas dark:bg-[#1D1D1D]">
-        <!-- <form @submit.prevent="handleSignup"> -->
-        <div id="container" class="w-full flex flex-col gap-10 justify-center items-center">
-          <div id="header" class="flex flex-col gap-2 items-center">
-            <img src="/assets/logo_app.png" alt="Logo" class="w-30 h-20">
-            <p class="text-4xl font-bold text-main dark:text-gray-200 pt-5 pb-5">Gestion de Projets</p>
-            <p class=" text-lg text-secondary dark:text-gray-500 pt-5">Créez un compte et gérez vos projets</p>
+  <div class="relative min-h-screen flex items-center justify-center p-4 lg:p-4 overflow-y-auto">
+    <!-- Background Image spanning the entire screen -->
+    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover fixed" />
+    
+    <!-- Dark Gradient Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 fixed"></div>
+
+    <!-- Top Left Branding -->
+    <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
+       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
+       <span class="text-white font-bold text-2xl tracking-wide">Gestion de Projets</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="relative z-10 w-full max-w-[3000px] min-h-[calc(100vh-2rem)] flex flex-col lg:flex-row items-center justify-between gap-10 my-auto">
+      
+      <!-- Left Panel - Text content -->
+      <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
+
+        <div class="my-auto">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Gérez plus intelligemment.<br />
+            Collaborez plus vite.<br />
+            Réussissez partout.
+          </h1>
+          <p class="text-gray-200 text-lg max-w-md">
+            De la planification rapide aux projets complexes, notre outil puissant vous permet de travailler en toute fluidité sur tous vos appareils.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Panel - Large Floating Form Card -->
+      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-[1.5rem] shadow-2xl p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto">
+        
+        <div class="w-full space-y-8">
+          
+          <!-- Header -->
+          <div class="flex flex-col items-left text-left mb-12">
+            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Welcome !</h2>
+            <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
           </div>
-        <div class=" bg-card dark:bg-[#1D1D1D] p-10 md:p-20 rounded-2xl flex flex-col gap-5 items-center shadow-[0_0_90px_theme(colors.shadow-color)] dark:shadow-[0_0_90px_rgba(0,0,0,0.5)]">
-            <div class="w-full">
-                <label for="name" class="text-secondary dark:text-gray-500">Nom</label>
-                <input type="text" id="name" placeholder="Nom" class="p-3 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
-            </div>
-            <br />
-            <div class="w-full">
-                <label for="email" class="text-secondary dark:text-gray-500">Adresse E-mail</label>
-                <input type="email" id="email" placeholder="E-mail" class="p-3 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
-            </div>
-            <br />
-            <div class="w-full">
-                <label for="password" class="text-secondary dark:text-gray-500">Mot de passe</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                    </span>
-                    <input type="password" id="password" placeholder="Mot de passe" class="p-3 pl-10 pr-10 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
-                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" @click="togglePassword">
-                            <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                        </span>
-                </div>    
-                
-                <!-- Password Validation -->
-                <!-- <div class="w-full">
-                    <p class="text-gray-500">Password must meet the following criteria:</p>
-                    <ul>
-                        <li :class="password.length >= 8 ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 8 characters
-                        </li>
-                        <li :class="/[A-Z]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 uppercase letter
-                        </li>
-                        <li :class="/[a-z]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 lowercase letter
-                        </li>
-                        <li :class="/[0-9]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 number
-                        </li>
-                        <li :class="/[^A-Za-z0-9]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 special character
-                        </li>
-                    </ul>
-                </div>-->
-            </div> 
 
-            <br>
-        <div class="w-full">
-                <label for="password-confirm" class="text-secondary dark:text-gray-500">Confirmer le mot de passe</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                    </span>
-                    <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmer le mot de passe" class="p-3 pl-10 pr-10 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
-                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" @click="togglePassword">
-                        <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                    </span>
-                </div>  
-                <!-- Password Confirmation -->
-                <!-- <div class="w-full">
-                    <p class="text-gray-500">Password must meet the following criteria:</p>
-                    <ul>
-                        <li :class="password.length >= 8 ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 8 characters
-                        </li>
-                        <li :class="/[A-Z]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 uppercase letter
-                        </li>
-                        <li :class="/[a-z]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 lowercase letter
-                        </li>
-                        <li :class="/[0-9]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 number
-                        </li>
-                        <li :class="/[^A-Za-z0-9]/.test(password) ? 'text-emerald-500' : (password.length > 0 ? 'text-red-500' : 'text-gray-500')">
-                            Minimum 1 special character
-                        </li>
-                    </ul>
-                </div>-->
-        </div>
-            <br />
-            <button type="submit" class="bg-primary dark:bg-blue-500 w-full flex items-center justify-center text-white px-4 py-2 h-14 rounded-md shadow-sm">Créer un compte <Icon name="heroicons:arrow-right" class="w-5 h-5 ml-2 text-white"/></button>
-        </div>
-        <p class="text-main dark:text-white">Vous avez déjà un compte ? <NuxtLink href="/auth/login" class="text-primary dark:text-blue-500 font-bold-300">Se connecter</NuxtLink></p>
+          <!-- Form -->
+          <form @submit.prevent="" class="space-y-6">
+            
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
+              <input type="text" id="name" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none text-base" />
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+              <input type="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none text-base" />
+            </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe</label>
+              <div class="relative">
+                <input :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none pr-12 text-base" />
+                <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                  <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label for="password-confirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmer le mot de passe</label>
+              <div class="relative">
+                <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2A2A2D] text-gray-900 dark:text-white focus:ring-2 focus:ring-black dark:focus:ring-white focus:border-transparent transition-colors outline-none pr-12 text-base" />
+                <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+                  <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-4 px-4 bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 text-white font-semibold text-lg rounded-full transition-all mt-8 transform active:scale-[0.98]">
+              Créer un compte
+            </button>
+
+            <!-- <div class="relative flex items-center py-6">
+              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+              <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
+              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+
+            <button type="button" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]">
+              <Icon name="logos:google-icon" class="w-6 h-6" />
+              Continuer avec Google
+            </button>
+             -->
+          </form>
+
+          <p class="text-center text-base text-gray-600 dark:text-gray-400 mt-10">
+            Vous avez déjà un compte ? 
+            <NuxtLink href="/auth/login" class="text-black dark:text-white font-bold hover:underline">Se connecter</NuxtLink>
+          </p>
 
         </div>
-        <!-- </form> -->
-    </section>
+      </div>
+    </div>
+  </div>
 </template>

@@ -63,10 +63,10 @@ const submit = () => {
       leave-to-class="opacity-0 scale-95"
     >
       <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="close">
-        <div class="bg-card dark:bg-[#1D1D1D] w-full max-w-lg rounded-xl shadow-2xl flex flex-col overflow-hidden border border-form-border dark:border-gray-800" role="dialog" aria-modal="true">
+        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-lg rounded-xl flex flex-col overflow-hidden" role="dialog" aria-modal="true">
           
           <!-- Header -->
-          <div class="px-6 py-4 border-b border-form-border dark:border-gray-800 flex justify-between items-center bg-canvas dark:bg-[#222224]">
+          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
             <h2 class="text-xl font-bold text-main dark:text-white">Créer un nouveau projet</h2>
             <button @click="close" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
               <Icon name="heroicons:x-mark" class="w-6 h-6" />
@@ -85,8 +85,8 @@ const submit = () => {
                 <input 
                   v-model="form.title" 
                   type="text" 
-                  class="w-full bg-canvas dark:bg-[#2A2A2D] text-main dark:text-white border dark:border-transparent placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 transition-all"
-                  :class="errors.title ? 'border-red-500 focus:ring-red-500/50' : 'border-form-border focus:ring-primary dark:focus:ring-blue-500/50'"
+                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all"
+                  :class="errors.title ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
                   placeholder="Nom du projet"
                 />
                 <p v-if="errors.title" class="text-red-500 text-xs mt-1 font-medium">Ce champ est requis.</p>
@@ -99,7 +99,7 @@ const submit = () => {
                   <input 
                     v-model="form.reference_code" 
                     type="text" 
-                    class="w-full bg-canvas dark:bg-[#2A2A2D] text-main dark:text-white border border-form-border dark:border-transparent placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500/50 transition-all uppercase"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all uppercase"
                     placeholder="ex: PRJ-001"
                   />
                 </div>
@@ -107,7 +107,7 @@ const submit = () => {
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Statut</label>
                   <select 
                     v-model="form.status"
-                    class="w-full bg-canvas dark:bg-[#2A2A2D] text-main dark:text-white border border-form-border dark:border-transparent rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500/50 transition-all appearance-none cursor-pointer"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                   >
                     <option value="TO_DO">À faire</option>
                     <option value="EN_COURS">En cours</option>
@@ -124,7 +124,7 @@ const submit = () => {
                   <input 
                     v-model="form.end_date" 
                     type="date" 
-                    class="w-full bg-canvas dark:bg-[#2A2A2D] text-main dark:text-white border border-form-border dark:border-transparent rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500/50 transition-all"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -137,8 +137,8 @@ const submit = () => {
                 <textarea 
                   v-model="form.description" 
                   rows="4"
-                  class="w-full bg-canvas dark:bg-[#2A2A2D] text-main dark:text-white border dark:border-transparent placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 transition-all resize-none"
-                  :class="errors.description ? 'border-red-500 focus:ring-red-500/50' : 'border-form-border focus:ring-primary dark:focus:ring-blue-500/50'"
+                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all resize-none"
+                  :class="errors.description ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
                   placeholder="Décrivez les objectifs et détails de ce projet..."
                 ></textarea>
                 <p v-if="errors.description" class="text-red-500 text-xs mt-1 font-medium">Ce champ est requis.</p>
@@ -148,11 +148,11 @@ const submit = () => {
           </div>
 
           <!-- Footer Actions -->
-          <div class="px-6 py-4 border-t border-form-border dark:border-gray-800 bg-canvas dark:bg-[#222224] flex justify-end gap-3">
-            <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
+          <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 z-10 relative">
+            <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-primary dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-500 shadow-md transition-colors flex items-center gap-2">
+            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
               <Icon name="heroicons:plus" class="w-4 h-4" />
               Créer le projet
             </button>

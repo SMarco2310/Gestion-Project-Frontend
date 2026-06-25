@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .neo-emboss {
+    /* For Primary Buttons - creates a raised, pillowy look */
+    @apply shadow-[inset_1px_1px_2px_rgba(255,255,255,0.4),_inset_-1px_-1px_2px_rgba(0,0,0,0.1),_2px_4px_8px_rgba(0,0,0,0.15)] 
+           dark:shadow-[inset_1px_1px_2px_rgba(255,255,255,0.15),_inset_-1px_-1px_2px_rgba(0,0,0,0.3),_2px_4px_8px_rgba(0,0,0,0.4)]
+           transition-all duration-200;
+  }
+
+  .neo-inset {
+    /* For Active/Pressed states - creates a sunken look */
+    @apply shadow-[inset_2px_2px_5px_rgba(0,0,0,0.15),_inset_-1px_-1px_2px_rgba(255,255,255,0.5)] 
+           dark:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.5),_inset_-1px_-1px_2px_rgba(255,255,255,0.05)]
+           transition-all duration-200;
+  }
+
+  .neo-card {
+    /* For Cards - creates a subtly elevated, beveled surface */
+    @apply shadow-[0px_8px_24px_rgba(0,0,0,0.08),_inset_0px_1px_1px_rgba(255,255,255,0.7)] 
+           dark:shadow-[0px_12px_32px_rgba(0,0,0,0.4),_inset_0px_1px_1px_rgba(255,255,255,0.05)]
+           transition-all duration-200;
+  }
+
+  .neo-input {
+    /* For Inputs - creates a sunken, engraved look */
+    @apply shadow-[inset_2px_2px_5px_rgba(0,0,0,0.05),_inset_-1px_-1px_3px_rgba(255,255,255,1)] 
+           dark:shadow-[inset_2px_2px_6px_rgba(0,0,0,0.4),_inset_-1px_-1px_3px_rgba(255,255,255,0.05)]
+           border-none transition-all duration-200;
+  }
+
+  .neo-badge {
+    /* For small badges - a softer, smaller raised look */
+    @apply shadow-[inset_1px_1px_1px_rgba(255,255,255,0.5),_inset_-1px_-1px_1px_rgba(0,0,0,0.05),_1px_2px_3px_rgba(0,0,0,0.1)] 
+           dark:shadow-[inset_1px_1px_1px_rgba(255,255,255,0.1),_inset_-1px_-1px_1px_rgba(0,0,0,0.3),_1px_2px_3px_rgba(0,0,0,0.3)]
+           border-none transition-all duration-200;
+  }
+
+  .neo-metallic {
+    /* For tags/badges - metallic 3D look with sharp highlight and shadow */
+    @apply shadow-[inset_1px_1px_2px_rgba(255,255,255,0.8),_inset_-1px_-1px_2px_rgba(0,0,0,0.2),_1px_2px_4px_rgba(0,0,0,0.15)] 
+           dark:shadow-[inset_1px_1px_2px_rgba(255,255,255,0.25),_inset_-1px_-1px_2px_rgba(0,0,0,0.5),_1px_2px_4px_rgba(0,0,0,0.4)]
+           border-none transition-all duration-200 bg-gradient-to-br from-white/40 to-black/5 dark:from-white/10 dark:to-black/30 backdrop-blur-sm;
+  }
+}
+
+/* Page Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), filter 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.98) translateY(10px);
+  filter: blur(5px);
+}

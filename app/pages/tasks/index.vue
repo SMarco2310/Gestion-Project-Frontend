@@ -177,8 +177,8 @@ const doneItems = ref([
     </div>
     <div id="search-bar" class="p-5 justify-end py-10 flex items-center gap-4">
             <div class="relative flex items-center w-full md:w-auto">
-                <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-3 pointer-events-none" />
-                <input type="text" placeholder="Rechercher" class="bg-card dark:bg-gray-600 text-main dark:text-gray-300 border border-form-border dark:border-transparent placeholder-form-placeholder px-4 py-2 rounded-md pl-10 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-64">
+                <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
+                <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
             </div>
             <FilterDropdown :showProjects="true" :showStatus="false" />
         </div>

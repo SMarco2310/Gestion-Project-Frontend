@@ -5,6 +5,21 @@ definePageMeta({
   layout: 'custom'
 })
 
+const todoItems = ref<any[]>([])
+const inProgressItems = ref<any[]>([])
+
+const isTaskModalOpen = ref(false)
+const selectedTaskId = ref<string | null>(null)
+
+const handleTaskClick = (taskId: string) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
+
+const handleCloseTaskModal = () => {
+  isTaskModalOpen.value = false
+  selectedTaskId.value = null
+}
 
 const doneItems = ref([
   {
@@ -167,23 +182,33 @@ const doneItems = ref([
     <div class="flex gap-6 h-[85vh]">
       <!-- Empty State Column -->
       <BoardColumn 
-        title="To Do" 
-        :items="[]" 
+        title="À faire" 
+        v-model:items="todoItems" 
         :allowCreate="true"
-      />
-    
-      <!-- Loaded State Column -->
-      <BoardColumn 
-        title="Done" 
-        :items="doneItems" 
-        :isDone="true" 
+        @taskClick="handleTaskClick"
       />
       
       <!-- In Progress State Column -->
       <BoardColumn 
-        title="In Progress" 
-        :items=[] 
+        title="En cours" 
+        v-model:items="inProgressItems" 
         :allowCreate="false"
+        @taskClick="handleTaskClick"
+      />
+    
+      <!-- Loaded State Column -->
+      <BoardColumn 
+        title="Terminé" 
+        v-model:items="doneItems" 
+        :isDone="true" 
+        @taskClick="handleTaskClick"
       />
     </div>
+
+    <!-- Task Modal -->
+    <TaskModal 
+      :is-open="isTaskModalOpen" 
+      :task-id="selectedTaskId" 
+      @close="handleCloseTaskModal" 
+    />
 </template>

@@ -46,8 +46,8 @@ const epics = [
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
     <!-- Status Overview -->
-    <div class="bg-[#1A1A1C] border border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
-      <h3 class="text-sm font-semibold text-gray-200 mb-6">Status Overview</h3>
+    <div class="bg-card dark:bg-[#1A1A1C] border border-form-border dark:border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
+      <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-6">Status Overview</h3>
       
       <div class="flex-1 flex flex-col items-center justify-center gap-8">
         <!-- Donut Chart (CSS Conic Gradient) -->
@@ -60,9 +60,9 @@ const epics = [
           );"
         >
           <!-- Inner circle to create donut hole -->
-          <div class="absolute inset-[12px] bg-[#1A1A1C] rounded-full flex flex-col items-center justify-center">
-            <span class="text-2xl font-bold text-white leading-tight">142</span>
-            <span class="text-[10px] text-gray-400">Total Issues</span>
+          <div class="absolute inset-[12px] bg-card dark:bg-[#1A1A1C] rounded-full flex flex-col items-center justify-center">
+            <span class="text-2xl font-bold text-main dark:text-white leading-tight">142</span>
+            <span class="text-[10px] text-secondary dark:text-gray-400">Total Issues</span>
           </div>
         </div>
 
@@ -70,27 +70,27 @@ const epics = [
         <div class="flex items-center justify-between w-full px-2">
           <div v-for="metric in statusMetrics" :key="metric.label" class="flex flex-col items-center gap-1.5">
             <div :class="['w-2.5 h-2.5 rounded-full', metric.colorClass]"></div>
-            <span class="text-[11px] text-gray-400">{{ metric.percentage }} {{ metric.label }}</span>
+            <span class="text-[11px] text-secondary dark:text-gray-400">{{ metric.percentage }} {{ metric.label }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Priority Breakdown -->
-    <div class="bg-[#1A1A1C] border border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
-      <h3 class="text-sm font-semibold text-gray-200 mb-6">Priority Breakdown</h3>
+    <div class="bg-card dark:bg-[#1A1A1C] border border-form-border dark:border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
+      <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-6">Priority Breakdown</h3>
       
       <div class="flex-1 flex flex-col justify-end gap-5">
         <div v-for="priority in priorities" :key="priority.label" class="flex flex-col gap-2">
           <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2 text-gray-200">
+            <div class="flex items-center gap-2 text-main dark:text-gray-200">
               <Icon :name="priority.icon" :class="['text-sm', priority.iconColor]" />
               <span>{{ priority.label }}</span>
             </div>
-            <span class="text-gray-400">{{ priority.count }}</span>
+            <span class="text-secondary dark:text-gray-400">{{ priority.count }}</span>
           </div>
           <!-- Progress Bar -->
-          <div class="h-1.5 w-full bg-[#222224] rounded-full overflow-hidden">
+          <div class="h-1.5 w-full bg-form-border dark:bg-[#222224] rounded-full overflow-hidden">
             <div 
               class="h-full rounded-full transition-all duration-500" 
               :class="priority.barColor"
@@ -102,10 +102,10 @@ const epics = [
     </div>
 
     <!-- Epic Progress -->
-    <div class="bg-[#1A1A1C] border border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
+    <div class="bg-card dark:bg-[#1A1A1C] border border-form-border dark:border-[#2A2A2D] rounded-xl p-6 flex flex-col h-[300px]">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-sm font-semibold text-gray-200">Epic Progress</h3>
-        <button class="text-gray-400 hover:text-gray-200">
+        <h3 class="text-sm font-semibold text-main dark:text-gray-200">Epic Progress</h3>
+        <button class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200">
           <Icon name="ph:dots-three" class="text-lg" />
         </button>
       </div>
@@ -114,17 +114,17 @@ const epics = [
         <div 
           v-for="epic in epics" 
           :key="epic.id"
-          class="bg-[#202022] rounded-lg p-4 flex flex-col gap-3"
+          class="bg-canvas dark:bg-[#202022] rounded-lg p-4 flex flex-col gap-3"
         >
           <div class="flex items-center gap-3">
             <span :class="['text-[10px] font-bold px-2 py-0.5 rounded', epic.badgeBg, epic.badgeText]">
               {{ epic.id }}
             </span>
-            <span class="text-sm text-gray-200 truncate flex-1">{{ epic.title }}</span>
-            <span class="text-xs text-gray-400">{{ epic.progress }}%</span>
+            <span class="text-sm text-main dark:text-gray-200 truncate flex-1">{{ epic.title }}</span>
+            <span class="text-xs text-secondary dark:text-gray-400">{{ epic.progress }}%</span>
           </div>
           <!-- Progress Bar -->
-          <div class="h-1.5 w-full bg-[#2A2A2D] rounded-full overflow-hidden">
+          <div class="h-1.5 w-full bg-form-border dark:bg-[#2A2A2D] rounded-full overflow-hidden">
             <div 
               class="h-full rounded-full transition-all duration-500" 
               :class="epic.barColor"

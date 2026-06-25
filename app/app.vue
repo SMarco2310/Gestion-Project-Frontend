@@ -1,6 +1,8 @@
 <template >
-  
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  </template>
+  
+  <!-- Global Toast Notifications Container -->
+  <AppToast />
+</template>

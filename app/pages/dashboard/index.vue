@@ -11,8 +11,8 @@ const user = {
 
 <template>
     <section class="flex flex-col gap-2 ">
-        <h1 class="text-4xl font-bold text-gray-200">Dashboard</h1>
-        <p class="text-gray-500 text-md pt-2">Bienvenue sur votre tableau de bord, {{ user.name }}</p>
+        <h1 class="text-4xl font-bold text-main dark:text-gray-200">Dashboard</h1>
+        <p class="text-secondary dark:text-gray-500 text-md pt-2">Bienvenue sur votre tableau de bord, {{ user.name }}</p>
     </section>
     <br>
     <section>

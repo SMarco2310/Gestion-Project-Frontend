@@ -11,34 +11,34 @@ export interface DashboardCard {
 
 const cards: DashboardCard[] = [
   {
-    title: 'COMPLETED',
+    title: 'TERMINÉS',
     value: '24',
-    subtitle: '+12% this week',
+    subtitle: '+12% cette semaine',
     subtitleIcon: 'ph:trend-up',
     icon: 'ph:check-circle',
     iconClass: 'text-blue-400',
     type: 'default'
   },
   {
-    title: 'UPDATED',
+    title: 'MIS À JOUR',
     value: '112',
-    subtitle: 'Last 24 hours',
+    subtitle: 'Dernières 24 heures',
     icon: 'ph:clock-counter-clockwise',
     iconClass: 'text-blue-400',
     type: 'default'
   },
   {
-    title: 'CREATED',
+    title: 'CRÉÉS',
     value: '18',
-    subtitle: 'Since Monday',
+    subtitle: 'Depuis lundi',
     icon: 'ph:plus-circle',
     iconClass: 'text-gray-400',
     type: 'default'
   },
   {
-    title: 'DUE SOON',
+    title: 'BIENTÔT À ÉCHÉANCE',
     value: '5',
-    subtitle: 'Needs attention',
+    subtitle: 'Nécessite votre attention',
     icon: 'ph:warning',
     iconClass: 'text-rose-300',
     type: 'danger'
@@ -51,14 +51,14 @@ const cards: DashboardCard[] = [
     <div 
       v-for="(card, index) in cards" 
       :key="index"
-      class="relative bg-[#1A1A1C] border border-[#2A2A2D] rounded-xl p-5 flex flex-col gap-3 overflow-hidden shadow-sm hover:border-[#3A3A3D] transition-colors"
+      class="relative bg-card dark:bg-[#1A1A1C] border border-form-border dark:border-[#2A2A2D] rounded-xl p-5 flex flex-col gap-3 overflow-hidden shadow-sm hover:border-form-border dark:hover:border-[#3A3A3D] transition-colors"
     >
 
       <!-- Header: Title and Icon -->
       <div class="flex items-center justify-between z-10">
         <h3 
           class="text-[11px] font-bold tracking-wider uppercase"
-          :class="card.type === 'danger' ? 'text-rose-200' : 'text-gray-400'"
+          :class="card.type === 'danger' ? 'text-rose-600 dark:text-rose-200' : 'text-secondary dark:text-gray-400'"
         >
           {{ card.title }}
         </h3>
@@ -72,7 +72,7 @@ const cards: DashboardCard[] = [
       <!-- Value -->
       <div 
         class="text-4xl font-bold mt-1 z-10"
-        :class="card.type === 'danger' ? 'text-rose-300' : 'text-white'"
+        :class="card.type === 'danger' ? 'text-rose-500 dark:text-rose-300' : 'text-main dark:text-white'"
       >
         {{ card.value }}
       </div>
@@ -80,7 +80,7 @@ const cards: DashboardCard[] = [
       <!-- Subtitle -->
       <div 
         class="flex items-center gap-1.5 text-xs font-medium z-10"
-        :class="card.type === 'danger' ? 'text-rose-400' : 'text-gray-400'"
+        :class="card.type === 'danger' ? 'text-rose-500 dark:text-rose-400' : 'text-secondary dark:text-gray-400'"
       >
         <Icon 
           v-if="card.subtitleIcon" 

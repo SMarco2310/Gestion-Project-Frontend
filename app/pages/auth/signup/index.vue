@@ -7,35 +7,35 @@ const togglePassword = () => {
 </script>
 
 <template>
-    <section class="flex flex-col gap-10 justify-center items-center px-10 py-40 max-h-screen min-h-screen bg-[#1D1D1D]">
+    <section class="flex flex-col gap-10 justify-center items-center px-10 py-40 max-h-screen min-h-screen bg-canvas dark:bg-[#1D1D1D]">
         <!-- <form @submit.prevent="handleSignup"> -->
         <div id="container" class="w-full flex flex-col gap-10 justify-center items-center">
           <div id="header" class="flex flex-col gap-2 items-center">
-            <img src="/assets/obsidian_velocity_icon_only.png" alt="Logo" class="w-20 h-20">
-            <p class="text-4xl font-bold text-gray-200 pt-5 pb-5">Project Manager</p>
-            <p class=" text-lg text-gray-500 pt-5">Create an account and manage your projects</p>
+            <img src="/assets/logo_app.png" alt="Logo" class="w-30 h-20">
+            <p class="text-4xl font-bold text-main dark:text-gray-200 pt-5 pb-5">Gestion de Projets</p>
+            <p class=" text-lg text-secondary dark:text-gray-500 pt-5">Créez un compte et gérez vos projets</p>
           </div>
-        <div class=" bg-[#1D1D1D] p-10 md:p-20 rounded-2xl flex flex-col gap-5 items-center shadow-[0_0_90px_rgba(0,0,0,0.5)]">
+        <div class=" bg-card dark:bg-[#1D1D1D] p-10 md:p-20 rounded-2xl flex flex-col gap-5 items-center shadow-[0_0_90px_theme(colors.shadow-color)] dark:shadow-[0_0_90px_rgba(0,0,0,0.5)]">
             <div class="w-full">
-                <label for="name" class="text-gray-500">Name</label>
-                <input type="text" id="name" placeholder="Name" class="p-3 w-full  my-2 bg-gray-200/10 text-gray-200 border-2 border-gray-200/10">
+                <label for="name" class="text-secondary dark:text-gray-500">Nom</label>
+                <input type="text" id="name" placeholder="Nom" class="p-3 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
             </div>
             <br />
             <div class="w-full">
-                <label for="email" class="text-gray-500">Address Email</label>
-                <input type="email" id="email" placeholder="Email" class="p-3 w-full  my-2 bg-gray-200/10 text-gray-200 border-2 border-gray-200/10">
+                <label for="email" class="text-secondary dark:text-gray-500">Adresse E-mail</label>
+                <input type="email" id="email" placeholder="E-mail" class="p-3 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
             </div>
             <br />
             <div class="w-full">
-                <label for="password" class="text-gray-500">Password</label>
+                <label for="password" class="text-secondary dark:text-gray-500">Mot de passe</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-gray-400" />
+                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-secondary dark:text-gray-400" />
                     </span>
-                    <input type="password" id="password" placeholder="Password" class="p-3 pl-10 pr-10 w-full my-2 bg-gray-200/10 text-gray-200 border-2 border-gray-200/10">
-                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer">
-                        <Icon name="heroicons:eye" class="w-5 h-5 text-gray-400" />
-                    </span>
+                    <input type="password" id="password" placeholder="Mot de passe" class="p-3 pl-10 pr-10 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" @click="togglePassword">
+                            <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5 text-secondary dark:text-gray-400" />
+                        </span>
                 </div>    
                 
                 <!-- Password Validation -->
@@ -63,14 +63,14 @@ const togglePassword = () => {
 
             <br>
         <div class="w-full">
-                <label for="password" class="text-gray-500">Confirmer le mot de passe</label>
+                <label for="password-confirm" class="text-secondary dark:text-gray-500">Confirmer le mot de passe</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-gray-400" />
+                        <Icon name="heroicons:lock-closed" class="w-5 h-5 text-secondary dark:text-gray-400" />
                     </span>
-                    <input type="password" id="password" placeholder="Confirmer le mot de passe" class="p-3 pl-10 pr-10 w-full my-2 bg-gray-200/10 text-gray-200 border-2 border-gray-200/10">
-                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer">
-                        <Icon name="heroicons:eye" class="w-5 h-5 text-gray-400" />
+                    <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmer le mot de passe" class="p-3 pl-10 pr-10 w-full my-2 bg-card dark:bg-gray-200/10 text-main dark:text-gray-200 border-2 border-form-border dark:border-gray-200/10 placeholder-form-placeholder">
+                    <span class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" @click="togglePassword">
+                        <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5 text-secondary dark:text-gray-400" />
                     </span>
                 </div>  
                 <!-- Password Confirmation -->
@@ -96,9 +96,9 @@ const togglePassword = () => {
                 </div>-->
         </div>
             <br />
-            <button type="submit" class="bg-blue-500 w-full flex items-center justify-center text-black px-4 py-2 h-14 rounded-md">Create Account <Icon name="heroicons:arrow-right" class="w-5 h-5 ml-2 text-black"/></button>
+            <button type="submit" class="bg-primary dark:bg-blue-500 w-full flex items-center justify-center text-white px-4 py-2 h-14 rounded-md shadow-sm">Créer un compte <Icon name="heroicons:arrow-right" class="w-5 h-5 ml-2 text-white"/></button>
         </div>
-        <p class="text-white">Already have an account? <NuxtLink href="/auth/login" class="text-blue-500 font-bold-300">Sign in</NuxtLink></p>
+        <p class="text-main dark:text-white">Vous avez déjà un compte ? <NuxtLink href="/auth/login" class="text-primary dark:text-blue-500 font-bold-300">Se connecter</NuxtLink></p>
 
         </div>
         <!-- </form> -->

@@ -5,6 +5,22 @@ definePageMeta({
     // middleware: "auth"
 })
 
+const todoItems = ref<any[]>([])
+const inProgressItems = ref<any[]>([])
+
+const isTaskModalOpen = ref(false)
+const selectedTaskId = ref<string | null>(null)
+
+const handleTaskClick = (taskId: string) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
+
+const handleCloseTaskModal = () => {
+  isTaskModalOpen.value = false
+  selectedTaskId.value = null
+}
+
 const doneItems = ref([
   {
     id: '1',
@@ -156,37 +172,47 @@ const doneItems = ref([
 <template>
   <header class="flex flex-row justify-between w-full">
     <div class="p-5">
-      <h1 class="text-4xl font-bold text-gray-300">Tasks Overview</h1>
-      <p class="text-gray-400 py-3 ">Gérer et suivre l'avancement de toutes vos tâches.</p>
+      <h1 class="text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
+      <p class="text-secondary dark:text-gray-400 py-3 ">Gérer et suivre l'avancement de toutes vos tâches.</p>
     </div>
-    <div id="search-bar" class="p-5 justify-end py-10">
-            <div class="relative flex items-center w-full">
-                <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-gray-400 absolute left-3 pointer-events-none" />
-                <input type="text" placeholder="Rechercher" class="bg-gray-600 text-gray-300 px-4 py-2 rounded-md pl-10 focus:outline-none focus:ring-1 focus:ring-blue-500 w-64">
+    <div id="search-bar" class="p-5 justify-end py-10 flex items-center gap-4">
+            <div class="relative flex items-center w-full md:w-auto">
+                <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-3 pointer-events-none" />
+                <input type="text" placeholder="Rechercher" class="bg-card dark:bg-gray-600 text-main dark:text-gray-300 border border-form-border dark:border-transparent placeholder-form-placeholder px-4 py-2 rounded-md pl-10 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-64">
             </div>
+            <FilterDropdown :showProjects="true" :showStatus="false" />
         </div>
   </header>
     <!-- Kanban Board Columns -->
     <div class="flex gap-6 h-[85vh]">
       <!-- Empty State Column -->
       <BoardColumn 
-        title="To Do" 
-        :items="[]" 
+        title="À faire" 
+        v-model:items="todoItems" 
         :allowCreate="true"
-      />
-    
-      <!-- Loaded State Column -->
-      <BoardColumn 
-        title="Done" 
-        :items="doneItems" 
-        :isDone="true" 
+        @taskClick="handleTaskClick"
       />
       
       <!-- In Progress State Column -->
       <BoardColumn 
-        title="In Progress" 
-        :items=[] 
+        title="En cours" 
+        v-model:items="inProgressItems" 
         :allowCreate="false"
+        @taskClick="handleTaskClick"
+      />
+    
+      <!-- Loaded State Column -->
+      <BoardColumn 
+        title="Terminé" 
+        v-model:items="doneItems" 
+        :isDone="true" 
+        @taskClick="handleTaskClick"
       />
     </div>
+    <!-- Task Modal -->
+    <TaskModal 
+      :isOpen="isTaskModalOpen" 
+      :task-id="selectedTaskId" 
+      @close="handleCloseTaskModal" 
+    />
 </template>

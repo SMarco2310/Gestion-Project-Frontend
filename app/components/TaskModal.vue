@@ -1,0 +1,269 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+const props = defineProps<{
+  isOpen: boolean
+  taskId?: string|any|null
+}>()
+
+const emit = defineEmits(['close'])
+
+const close = () => {
+  emit('close')
+}
+
+const activeTab = ref('comments')
+</script>
+
+<template>
+  <Teleport to="body">
+    <Transition
+      enter-active-class="transition duration-200 ease-out"
+      enter-from-class="opacity-0"
+      enter-to-class="opacity-100"
+      leave-active-class="transition duration-150 ease-in"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0"
+    >
+      <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60" @click.self="close">
+        <div 
+          class="bg-card dark:bg-[#1D1D1D] w-full max-w-[1200px] h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-form-border dark:border-gray-800"
+          role="dialog"
+          aria-modal="true"
+        >
+          <!-- Header -->
+          <header class="flex items-center justify-between px-6 py-4 border-b border-form-border dark:border-gray-800 shrink-0">
+            <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
+              <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
+              <span class="hover:underline cursor-pointer">SAMS-80</span>
+              <span>/</span>
+              <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
+              <span class="hover:underline cursor-pointer">SAMS-70</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:lock-closed" class="w-5 h-5" /></button>
+              <button class="flex items-center gap-1.5 px-3 py-1.5 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm"><Icon name="heroicons:eye" class="w-4 h-4" /> 1</button>
+              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:share" class="w-5 h-5" /></button>
+              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:ellipsis-horizontal" class="w-5 h-5" /></button>
+              <div class="w-px h-6 bg-form-border dark:bg-gray-700 mx-1"></div>
+              <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
+            </div>
+          </header>
+
+          <!-- Content Layout -->
+          <div class="flex flex-1 overflow-hidden">
+            <!-- Main Column (Left) -->
+            <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+              <h1 class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
+                Write Sprint 3 report — goal, completed stories, velocity, retrospective notes
+              </h1>
+              
+              <div class="flex items-center gap-2 mb-8">
+                <button class="p-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors"><Icon name="heroicons:plus" class="w-4 h-4" /></button>
+                <button class="p-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors"><Icon name="heroicons:ellipsis-horizontal" class="w-4 h-4" /></button>
+              </div>
+
+              <!-- Description -->
+              <div class="mb-8">
+                <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Description</h3>
+                <div class="p-4 bg-canvas dark:bg-[#161618] rounded-lg border border-form-border dark:border-gray-800 text-secondary dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-text transition-colors">
+                  Ajouter une description...
+                </div>
+              </div>
+
+              <!-- Subtasks -->
+              <div class="mb-8">
+                <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Sous-tâches</h3>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="w-full h-1.5 bg-form-border dark:bg-gray-800 rounded-full overflow-hidden mr-4">
+                    <div class="bg-emerald-500 h-full w-[60%]"></div>
+                  </div>
+                  <span class="text-xs font-bold text-secondary dark:text-gray-500 whitespace-nowrap">60% Fait</span>
+                </div>
+                
+                <div class="flex flex-col gap-2 mt-4">
+                  <!-- Dummy Subtasks -->
+                  <div class="flex items-center justify-between p-2 hover:bg-canvas dark:hover:bg-gray-800 rounded border border-transparent hover:border-form-border dark:hover:border-gray-700 transition-colors cursor-pointer group">
+                    <div class="flex items-center gap-3">
+                      <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
+                      <span class="text-secondary dark:text-gray-400 text-sm font-medium">SAMS-12</span>
+                      <span class="text-main dark:text-gray-300 text-sm">Rédiger le résumé du sprint</span>
+                    </div>
+                    <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 rounded text-xs font-bold">TERMINÉ</span>
+                      <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">SY</div>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between p-2 hover:bg-canvas dark:hover:bg-gray-800 rounded border border-transparent hover:border-form-border dark:hover:border-gray-700 transition-colors cursor-pointer group">
+                    <div class="flex items-center gap-3">
+                      <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
+                      <span class="text-secondary dark:text-gray-400 text-sm font-medium">SAMS-13</span>
+                      <span class="text-main dark:text-gray-300 text-sm">Compiler les métriques de vélocité</span>
+                    </div>
+                    <div class="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span class="px-2 py-0.5 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded text-xs font-bold">EN COURS</span>
+                      <div class="w-6 h-6 rounded-full bg-cyan-600 flex items-center justify-center text-[10px] font-bold text-white">F</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <button class="mt-2 text-primary dark:text-blue-400 text-sm font-medium hover:underline flex items-center gap-1">
+                  <Icon name="heroicons:plus" class="w-4 h-4" /> Ajouter une sous-tâche
+                </button>
+              </div>
+
+              <!-- Linked items -->
+              <div class="mb-8">
+                <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Éléments liés</h3>
+                <button class="text-primary dark:text-blue-400 text-sm font-medium hover:underline flex items-center gap-1">
+                  <Icon name="heroicons:plus" class="w-4 h-4" /> Lier un élément
+                </button>
+              </div>
+
+              <!-- Activity -->
+              <div>
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-base font-bold text-main dark:text-gray-200">Activité</h3>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs text-secondary dark:text-gray-500 font-medium">Afficher:</span>
+                    <button class="text-sm font-medium text-main dark:text-gray-300 bg-canvas dark:bg-gray-800 px-2 py-1 rounded">Tous</button>
+                    <button class="text-sm font-medium text-white bg-primary dark:bg-blue-600 px-2 py-1 rounded">Commentaires</button>
+                    <button class="text-sm font-medium text-main dark:text-gray-300 bg-canvas dark:bg-gray-800 px-2 py-1 rounded">Historique</button>
+                  </div>
+                </div>
+
+                <!-- Add Comment Input -->
+                <div class="flex gap-4">
+                  <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">MS</div>
+                  <div class="flex-1 border border-form-border dark:border-gray-700 rounded-lg overflow-hidden bg-canvas dark:bg-[#161618] focus-within:border-primary dark:focus-within:border-blue-500 transition-colors">
+                    <textarea class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                    <div class="px-3 py-2 bg-form-border/30 dark:bg-gray-800/50 flex items-center gap-4 text-xs font-medium text-secondary dark:text-gray-400">
+                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:hand-thumb-up" class="w-4 h-4" /> Super !</button>
+                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:hand-raised" class="w-4 h-4" /> Besoin d'aide ?</button>
+                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:minus-circle" class="w-4 h-4" /> C'est bloqué</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sidebar (Right) -->
+            <div class="w-[320px] shrink-0 border-l border-form-border dark:border-gray-800 bg-[#FAFAFA] dark:bg-[#161618] overflow-y-auto p-6 custom-scrollbar">
+              
+              <!-- Status Dropdown -->
+              <div class="mb-6 flex gap-2">
+                <button class="flex items-center justify-between gap-2 px-3 py-1.5 bg-emerald-500/20 text-emerald-600 dark:text-emerald-500 border border-emerald-500/30 rounded font-bold text-sm w-full hover:bg-emerald-500/30 transition-colors">
+                  TERMINÉ <Icon name="heroicons:chevron-down" class="w-4 h-4" />
+                </button>
+                <button class="p-1.5 border border-form-border dark:border-gray-700 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-secondary dark:text-gray-400 transition-colors">
+                  <Icon name="heroicons:bolt" class="w-5 h-5" />
+                </button>
+              </div>
+
+              <!-- Details Accordion -->
+              <div class="mb-6">
+                <button class="flex items-center justify-between w-full font-bold text-main dark:text-gray-200 mb-4 group">
+                  <span class="flex items-center gap-2"><Icon name="heroicons:chevron-down" class="w-4 h-4 text-secondary dark:text-gray-500" /> Détails</span>
+                  <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+                
+                <div class="flex flex-col gap-4 text-sm">
+                  <!-- Property -->
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Assigné à</div>
+                    <div class="col-span-2">
+                      <div class="flex items-center gap-2 mb-1">
+                        <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">SY</div>
+                        <span class="text-main dark:text-gray-300 font-medium">Sarah Yeung</span>
+                      </div>
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs">M'assigner</button>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Étiquettes</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">Aucune</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Parent</div>
+                    <div class="col-span-2 flex items-center gap-1.5">
+                      <Icon name="heroicons:rectangle-group" class="w-4 h-4 text-purple-500" />
+                      <span class="text-main dark:text-gray-300 hover:underline cursor-pointer">SAMS-80</span>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Échéance</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">Aucune</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Équipe</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">Aucune</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Début</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">Aucun</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Sprint</div>
+                    <div class="col-span-2 text-primary dark:text-blue-400 hover:underline cursor-pointer">Sprint 3 - Demo</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium">Rapporteur</div>
+                    <div class="col-span-2 flex items-center gap-2">
+                      <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">MS</div>
+                      <span class="text-main dark:text-gray-300 font-medium">Marc-Etienne SOSSOU</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Divider -->
+              <div class="w-full border-t border-form-border dark:border-gray-800 my-4"></div>
+              
+              <!-- Development -->
+              <div class="mb-4">
+                <button class="flex items-center gap-2 font-bold text-main dark:text-gray-200">
+                  <Icon name="heroicons:chevron-right" class="w-4 h-4 text-secondary dark:text-gray-500" /> Développement
+                </button>
+              </div>
+
+              <!-- Divider -->
+              <div class="w-full border-t border-form-border dark:border-gray-800 my-4"></div>
+
+              <!-- Timestamps -->
+              <div class="text-xs text-secondary dark:text-gray-500 flex flex-col gap-1 mt-6">
+                <div>Créé le 12 avril 2026 à 18:56</div>
+                <div>Mis à jour il y a 2 jours</div>
+                <div>Résolu il y a 2 jours</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #3f3f46;
+  border-radius: 20px;
+}
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #52525b;
+}
+</style>

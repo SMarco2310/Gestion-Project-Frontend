@@ -64,7 +64,7 @@ const updateStatus = (status: string) => {
     >
       <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60" @click.self="close">
         <div 
-          class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-[1200px] h-[90vh] rounded-xl flex flex-col overflow-hidden"
+          class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-[1200px] h-[100dvh] md:h-[90vh] rounded-none md:rounded-xl flex flex-col overflow-hidden"
           role="dialog"
           aria-modal="true"
         >
@@ -78,23 +78,23 @@ const updateStatus = (status: string) => {
               <span class="hover:underline cursor-pointer">SAMS-70</span>
             </div>
             
-            <div class="flex items-center gap-2">
-              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:lock-closed" class="w-5 h-5" /></button>
-              <button class="flex items-center gap-1.5 px-3 py-1.5 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm"><Icon name="heroicons:eye" class="w-4 h-4" /> 1</button>
-              <button class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:share" class="w-5 h-5" /></button>
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+              <button class="hidden sm:flex p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:lock-closed" class="w-5 h-5" /></button>
+              <button class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm"><Icon name="heroicons:eye" class="w-4 h-4" /> 1</button>
+              <button class="hidden sm:flex p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:share" class="w-5 h-5" /></button>
               <button v-if="!isEditing" @click="startEditing" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier"><Icon name="heroicons:pencil" class="w-5 h-5" /></button>
               <button v-if="!isEditing" class="p-1.5 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer"><Icon name="heroicons:trash" class="w-5 h-5" /></button>
-              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
-              <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> Annuler</button>
-              <div class="w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
+              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
+              <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs sm:text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> <span class="hidden sm:inline">Annuler</span></button>
+              <div class="hidden sm:block w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
               <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
             </div>
           </header>
 
           <!-- Content Layout -->
-          <div class="flex flex-1 overflow-hidden">
+          <div class="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar">
             <!-- Main Column (Left) -->
-            <div class="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar">
+            <div class="flex-1 md:overflow-y-auto px-4 sm:px-8 py-6 custom-scrollbar shrink-0">
               <h1 v-if="!isEditing" class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
                 {{ taskTitle }}
               </h1>
@@ -190,7 +190,7 @@ const updateStatus = (status: string) => {
             </div>
 
             <!-- Sidebar (Right) -->
-            <div class="w-[320px] shrink-0 shadow-[-2px_0_10px_rgba(0,0,0,0.02)] overflow-y-auto p-6 custom-scrollbar">
+            <div class="w-full md:w-[320px] shrink-0 shadow-none md:shadow-[-2px_0_10px_rgba(0,0,0,0.02)] md:overflow-y-auto p-4 sm:p-6 custom-scrollbar border-t md:border-t-0 border-form-border dark:border-gray-800">
               
               <!-- Status Dropdown -->
               <div class="mb-6 flex gap-2">

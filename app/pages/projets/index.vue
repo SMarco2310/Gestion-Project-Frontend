@@ -69,10 +69,10 @@ const handleCreateProjectSubmit = (data: any) => {
   <div>
     <header>
         <div class="pb-5"> 
-            <h1 class="text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
-            <p class="text-secondary dark:text-gray-400 pt-3">Gérer et suivre l'avancement de tous vos projets.</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
+            <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer et suivre l'avancement de tous vos projets.</p>
         </div>
-        <div class="flex justify-between items-center pb-5 gap-2 md:gap-4">
+        <div class="flex flex-row justify-between md:items-center pb-5 gap-2 md:gap-4 w-full">
             
             <div id="search-bar" class="flex-1 md:flex-none">
                 <div class="relative flex items-center w-full">
@@ -81,9 +81,9 @@ const handleCreateProjectSubmit = (data: any) => {
                 </div>
             </div>
             
-            <div class="flex items-center gap-2 md:gap-4 shrink-0">
-                <FilterDropdown :showProjects="false" :showStatus="true" :showPriority="false"/>
-                <button @click="isCreateModalOpen = true" class="bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+            <div class="flex items-center gap-2 md:gap-3 shrink-0">
+                <FilterDropdown :showProjects="false" :showStatus="true" :showPriority="false" class="shrink-0" />
+                <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
                     <Icon name="heroicons:plus" class="w-5 h-5" /> 
                     <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
                 </button>

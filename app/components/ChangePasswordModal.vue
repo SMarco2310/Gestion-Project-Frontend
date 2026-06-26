@@ -30,6 +30,7 @@ const submit = () => {
   })
   close()
 }
+
 </script>
 
 <template>

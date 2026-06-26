@@ -171,21 +171,21 @@ const doneItems = ref([
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-row justify-between w-full flex-shrink-0">
+    <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
     <div class="py-2">
-      <h1 class="text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
-      <p class="text-secondary dark:text-gray-400 py-3 ">Gérer et suivre l'avancement de toutes vos tâches.</p>
+      <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
+      <p class="text-secondary dark:text-gray-400 py-3 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
     </div>
-    <div id="search-bar" class="p-5 justify-end py-10 flex items-center gap-4">
-            <div class="relative flex items-center w-full md:w-auto">
+    <div id="search-bar" class="py-4 md:py-10 flex flex-row justify-between md:justify-end items-center gap-2 md:gap-4 w-full">
+            <div class="relative flex items-center flex-1 md:flex-none">
                 <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
                 <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
             </div>
-            <FilterDropdown :showProjects="true" :showStatus="false" />
+            <FilterDropdown :showProjects="true" :showStatus="false" class="shrink-0" />
         </div>
   </header>
     <!-- Kanban Board Columns -->
-    <div class="flex gap-6 flex-1 min-h-0 pb-4">
+    <div class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto snap-x snap-mandatory flex-nowrap custom-scrollbar">
       <!-- Empty State Column -->
       <BoardColumn 
         title="À faire" 

@@ -39,11 +39,10 @@ const handlePasswordChange = (data: any) => {
         </header>
 
         <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column -->
-            <div class="flex flex-col gap-6 lg:col-span-1">
-                <!-- Avatar Card -->
-                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            
+            <!-- Avatar Card -->
+            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
                     <div class="relative mb-4 mt-2">
                         <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner">
                             <img :src="user.avatar" alt="User Avatar" class="w-full h-full object-cover" />
@@ -69,31 +68,9 @@ const handlePasswordChange = (data: any) => {
                         </div>
                     </div>
                 </div>
-
-                <!-- Security Card -->
-                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-lg">
-                    <div class="flex items-center gap-2 mb-4 px-1">
-                        <Icon name="heroicons:shield-check" class="w-5 h-5 text-secondary dark:text-gray-300" />
-                        <h3 class="font-bold text-main dark:text-gray-200">Sécurité</h3>
-                    </div>
-                    
-                    <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 mb-3 transition-colors">
-                        <span class="text-main dark:text-gray-300 text-sm font-medium">Changer le mot de passe</span>
-                        <Icon name="heroicons:chevron-right" class="w-4 h-4 text-gray-500" />
-                    </button>
-                    
-                    <button class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 transition-colors group">
-                        <span class="text-[#FCA5A5] text-sm font-medium group-hover:text-red-400 transition-colors">Se déconnecter partout</span>
-                        <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 text-[#FCA5A5] group-hover:text-red-400 transition-colors" />
-                    </button>
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div class="lg:col-span-2">
-                <!-- Personal Info Card -->
-                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-lg">
-                    <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-8">Informations personnelles</h3>
+            <!-- Personal Info Card -->
+            <div class="lg:col-span-2 lg:row-span-2 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-lg">
+                <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-8">Informations personnelles</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
@@ -111,6 +88,23 @@ const handlePasswordChange = (data: any) => {
                         <textarea v-model="user.bio" rows="4" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all resize-none shadow-inner"></textarea>
                     </div>
                 </div>
+
+            <!-- Security Card -->
+            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-lg">
+                <div class="flex items-center gap-2 mb-4 px-1">
+                    <Icon name="heroicons:shield-check" class="w-5 h-5 text-secondary dark:text-gray-300" />
+                    <h3 class="font-bold text-main dark:text-gray-200">Sécurité</h3>
+                </div>
+                
+                <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 mb-3 transition-colors">
+                    <span class="text-main dark:text-gray-300 text-sm font-medium">Changer le mot de passe</span>
+                    <Icon name="heroicons:chevron-right" class="w-4 h-4 text-gray-500" />
+                </button>
+                
+                <button class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 transition-colors group">
+                    <span class="text-[#FCA5A5] text-sm font-medium group-hover:text-red-400 transition-colors">Se déconnecter partout</span>
+                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 text-[#FCA5A5] group-hover:text-red-400 transition-colors" />
+                </button>
             </div>
         </div>
         

@@ -6,7 +6,6 @@ definePageMeta({
   }
 })
 
-const { login } = useAuth();
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
@@ -21,7 +20,7 @@ const handleLogin = async () => {
     loading.value = true;
     errorMessage.value = '';
     try {
-        await login(email.value, password.value);
+        await new Promise(resolve => setTimeout(resolve, 500));
         navigateTo('/dashboard');
     } catch (error) {
         errorMessage.value = 'Email ou mot de passe incorrect';

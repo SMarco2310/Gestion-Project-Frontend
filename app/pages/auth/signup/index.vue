@@ -51,7 +51,7 @@ const togglePassword = () => {
           
           <!-- Header -->
           <div class="flex flex-col items-left text-left mb-12">
-            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Welcome!</h2>
+            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Bienvenue!</h2>
             <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
           </div>
 

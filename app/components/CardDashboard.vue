@@ -9,41 +9,8 @@ export interface DashboardCard {
   type?: 'default' | 'danger'
 }
 
-const cards: DashboardCard[] = [
-  {
-    title: 'TERMINÉS',
-    value: '24',
-    subtitle: '+12% cette semaine',
-    subtitleIcon: 'ph:trend-up',
-    icon: 'ph:check-circle',
-    iconClass: 'text-blue-400',
-    type: 'default'
-  },
-  {
-    title: 'MIS À JOUR',
-    value: '112',
-    subtitle: 'Dernières 24 heures',
-    icon: 'ph:clock-counter-clockwise',
-    iconClass: 'text-blue-400',
-    type: 'default'
-  },
-  {
-    title: 'CRÉÉS',
-    value: '18',
-    subtitle: 'Depuis lundi',
-    icon: 'ph:plus-circle',
-    iconClass: 'text-gray-400',
-    type: 'default'
-  },
-  {
-    title: 'BIENTÔT À ÉCHÉANCE',
-    value: '5',
-    subtitle: 'Nécessite votre attention',
-    icon: 'ph:warning',
-    iconClass: 'text-rose-300',
-    type: 'danger'
-  }
-]
+
+const props = defineProps<{ cards: DashboardCard[] }>()
 </script>
 
 <template>

@@ -31,6 +31,7 @@ const props = defineProps({
     }
 })
 
+
 // A simple native function to format dates
 const formatDate = (dateString: string) => {
   if (!dateString) return ''
@@ -40,6 +41,14 @@ const formatDate = (dateString: string) => {
     month: 'short',
     year: 'numeric'
   }).format(date)
+}
+
+const handleDelete = () => {
+  isDropdownOpen.value = false
+
+  if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
+    emit('delete', props.id)
+  }
 }
 
 </script>
@@ -64,7 +73,7 @@ const formatDate = (dateString: string) => {
                         <button @click.stop="isDropdownOpen = false; emit('edit', props.id)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                             <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
                         </button>
-                        <button @click.stop="isDropdownOpen = false; emit('delete', props.id)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
+                        <button @click.stop="handleDelete" class="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
                             <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
                         </button>
                     </div>

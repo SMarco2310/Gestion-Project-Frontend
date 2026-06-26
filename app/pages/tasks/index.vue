@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { TaskStatus, TaskTag } from '~/utils/enums'
 
 definePageMeta({
-    layout: "custom",
-    // middleware: "auth"
+    layout: 'custom',
+    // middleware: 'auth',
 })
+
+const { tasks, getTasks } = useTasks()
 
 const todoItems = ref<any[]>([])
 const inProgressItems = ref<any[]>([])
+const doneItems = ref<any[]>([])
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
@@ -21,152 +25,70 @@ const handleCloseTaskModal = () => {
   selectedTaskId.value = null
 }
 
-const doneItems = ref([
-  {
-    id: '1',
-    title: 'Write Sprint 2 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-69',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '2',
-    title: 'Write Sprint 3 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-70',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '3',
-    title: 'Write Sprint 1 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-68',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '4',
-    title: 'Write Sprint 0 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-67',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '5',
-    title: 'Write integration tests for emergency and contacts endpoints',
-    tag: {
-      label: 'TESTING & QUALITY',
-      colorClass: 'bg-amber-500 text-black',
-      icon: 'ph:pencil-simple-duotone'
-    },
-    reference: 'SAMS-58',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'F',
-      colorClass: 'bg-cyan-600'
-    }
-  },
-  {
-    id: '6',
-    title: 'Record a backup demo video in case of live demo technical issues',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-78',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      icon: 'ph:user',
-      colorClass: 'bg-gray-600'
-    }
-  },
-  {
-    id: '7',
-    title: 'Prepare demo script — 5 minute walkthrough of all key features',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-77',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '8',
-    title: 'Deploy frontend to Vercel or Netlify — connected to live backend',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-74',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'D',
-      colorClass: 'bg-indigo-500'
-    }
+const getTagColorClass = (tag: string) => {
+  switch (tag) {
+    case TaskTag.TESTING:
+      return 'bg-amber-500 text-black'
+    case TaskTag.DEPLOYMENT:
+      return 'bg-sky-300 text-black'
+    default:
+      return 'bg-[#3A3A3D] text-gray-300'
   }
-]);
+}
+
+const getTagIcon = (tag: string) => {
+  switch (tag) {
+    case TaskTag.TESTING:
+      return 'ph:pencil-simple-duotone'
+    case TaskTag.DEPLOYMENT:
+      return 'ph:rocket-launch-duotone'
+    default:
+      return 'ph:file-duotone'
+  }
+}
+
+const mapTaskToBoardItem = (task: any) => ({
+  id: String(task.id),
+  title: task.title,
+  description: task.description,
+  status: task.status,
+  priority: task.priority,
+  tag: {
+    label: task.tag || TaskTag.DOCUMENTATION,
+    colorClass: getTagColorClass(task.tag || TaskTag.DOCUMENTATION),
+    icon: getTagIcon(task.tag || TaskTag.DOCUMENTATION),
+  },
+  reference: `T-${String(task.id).padStart(2, '0')}`,
+  issueTypeIcon: 'ph:bookmark-simple-fill',
+  issueTypeColorClass: 'text-emerald-600',
+  statusIcon: 'ph:check',
+  statusColorClass: 'text-emerald-500',
+  assignee: {
+    initials: 'U',
+    colorClass: 'bg-gray-600',
+  },
+})
+
+const syncBoardItems = () => {
+  todoItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.TO_DO)
+    .map(mapTaskToBoardItem)
+
+  inProgressItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.IN_PROGRESS)
+    .map(mapTaskToBoardItem)
+
+  doneItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.DONE)
+    .map(mapTaskToBoardItem)
+}
+
+watch(tasks, syncBoardItems, { deep: true })
+
+onMounted(async () => {
+  await getTasks()
+  syncBoardItems()
+})
 </script>
 
 <template>

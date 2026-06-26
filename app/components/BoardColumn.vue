@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useToast } from '~/composables/useToast'
+import useProjets from '~/composables/useProjets'
 import draggable from 'vuedraggable'
+import { TaskTag as TaskTagEnum } from '~/utils/enums'
 
 export interface TaskTag {
   label: string
@@ -45,37 +47,48 @@ const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
 const newTaskProject = ref('')
 
-const availableProjects = [
-  { id: 'PRJ-101', name: 'Refonte UI' },
-  { id: 'PRJ-102', name: 'Backend API' },
-  { id: 'PRJ-103', name: 'Mobile App' }
-]
+const { projets } = useProjets()
+
+const availableProjects = computed(() => projets.value.map((project) => ({
+  id: String(project.id),
+  name: project.name,
+})))
 
 const submitNewTask = () => {
   if (!newTaskTitle.value.trim()) return
+  if (!newTaskProject.value) {
+    const { addToast } = useToast()
+    addToast({
+      type: 'warning',
+      title: 'Projet requis',
+      message: 'Sélectionnez un projet avant de créer la tâche.',
+    })
+    return
+  }
+  
+  const project = availableProjects.value.find((p) => p.id === newTaskProject.value)
   
   items.value.push({
     id: Date.now().toString(),
     title: newTaskTitle.value.trim(),
     tag: {
-      label: 'NOUVEAU',
+      label: TaskTagEnum.FEATURE,
       colorClass: 'bg-[#3A3A3D] text-gray-300',
       icon: 'ph:file-duotone'
     },
-    reference: 'SAMS-NEW',
+    reference: project ? `${project.id}-TASK` : 'SAMS-NEW',
     issueTypeIcon: 'ph:bookmark-simple-fill',
     issueTypeColorClass: 'text-emerald-600',
     assignee: {
-      initials: '?',
+      initials: project ? project.name.charAt(0).toUpperCase() : '?',
       colorClass: 'bg-gray-600'
-    }
+    },
+    projet_id: newTaskProject.value,
   })
   
-  // Fire a toast notification!
   const { addToast } = useToast()
   
-  let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée.`
-  if (newTaskProject.value) successMsg += ` Projet: ${availableProjects.find(p => p.id === newTaskProject.value)?.name}.`
+  let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée au projet ${project?.name ?? 'inconnu'}.`
   if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
   
   addToast({

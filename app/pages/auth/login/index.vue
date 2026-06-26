@@ -6,6 +6,10 @@ definePageMeta({
   }
 })
 
+import useAuth from '../../../composables/useAuth'
+
+const {login}= useAuth();
+
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
@@ -21,7 +25,7 @@ const handleLogin = async () => {
     loading.value = true;
     errorMessage.value = '';
     try {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await login(email.value,password.value);
         navigateTo('/dashboard');
     } catch (error) {
         errorMessage.value = 'Email ou mot de passe incorrect';
@@ -101,7 +105,7 @@ const handleLogin = async () => {
               <NuxtLink href="/auth/forget-password" class="text-gray-500 hover:text-black dark:hover:text-white transition-colors text-base">Mot de passe oublié ?</NuxtLink>
             </div>
 
-             <div v-if="errorMessage" class="flex items-center justify-center p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg">
+             <div v-if="errorMessage" class="flex items-center justify-center p-3 ">
                 <span class="text-red-500 dark:text-red-400">{{ errorMessage }}</span>
              </div>
             <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all">

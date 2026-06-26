@@ -1,46 +1,9 @@
 <script setup lang="ts">
-// Data for Status Overview
-const statusMetrics = [
-  { label: 'Done', percentage: '65%', colorClass: 'bg-[#A6C4FF]', dotColor: '#A6C4FF' },
-  { label: 'In Prog', percentage: '20%', colorClass: 'bg-[#8CA8F9]', dotColor: '#8CA8F9' },
-  { label: 'To Do', percentage: '15%', colorClass: 'bg-[#FFB78C]', dotColor: '#FFB78C' }
-]
-
-// Data for Priority Breakdown
-const priorities = [
-  { label: 'Highest', count: 32, icon: 'ph:caret-double-up', iconColor: 'text-rose-400', barColor: 'bg-rose-300', percent: (32/50)*100 },
-  { label: 'High', count: 45, icon: 'ph:caret-up', iconColor: 'text-amber-500', barColor: 'bg-[#3A3A3D]', percent: (45/50)*100 },
-  { label: 'Medium', count: 50, icon: 'ph:equals', iconColor: 'text-blue-400', barColor: 'bg-[#3A3A3D]', percent: (50/50)*100 },
-  { label: 'Low', count: 15, icon: 'ph:caret-down', iconColor: 'text-gray-400', barColor: 'bg-[#3A3A3D]', percent: (15/50)*100 },
-]
-
-// Data for Epic Progress
-const epics = [
-  { 
-    id: 'ZEN-90', 
-    title: 'Performance Optimization', 
-    progress: 78, 
-    badgeBg: 'bg-blue-500/10', 
-    badgeText: 'text-blue-400',
-    barColor: 'bg-[#A6C4FF]' 
-  },
-  { 
-    id: 'ZEN-104', 
-    title: 'User Authentication', 
-    progress: 42, 
-    badgeBg: 'bg-blue-500/10', 
-    badgeText: 'text-blue-400',
-    barColor: 'bg-[#A6C4FF]' 
-  },
-  { 
-    id: 'ZEN-118', 
-    title: 'Data Migration', 
-    progress: 15, 
-    badgeBg: 'bg-orange-500/10', 
-    badgeText: 'text-orange-400',
-    barColor: 'bg-[#FFB78C]' 
-  },
-]
+const props = defineProps<{
+  statusMetrics: Array<{ label: string; percentage: string; colorClass: string }>
+  priorities: Array<{ label: string; count: number; icon: string; iconColor: string; barColor: string; percent: number }>
+  epics: Array<{ id: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
+}>()
 </script>
 
 <template>

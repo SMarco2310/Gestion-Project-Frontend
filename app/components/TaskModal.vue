@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import useCommentaire from '~/composables/useCommentaire'
+import useAuth from '~/composables/useAuth'
+import { useToast } from '~/composables/useToast'
 
 const props = defineProps<{
   isOpen: boolean
@@ -12,6 +15,10 @@ const close = () => {
   emit('close')
 }
 
+const { commentaires, getCommentaires, createCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
+const { user } = useAuth()
+const { addToast } = useToast()
+
 const activeTab = ref('comments')
 
 const isEditing = ref(false)
@@ -19,6 +26,10 @@ const taskTitle = ref('Write Sprint 3 report — goal, completed stories, veloci
 const taskDescription = ref('Ajouter une description...')
 const editTitle = ref('')
 const editDescription = ref('')
+
+const setTask = (id: string | number | null) => {
+  // TODO: hydrate real task data by id when task detail state exists
+}
 
 const startEditing = () => {
   editTitle.value = taskTitle.value
@@ -38,6 +49,7 @@ const cancelEdit = () => {
 
 const isStatusDropdownOpen = ref(false)
 const taskStatus = ref('TERMINÉ')
+const commentText = ref('')
 
 const statusConfig: Record<string, { label: string; colorClass: string }> = {
   'À FAIRE': { label: 'À FAIRE', colorClass: 'bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300' },
@@ -49,6 +61,33 @@ const updateStatus = (status: string) => {
   taskStatus.value = status
   isStatusDropdownOpen.value = false
 }
+
+const sendComment = async () => {
+  if (!commentText.value.trim() || !props.taskId) {
+    addToast({ title: 'Commentaire vide', message: 'Écrivez quelque chose avant d’envoyer.', type: 'warning' })
+    return
+  }
+
+  try {
+    await createCommentaire({
+      content: commentText.value.trim(),
+      tache_id: props.taskId,
+      user_id: user.value?.id ?? null,
+    })
+
+    commentText.value = ''
+    addToast({ title: 'Commentaire ajouté', message: 'Votre commentaire a été publié.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible d’ajouter le commentaire.', type: 'error' })
+    console.error(err)
+  }
+}
+
+watch(() => props.taskId, async (newTaskId) => {
+  if (newTaskId) {
+    await getCommentaires(newTaskId)
+  }
+})
 </script>
 
 <template>
@@ -178,11 +217,12 @@ const updateStatus = (status: string) => {
                 <div class="flex gap-4">
                   <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">MS</div>
                   <div class="flex-1 rounded-lg overflow-hidden neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500">
-                    <textarea class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
-                    <div class="px-3 py-2 border-t border-black/5 dark:border-white/5 flex items-center gap-4 text-xs font-medium text-secondary dark:text-gray-400">
-                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:hand-thumb-up" class="w-4 h-4" /> Super !</button>
-                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:hand-raised" class="w-4 h-4" /> Besoin d'aide ?</button>
-                      <button class="hover:text-main dark:hover:text-gray-200 flex items-center gap-1"><Icon name="heroicons:minus-circle" class="w-4 h-4" /> C'est bloqué</button>
+                    <textarea v-model="commentText" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                    <div class="px-3 py-2 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-4 text-xs font-medium text-secondary dark:text-gray-400">
+                      <button @click="sendComment" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/10 transition-all duration-200 text-sm font-semibold">
+                        <Icon name="heroicons:arrow-up-right" class="w-4 h-4" />
+                        Envoyer
+                      </button>
                     </div>
                   </div>
                 </div>

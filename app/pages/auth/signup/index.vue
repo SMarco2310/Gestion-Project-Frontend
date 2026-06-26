@@ -6,9 +6,39 @@ definePageMeta({
   }
 })
 
+
+const {signup}= useAuth();
+
+const name = ref('');
+const email = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const errorMessage = ref('');
+const loading = ref(false);
+
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
+}
+
+const handleSignup = async () => {
+    loading.value = true;
+    errorMessage.value = '';
+
+    if (password.value !== confirmPassword.value) {
+        errorMessage.value = 'Les mots de passe ne correspondent pas';
+        loading.value = false;
+        return;
+    }
+
+    try {
+        await signup(name.value, email.value, password.value);
+        navigateTo('/dashboard');
+    } catch (error) {
+        errorMessage.value = 'Email ou mot de passe incorrect';
+    } finally {
+        loading.value = false;
+    }
 }
 </script>
 
@@ -56,22 +86,22 @@ const togglePassword = () => {
           </div>
 
           <!-- Form -->
-          <form @submit.prevent="" class="space-y-6">
+          <form @submit.prevent="handleSignup" class="space-y-6">
             
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
-              <input type="text" id="name" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+              <input v-model="name" id="name" type="text" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
             </div>
 
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-              <input type="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+              <input v-model="email" id="email" type="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
             </div>
 
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
+                <input v-model="password" :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
@@ -81,16 +111,17 @@ const togglePassword = () => {
             <div>
               <label for="password-confirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmer le mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
+                <input v-model="confirmPassword" :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all">
-              Créer un compte
+            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all" :disabled="loading">
+              {{ loading ? 'Création...' : 'Créer un compte' }}
             </button>
+            <p v-if="errorMessage" class="text-sm text-red-500 mt-3">{{ errorMessage }}</p>
 
             <!-- <div class="relative flex items-center py-6">
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>

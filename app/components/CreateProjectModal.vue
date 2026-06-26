@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import useAuth from '~/composables/useAuth'
+import { ProjectStatus } from '~/utils/enums'
 
 const props = defineProps<{
   isOpen: boolean
+  createProject?: (data: any) => Promise<unknown> | unknown
 }>()
 
+const { user } = useAuth()
 const emit = defineEmits(['close', 'submit'])
 
 const form = ref({
-  title: '',
+  name: '',
   reference_code: '',
   description: '',
-  status: 'TO_DO',
+  status: ProjectStatus.TO_DO,
+  user_id: null as number | string | null,
   end_date: ''
 })
 
@@ -24,10 +29,11 @@ const errors = ref({
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     form.value = {
-      title: '',
+      name: '',
       reference_code: '',
       description: '',
-      status: 'TO_DO',
+      status: ProjectStatus.TO_DO,
+      user_id: user.value?.id ?? null,
       end_date: ''
     }
     errors.value = { title: false, description: false }
@@ -38,17 +44,33 @@ const close = () => {
   emit('close')
 }
 
-const submit = () => {
+const submit = async () => {
   // Simple validation
-  errors.value.title = !form.value.title.trim()
+  errors.value.title = !form.value.name.trim()
   errors.value.description = !form.value.description.trim()
 
   if (errors.value.title || errors.value.description) {
     return // Stop submission if validation fails
   }
 
-  emit('submit', { ...form.value })
-  close()
+  const payload = {
+    ...form.value,
+    status: form.value.status,
+    user_id: user.value?.id ?? null,
+  }
+
+  try {
+    if (props.createProject) {
+      await props.createProject(payload)
+    } else {
+      emit('submit', payload)
+    }
+
+    close()
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
 }
 </script>
 
@@ -83,7 +105,7 @@ const submit = () => {
                   Titre du projet <span class="text-red-500">*</span>
                 </label>
                 <input 
-                  v-model="form.title" 
+                  v-model="form.name" 
                   type="text" 
                   class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all"
                   :class="errors.title ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"

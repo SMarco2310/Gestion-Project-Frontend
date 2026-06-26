@@ -4,9 +4,9 @@ import AppFooter from '~/components/AppFooter.vue';
 </script>
 
 <template>
-  <div class="min-h-screen w-screen bg-canvas dark:bg-[#1D1D1D] pt-24 md:pl-64 overflow-x-hidden flex flex-col text-main dark:text-gray-200">
+  <div class="h-screen w-screen bg-canvas dark:bg-[#1D1D1D] pt-20 md:pl-64 overflow-hidden flex flex-col text-main dark:text-gray-200">
     <AppHeader />
-    <main class="p-8 flex-1">
+    <main class="px-8 pt-0 pb-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
       <slot />
     </main>
     <AppFooter />

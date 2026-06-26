@@ -1,3 +1,108 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+
+definePageMeta({
+  pageTransition: {
+    name: 'fade',
+    mode: 'out-in'
+  }
+})
+
+const email = ref('')
+const isSuccess = ref(false)
+
+const handleSubmit = () => {
+  if (email.value) {
+    // Simulate API call
+    setTimeout(() => {
+      isSuccess.value = true
+    }, 500)
+  }
+}
+</script>
+
 <template>
-    <h1 class="text-main dark:text-gray-200">Oublie de mot de passe</h1>
+  <div class="relative min-h-screen flex items-center justify-center p-4 lg:p-4">
+    <!-- Background Image spanning the entire screen -->
+    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover" />
+    
+    <!-- Dark Gradient Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20"></div>
+
+    <!-- Top Left Branding -->
+    <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
+       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
+       <span class="text-white font-bold text-2xl tracking-wide">Gestion de Projets</span>
+    </div>
+
+    <!-- Main Content Container -->
+    <div class="relative z-10 w-full max-w-[3000px] min-h-[calc(100vh-2rem)] flex flex-col lg:flex-row items-center justify-between gap-10">
+      
+      <!-- Left Panel - Text content -->
+      <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
+        <div class="my-auto">
+          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            Récupérez l'accès<br />
+            à vos projets.<br />
+            En toute sécurité.
+          </h1>
+          <p class="text-gray-200 text-lg max-w-md">
+            Nous comprenons que les oublis arrivent. Réinitialisez votre mot de passe pour reprendre le contrôle de votre travail.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Panel - Large Floating Form Card -->
+      <div class="relative w-full lg:w-1/2 max-w-[700px] min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-[1.5rem] neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border border-white/50 dark:border-white/5">
+        
+        <div class="w-full space-y-8">
+          
+          <Transition name="fade" mode="out-in">
+            <!-- Step 1: Input Form -->
+            <div v-if="!isSuccess" key="input">
+              <!-- Absolute Retour Button -->
+              <NuxtLink href="/auth/login" class="absolute top-8 left-8 sm:top-12 sm:left-12 lg:top-16 lg:left-16 xl:top-20 xl:left-20 inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-black dark:hover:text-white transition-colors w-fit z-10">
+                <Icon name="heroicons:arrow-left" class="w-4 h-4" /> Retour
+              </NuxtLink>
+
+              <!-- Header -->
+              <div class="flex flex-col items-left text-left mb-12">
+                <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white mb-3">Mot de passe oublié</h2>
+                <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
+              </div>
+
+              <!-- Form -->
+              <form @submit.prevent="handleSubmit" class="space-y-6">
+                <div>
+                  <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                  <input v-model="email" type="email" id="email" placeholder="Entrez votre e-mail" required class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+                </div>
+
+                <button type="submit" :disabled="!email" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                  Envoyer le lien
+                </button>
+              </form>
+            </div>
+
+            <!-- Step 2: Success Message -->
+            <div v-else key="success" class="flex flex-col items-center justify-center text-center py-10">
+              <div class="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 neo-emboss">
+                <Icon name="heroicons:envelope-open" class="w-12 h-12 text-blue-600 dark:text-blue-400" />
+              </div>
+              
+              <h2 class="text-3xl sm:text-4xl font-bold text-black dark:text-white mb-4">Email envoyé !</h2>
+              <p class="text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">
+                Nous avons envoyé un lien de réinitialisation à <span class="text-black dark:text-white font-bold">{{ email }}</span>. Veuillez vérifier votre boîte de réception.
+              </p>
+
+              <NuxtLink href="/auth/login" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                Retour à la connexion
+              </NuxtLink>
+            </div>
+          </Transition>
+
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

@@ -10,9 +10,10 @@ const user = {
 </script>
 
 <template>
-    <section class="flex flex-col gap-2 ">
+    <div>
+        <section class="flex flex-col gap-2 ">
         <h1 class="text-4xl font-bold text-main dark:text-gray-200">Dashboard</h1>
-        <p class="text-secondary dark:text-gray-500 text-md pt-2">Bienvenue sur votre tableau de bord, {{ user.name }}</p>
+        <p class="text-secondary dark:text-gray-500 text-md pt-3">Bienvenue sur votre tableau de bord, {{ user.name }}</p>
     </section>
     <br>
     <section>
@@ -24,4 +25,5 @@ const user = {
         <!-- Stats Cards with graphs -->
         <CardV2Dashboard />
     </section>
+    </div>
 </template>

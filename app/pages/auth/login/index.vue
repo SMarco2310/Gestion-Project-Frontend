@@ -6,14 +6,33 @@ definePageMeta({
   }
 })
 
+const { login } = useAuth();
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
 }
+
+const email = ref('');
+const password = ref('');
+const errorMessage = ref('');
+const loading = ref(false);
+
+const handleLogin = async () => {
+    loading.value = true;
+    errorMessage.value = '';
+    try {
+        await login(email.value, password.value);
+        navigateTo('/dashboard');
+    } catch (error) {
+        errorMessage.value = 'Email ou mot de passe incorrect';
+    } finally {
+        loading.value = false;
+    }
+};
 </script>
 
 <template>
-  <div class="relative min-h-screen flex items-center justify-center p-4 lg:p-4">
+  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-4">
     <!-- Background Image spanning the entire screen -->
     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover" />
     
@@ -27,7 +46,7 @@ const togglePassword = () => {
     </div>
 
     <!-- Main Content Container -->
-    <div class="relative z-10 w-full max-w-[3000px] min-h-[calc(100vh-2rem)] flex flex-col lg:flex-row items-center justify-between gap-10">
+    <div class="relative z-10 w-full max-w-[3000px] min-h-[100dvh] lg:min-h-[calc(100vh-2rem)] flex flex-col lg:flex-row items-center justify-between lg:gap-10">
       
       <!-- Left Panel - Text content -->
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
@@ -45,7 +64,7 @@ const togglePassword = () => {
       </div>
 
       <!-- Right Panel - Large Floating Form Card -->
-      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-[1.5rem] neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border border-white/50 dark:border-white/5">
+      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[100dvh] lg:min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-none lg:rounded-[1.5rem] lg:neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border-0 lg:border border-white/50 dark:border-white/5">
         
         <div class="w-full space-y-8">
           

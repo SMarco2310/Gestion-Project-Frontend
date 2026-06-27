@@ -3,22 +3,28 @@ import { TaskPriority, TaskStatus, TaskTag } from '~/utils/enums'
 interface Tache {
   id: number | string
   title: string
+  reference_code: string
   description: string
   status: string
   priority: string
   tag: string
   projet_id?: number | string | null
+  parent_task_id?: number | string | null
+  sub_tasks?: any[]
   created_at?: string
   updated_at?: string
 }
 
 interface TaskPayload {
   title: string
+  reference_code: string
   description?: string
   status?: string
   priority?: string
   tag?: string
   projet_id?: number | string | null
+  parent_task_id?: number | string | null
+  due_date?: string
 }
 
 const defaultTasks: Tache[] = [
@@ -61,11 +67,14 @@ export default function useTasks() {
   const normalizeTask = (task: any): Tache => ({
     id: task.id ?? task._id ?? '',
     title: task.title ?? task.name ?? 'Sans titre',
+    reference_code: task.reference_code ?? '',
     description: task.description ?? '',
     status: task.status ?? TaskStatus.TO_DO,
     priority: task.priority ?? TaskPriority.MEDIUM,
     tag: task.tag ?? TaskTag.FEATURE,
     projet_id: task.projet_id ?? task.project_id ?? null,
+    parent_task_id: task.parent_task_id ?? null,
+    sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
     created_at: task.created_at ?? '',
     updated_at: task.updated_at ?? '',
   })
@@ -76,11 +85,12 @@ export default function useTasks() {
 
     try {
       const query = projectId ? `?projet_id=${projectId}` : ''
-      const data = await $api<{ tasks: Tache[]; success: boolean }>(`/api/taches${query}`, {
+      const data = await $api<Tache[] | any>(`/api/taches${query}`, {
         method: 'GET',
       })
 
-      tasks.value = (data.tasks ?? []).map(normalizeTask)
+      const rawTasks = Array.isArray(data) ? data : data.tasks ?? data.data ?? []
+      tasks.value = rawTasks.map(normalizeTask)
       return tasks.value
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
@@ -96,11 +106,12 @@ export default function useTasks() {
 
   const getTask = async (id: number | string) => {
     try {
-      const data = await $api<{ task: Tache; success: boolean }>(`/api/taches/${id}`, {
+      const data = await $api<Tache | any>(`/api/taches/${id}`, {
         method: 'GET',
       })
 
-      const nextTask = normalizeTask(data.task)
+      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const nextTask = normalizeTask(rawTask)
       const index = tasks.value.findIndex((item) => String(item.id) === String(id))
       if (index !== -1) {
         tasks.value[index] = nextTask
@@ -117,12 +128,13 @@ export default function useTasks() {
 
   const createTask = async (payload: TaskPayload) => {
     try {
-      const data = await $api<{ task: Tache; success: boolean }>('/api/taches', {
+      const data = await $api<Tache | any>('/api/taches', {
         method: 'POST',
         body: payload,
       })
 
-      const createdTask = normalizeTask(data.task)
+      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const createdTask = normalizeTask(rawTask)
       tasks.value = [createdTask, ...tasks.value]
       return createdTask
     } catch (err) {
@@ -133,12 +145,13 @@ export default function useTasks() {
 
   const updateTask = async (id: number | string, payload: Partial<TaskPayload>) => {
     try {
-      const data = await $api<{ task: Tache; success: boolean }>(`/api/taches/${id}`, {
+      const data = await $api<any>(`/api/taches/${id}`, {
         method: 'PUT',
         body: payload,
       })
 
-      const updatedTask = normalizeTask(data.task)
+      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const updatedTask = normalizeTask(rawTask)
       const index = tasks.value.findIndex((item) => String(item.id) === String(id))
       if (index !== -1) {
         tasks.value[index] = updatedTask

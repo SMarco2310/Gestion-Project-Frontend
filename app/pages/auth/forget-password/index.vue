@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import useAuth from '../../../composables/useAuth'
 
 definePageMeta({
   pageTransition: {
@@ -8,15 +9,33 @@ definePageMeta({
   }
 })
 
+const { forgotPassword } = useAuth()
+
 const email = ref('')
 const isSuccess = ref(false)
+const loading = ref(false)
+const errorMessage = ref('')
 
-const handleSubmit = () => {
-  if (email.value) {
-    // Simulate API call
-    setTimeout(() => {
-      isSuccess.value = true
-    }, 500)
+const handleSubmit = async () => {
+  if (!email.value) return
+
+  loading.value = true
+  errorMessage.value = ''
+
+  try {
+    await forgotPassword(email.value)
+    isSuccess.value = true
+  } catch (error: any) {
+    // Extract validation error from Laravel response
+    if (error?.data?.errors?.email) {
+      errorMessage.value = error.data.errors.email[0]
+    } else if (error?.data?.message) {
+      errorMessage.value = error.data.message
+    } else {
+      errorMessage.value = 'Une erreur est survenue. Veuillez réessayer.'
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -71,6 +90,11 @@ const handleSubmit = () => {
                 <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
               </div>
 
+              <!-- Error Message -->
+              <div v-if="errorMessage" class="flex items-center justify-center p-3 mb-4 rounded-xl bg-red-50 dark:bg-red-900/20">
+                <span class="text-red-500 dark:text-red-400 text-sm">{{ errorMessage }}</span>
+              </div>
+
               <!-- Form -->
               <form @submit.prevent="handleSubmit" class="space-y-6">
                 <div>
@@ -78,8 +102,12 @@ const handleSubmit = () => {
                   <input v-model="email" type="email" id="email" placeholder="Entrez votre e-mail" required class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
                 </div>
 
-                <button type="submit" :disabled="!email" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-                  Envoyer le lien
+                <button type="submit" :disabled="!email || loading" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <svg v-if="loading" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  {{ loading ? 'Envoi en cours...' : 'Envoyer le lien' }}
                 </button>
               </form>
             </div>

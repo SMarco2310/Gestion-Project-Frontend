@@ -19,7 +19,7 @@ const isMobileMenuOpen = ref(false)
 <template>
     <div>
         <!-- Top Horizontal Bar -->
-        <header class="fixed top-0 md:left-64 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800">
+        <header class="fixed top-0 md:left-80 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800">
             <!-- Mobile Left Actions (Branding) -->
             <div class="flex md:hidden items-center gap-3">
                 <NuxtLink to="/dashboard" class="flex items-center gap-2">
@@ -96,7 +96,7 @@ const isMobileMenuOpen = ref(false)
         <!-- Left-Aligned Navigation (Stem of the L) -->
         <aside 
             :class="[
-                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] md:w-64 bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
+                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] md:w-80 bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
                 isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
             ]"
         >

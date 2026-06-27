@@ -18,17 +18,46 @@ const togglePassword = () => {
 const email = ref('');
 const password = ref('');
 const errorMessage = ref('');
+const fieldErrors = ref<Record<string, string>>({});
 const rememberMe = ref(false);
 const loading = ref(false);
 
+const validateFields = (): boolean => {
+  fieldErrors.value = {};
+
+  if (!email.value.trim()) {
+    fieldErrors.value.email = "L'adresse e-mail est requise.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    fieldErrors.value.email = "Veuillez entrer une adresse e-mail valide.";
+  }
+
+  if (!password.value) {
+    fieldErrors.value.password = 'Le mot de passe est requis.';
+  }
+
+  return Object.keys(fieldErrors.value).length === 0;
+}
+
 const handleLogin = async () => {
-    loading.value = true;
     errorMessage.value = '';
+    fieldErrors.value = {};
+
+    if (!validateFields()) return;
+
+    loading.value = true;
     try {
         await login(email.value,password.value);
         navigateTo('/dashboard');
-    } catch (error) {
-        errorMessage.value = 'Email ou mot de passe incorrect';
+    } catch (error: any) {
+        if (error?.data?.errors) {
+            const errors = error.data.errors;
+            if (errors.email) fieldErrors.value.email = errors.email[0];
+            if (errors.password) fieldErrors.value.password = errors.password[0];
+        } else if (error?.data?.message) {
+            errorMessage.value = error.data.message;
+        } else {
+            errorMessage.value = 'Email ou mot de passe incorrect.';
+        }
     } finally {
         loading.value = false;
     }
@@ -79,22 +108,34 @@ const handleLogin = async () => {
             <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Connectez-vous à votre compte</p>
           </div>
 
+          <!-- General Error -->
+          <div v-if="errorMessage" class="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+            <Icon name="heroicons:exclamation-circle" class="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
+            <span class="text-red-600 dark:text-red-400 text-sm">{{ errorMessage }}</span>
+          </div>
+
           <!-- Form -->
           <form @submit.prevent="handleLogin" class="space-y-6">
             
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-              <input type="email" v-model="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+              <input type="email" v-model="email" id="email" placeholder="Entrez votre e-mail" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.email ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
+              <p v-if="fieldErrors.email" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.email }}
+              </p>
             </div>
 
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" v-model="password" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
+                <input :type="showPassword ? 'text' : 'password'" v-model="password" id="password" placeholder="Entrez votre mot de passe" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none pr-12 text-base transition-all', fieldErrors.password ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
               </div>
+              <p v-if="fieldErrors.password" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.password }}
+              </p>
             </div>
 
             <div class="flex items-center justify-between text-sm mt-4">
@@ -105,11 +146,9 @@ const handleLogin = async () => {
               <NuxtLink href="/auth/forget-password" class="text-gray-500 hover:text-black dark:hover:text-white transition-colors text-base">Mot de passe oublié ?</NuxtLink>
             </div>
 
-             <div v-if="errorMessage" class="flex items-center justify-center p-3 ">
-                <span class="text-red-500 dark:text-red-400">{{ errorMessage }}</span>
-             </div>
-            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all">
-              Se connecter
+            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" :disabled="loading">
+              <svg v-if="loading" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              {{ loading ? 'Connexion...' : 'Se connecter' }}
             </button>
 
             <!-- <div class="relative flex items-center py-6">

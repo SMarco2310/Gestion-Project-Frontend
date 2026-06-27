@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useToast } from '~/composables/useToast'
 import useProjets from '~/composables/useProjets'
+import useTasks from '~/composables/useTasks'
 import draggable from 'vuedraggable'
 import { TaskTag as TaskTagEnum } from '~/utils/enums'
 
@@ -40,12 +41,27 @@ const items = defineModel<Task[]>('items', { default: () => [] })
 const itemCount = computed(() => items.value.length)
 
 const activeDropdownId = ref<string | null>(null)
-const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask'])
+const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved'])
+
+const onChange = (evt: any) => {
+  if (evt.added) {
+    emit('taskMoved', evt.added.element.id)
+  }
+}
 
 const isCreating = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
 const newTaskProject = ref('')
+
+const getTodayDate = () => {
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+const minDate = ref(getTodayDate())
 
 const { projets } = useProjets()
 
@@ -54,7 +70,9 @@ const availableProjects = computed(() => projets.value.map((project) => ({
   name: project.name,
 })))
 
-const submitNewTask = () => {
+const { createTask } = useTasks()
+
+const submitNewTask = async () => {
   if (!newTaskTitle.value.trim()) return
   if (!newTaskProject.value) {
     const { addToast } = useToast()
@@ -66,41 +84,43 @@ const submitNewTask = () => {
     return
   }
   
-  const project = availableProjects.value.find((p) => p.id === newTaskProject.value)
-  
-  items.value.push({
-    id: Date.now().toString(),
-    title: newTaskTitle.value.trim(),
-    tag: {
-      label: TaskTagEnum.FEATURE,
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: project ? `${project.id}-TASK` : 'SAMS-NEW',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    assignee: {
-      initials: project ? project.name.charAt(0).toUpperCase() : '?',
-      colorClass: 'bg-gray-600'
-    },
-    projet_id: newTaskProject.value,
-  })
-  
-  const { addToast } = useToast()
-  
-  let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée au projet ${project?.name ?? 'inconnu'}.`
-  if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
-  
-  addToast({
-    type: 'success',
-    title: 'Tâche créée',
-    message: successMsg,
-  })
-  
-  newTaskTitle.value = ''
-  newTaskDueDate.value = ''
-  newTaskProject.value = ''
-  isCreating.value = false
+  try {
+    const statusVal = props.title === 'En cours' ? 'en cours' : (props.title === 'Terminé' ? 'terminé' : 'à faire')
+    const referenceCode = `T-${Math.floor(1000 + Math.random() * 9000)}`
+    await createTask({
+      title: newTaskTitle.value.trim(),
+      reference_code: referenceCode,
+      projet_id: newTaskProject.value,
+      status: statusVal,
+      priority: 'moyen',
+      tag: 'feature',
+      due_date: newTaskDueDate.value || getTodayDate(),
+    })
+    
+    const project = availableProjects.value.find((p) => String(p.id) === String(newTaskProject.value))
+    const { addToast } = useToast()
+    
+    let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée au projet ${project?.name ?? 'inconnu'}.`
+    if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
+    
+    addToast({
+      type: 'success',
+      title: 'Tâche créée',
+      message: successMsg,
+    })
+    
+    newTaskTitle.value = ''
+    newTaskDueDate.value = ''
+    newTaskProject.value = ''
+    isCreating.value = false
+  } catch (error) {
+    const { addToast } = useToast()
+    addToast({
+      type: 'error',
+      title: 'Erreur',
+      message: 'Impossible de créer la tâche. Vérifiez les informations.',
+    })
+  }
 }
 
 const createFormRef = ref<HTMLElement | null>(null)
@@ -163,7 +183,7 @@ onUnmounted(() => {
             
             <!-- Calendar Date Picker -->
             <div class="relative flex items-center">
-              <input type="date" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
+              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
             </div>
             
             <!-- User -->
@@ -185,6 +205,7 @@ onUnmounted(() => {
         item-key="id" 
         class="flex flex-col gap-2.5 min-h-[100px] h-full"
         ghost-class="opacity-40"
+        @change="onChange"
       >
         <template #item="{ element: item }">
           <div 

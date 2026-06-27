@@ -4,6 +4,7 @@ interface Projet{
   reference_code:string,
   user_id:number|any|string,
   description:string,
+  start_date: string,
   created_at: string,
   updated_at: string
 }
@@ -35,12 +36,12 @@ export default function useProjets() {
     // get projet
     const getProjet = async (id:number|string|any)=>{
         try{
-            const data = await $fetch<{projet:Projet,succes:boolean}>(`http://localhost:8000/api/projets/${id}`,{
+            const data = await $fetch<{projet:Projet,succes:boolean} | any>(`http://localhost:8000/api/projets/${id}`,{
                 method:'GET',
                 headers:{Authorization:`Bearer ${token.value}`}
             });
 
-            return data.projet
+            return data.projet ?? data
         }catch(error){
             console.error(error)
                 throw error
@@ -50,7 +51,7 @@ export default function useProjets() {
 
     // create projet
 
-    const createProjet = async (name:string,description:string,reference_code:string,end_date:Date,status:string,user_id:number)=>{
+    const createProjet = async (name:string,description:string,reference_code:string,start_date:string|Date,end_date:string|Date,status:string,user_id:number)=>{
         try{
             const data = await $fetch<{projet:Projet,succes:boolean}>(`http://localhost:8000/api/projets`,{
                 method:'POST',
@@ -60,6 +61,7 @@ export default function useProjets() {
                     name:name,
                     reference_code:reference_code,
                     description:description,
+                    start_date:start_date,
                     end_date:end_date,
                     status:status,
                     user_id:user_id
@@ -77,22 +79,24 @@ export default function useProjets() {
 
     // update projet
 
-    const updateProjet = async (id:number,name:string,description:string,end_date:Date,status:string)=>{
+    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date,end_date:string|Date,status:string)=>{
         try{
-            const data = await $fetch<{projet:Projet,succes:boolean}>(`http://localhost:8000/api/projets/${id}`,{
+            const data = await $fetch<{projet:Projet,succes:boolean} | any>(`http://localhost:8000/api/projets/${id}`,{
                 method:'PUT',
                 headers:{Authorization:`Bearer ${token.value}`},
                 body:{
                     name:name,
                     description:description,
+                    start_date:start_date,
                     end_date:end_date,
                     status:status
 
                 }
             });
-            const index = projets.value.findIndex(p => p.id === id)
-             if (index !== -1) projets.value[index] = data.projet
-            return data.projet
+            const proj = data.projet ?? data
+            const index = projets.value.findIndex(p => String(p.id) === String(id))
+             if (index !== -1) projets.value[index] = proj
+            return proj
         }catch(error){
             console.error(error)
                 throw error
@@ -106,7 +110,7 @@ export default function useProjets() {
                 method:"DELETE",
                 headers:{Authorization:`Bearer ${token.value}`}});
 
-
+                projets.value = projets.value.filter((p) => String(p.id) !== String(id));
                 return data.message;
         }catch(error){
             console.error(error)

@@ -18,9 +18,8 @@ interface CommentairePayload {
   user_id?: number | string | null
 }
 
-const commentaires = useState<Commentaire[]>('commentaires', () => [])
-
 export default function useCommentaire() {
+  const commentaires = useState<Commentaire[]>('commentaires', () => [])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const token = useCookie<string | null>('auth_token', {

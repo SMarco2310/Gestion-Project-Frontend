@@ -109,6 +109,39 @@ export default function useAuth() {
     }
   }
 
+  /**
+   * Send a password reset link to the given email.
+   */
+  const forgotPassword = async (email: string) => {
+    const { $api } = useNuxtApp()
+
+    const data = await $api<{ message: string }>('/api/forgot-password', {
+      method: 'POST',
+      body: { email },
+    })
+
+    return data.message
+  }
+
+  /**
+   * Reset the password using the token received by email.
+   */
+  const resetPassword = async (
+    tokenValue: string,
+    email: string,
+    password: string,
+    password_confirmation: string
+  ) => {
+    const { $api } = useNuxtApp()
+
+    const data = await $api<{ message: string }>('/api/reset-password', {
+      method: 'POST',
+      body: { token: tokenValue, email, password, password_confirmation },
+    })
+
+    return data.message
+  }
+
   return {
     user,
     token,
@@ -118,5 +151,7 @@ export default function useAuth() {
     logout,
     getProfile,
     updateProfile,
+    forgotPassword,
+    resetPassword,
   }
 }

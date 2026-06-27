@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { error } from 'node:console';
 import { ref } from 'vue'
-import auth from '~/middleware/auth.global';
 const {user,updateProfile,logout}=useAuth();
 
 const router = useRouter();
 definePageMeta({
     layout: "custom",
-    // middleware: 'auth',
 });
 
 
@@ -19,7 +16,6 @@ const HandleProfileUpdate = async ()=>{
     
     try {
         if(name.value=='' && email.value==''){
-        // throw error("The field shouldn't be emmpty");
         return
         }
         await updateProfile(name.value, email.value,bio.value);
@@ -37,11 +33,6 @@ const handleCancel = () => {
 }
 
 const isPasswordModalOpen = ref(false)
-
-const handlePasswordChange = (data: any) => {
-    // Implement API call logic here
-    console.log("Password change requested", data)
-}
 
 const handleLogout = async () => {
     await logout();
@@ -136,7 +127,6 @@ const handleLogout = async () => {
         <ChangePasswordModal 
             :is-open="isPasswordModalOpen" 
             @close="isPasswordModalOpen = false"
-            @submit="handlePasswordChange"
         />
     </div>
 </template>

@@ -6,7 +6,10 @@ definePageMeta({
     // middleware: 'auth',
 })
 
-const { tasks, getTasks } = useTasks()
+import { useToast } from '~/composables/useToast'
+
+const { tasks, getTasks, deleteTask, updateTask } = useTasks()
+const { addToast } = useToast()
 
 const todoItems = ref<any[]>([])
 const inProgressItems = ref<any[]>([])
@@ -20,9 +23,41 @@ const handleTaskClick = (taskId: string) => {
   isTaskModalOpen.value = true
 }
 
+const handleEditTask = (taskId: string) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
+
+const handleDeleteTask = async (taskId: string) => {
+  if (confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
+    try {
+      await deleteTask(taskId)
+      addToast({ type: 'success', title: 'Tâche supprimée', message: 'La tâche a été supprimée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+    }
+  }
+}
+
 const handleCloseTaskModal = () => {
   isTaskModalOpen.value = false
   selectedTaskId.value = null
+}
+
+const handleTaskMoved = async (taskId: string, newStatus: string) => {
+  try {
+    // Map internal enum/status to the backend status string (en cours, à faire, terminé)
+    let mappedStatus = newStatus
+    if (newStatus === TaskStatus.TO_DO) mappedStatus = 'à faire'
+    if (newStatus === TaskStatus.IN_PROGRESS) mappedStatus = 'en cours'
+    if (newStatus === TaskStatus.DONE) mappedStatus = 'terminé'
+
+    await updateTask(taskId, { status: mappedStatus })
+    // No toast here to avoid spamming on drag and drop
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de déplacer la tâche.' })
+    await getTasks() // Reset the board if it failed
+  }
 }
 
 const getTagColorClass = (tag: string) => {
@@ -31,6 +66,16 @@ const getTagColorClass = (tag: string) => {
       return 'bg-amber-500 text-black'
     case TaskTag.DEPLOYMENT:
       return 'bg-sky-300 text-black'
+    case TaskTag.BUG:
+      return 'bg-red-500 text-white'
+    case TaskTag.FEATURE:
+      return 'bg-blue-500 text-white'
+    case TaskTag.IMPROVEMENT:
+      return 'bg-emerald-500 text-white'
+    case TaskTag.DOCUMENTATION:
+      return 'bg-purple-500 text-white'
+    case TaskTag.DESIGN:
+      return 'bg-pink-500 text-white'
     default:
       return 'bg-[#3A3A3D] text-gray-300'
   }
@@ -42,6 +87,16 @@ const getTagIcon = (tag: string) => {
       return 'ph:pencil-simple-duotone'
     case TaskTag.DEPLOYMENT:
       return 'ph:rocket-launch-duotone'
+    case TaskTag.BUG:
+      return 'ph:bug-duotone'
+    case TaskTag.FEATURE:
+      return 'ph:star-duotone'
+    case TaskTag.IMPROVEMENT:
+      return 'ph:trend-up-duotone'
+    case TaskTag.DOCUMENTATION:
+      return 'ph:book-open-duotone'
+    case TaskTag.DESIGN:
+      return 'ph:palette-duotone'
     default:
       return 'ph:file-duotone'
   }
@@ -58,7 +113,7 @@ const mapTaskToBoardItem = (task: any) => ({
     colorClass: getTagColorClass(task.tag || TaskTag.DOCUMENTATION),
     icon: getTagIcon(task.tag || TaskTag.DOCUMENTATION),
   },
-  reference: `T-${String(task.id).padStart(2, '0')}`,
+  reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',
   issueTypeColorClass: 'text-emerald-600',
   statusIcon: 'ph:check',
@@ -83,7 +138,41 @@ const syncBoardItems = () => {
     .map(mapTaskToBoardItem)
 }
 
-watch(tasks, syncBoardItems, { deep: true })
+watch(tasks, () => {
+  const totalInBoard = todoItems.value.length + inProgressItems.value.length + doneItems.value.length
+  let needsFullSync = tasks.value.length !== totalInBoard
+
+  if (!needsFullSync) {
+    for (const t of tasks.value) {
+      const mappedStatus = t.status === 'TO_DO' || t.status === 'à faire' ? TaskStatus.TO_DO : 
+                           (t.status === 'IN_PROGRESS' || t.status === 'en cours' ? TaskStatus.IN_PROGRESS : 
+                           (t.status === 'DONE' || t.status === 'terminé' ? TaskStatus.DONE : t.status))
+                           
+      const inTodo = todoItems.value.some(i => i.id === String(t.id))
+      const inInProgress = inProgressItems.value.some(i => i.id === String(t.id))
+      const inDone = doneItems.value.some(i => i.id === String(t.id))
+      
+      if (mappedStatus === TaskStatus.TO_DO && !inTodo) needsFullSync = true
+      if (mappedStatus === TaskStatus.IN_PROGRESS && !inInProgress) needsFullSync = true
+      if (mappedStatus === TaskStatus.DONE && !inDone) needsFullSync = true
+    }
+  }
+
+  if (needsFullSync) {
+    syncBoardItems()
+  } else {
+    tasks.value.forEach(t => {
+      const mapped = mapTaskToBoardItem(t)
+      const updateItem = (list: any[]) => {
+        const item = list.find(i => i.id === mapped.id)
+        if (item) Object.assign(item, mapped)
+      }
+      updateItem(todoItems.value)
+      updateItem(inProgressItems.value)
+      updateItem(doneItems.value)
+    })
+  }
+}, { deep: true })
 
 onMounted(async () => {
   await getTasks()
@@ -114,6 +203,9 @@ onMounted(async () => {
         v-model:items="todoItems" 
         :allowCreate="true"
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.TO_DO)"
       />
       
       <!-- In Progress State Column -->
@@ -122,6 +214,9 @@ onMounted(async () => {
         v-model:items="inProgressItems" 
         :allowCreate="false"
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.IN_PROGRESS)"
       />
     
       <!-- Loaded State Column -->
@@ -130,6 +225,9 @@ onMounted(async () => {
         v-model:items="doneItems" 
         :isDone="true" 
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.DONE)"
       />
     </div>
     <!-- Task Modal -->

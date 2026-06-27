@@ -1,9 +1,31 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps<{
-  statusMetrics: Array<{ label: string; percentage: string; colorClass: string }>
+  totalIssues: number
+  statusMetrics: Array<{ label: string; percentage: string; colorClass: string; colorCode: string; rawPercent: number }>
   priorities: Array<{ label: string; count: number; icon: string; iconColor: string; barColor: string; percent: number }>
   epics: Array<{ id: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
 }>()
+
+const donutStyle = computed(() => {
+  if (props.totalIssues === 0 || props.statusMetrics.length === 0) {
+    return 'background: conic-gradient(#E5E7EB 0% 100%);'
+  }
+  
+  const done = props.statusMetrics.find(m => m.label === 'Terminées')
+  const inProgress = props.statusMetrics.find(m => m.label === 'En cours')
+  const todo = props.statusMetrics.find(m => m.label === 'À faire')
+
+  const doneP = done ? done.rawPercent : 0
+  const inProgressP = inProgress ? inProgress.rawPercent : 0
+  
+  return `background: conic-gradient(
+    ${done?.colorCode || '#A6C4FF'} 0% ${doneP}%, 
+    ${inProgress?.colorCode || '#8CA8F9'} ${doneP}% ${doneP + inProgressP}%, 
+    ${todo?.colorCode || '#FFB78C'} ${doneP + inProgressP}% 100%
+  );`
+})
 </script>
 
 <template>
@@ -16,15 +38,11 @@ const props = defineProps<{
         <!-- Donut Chart (CSS Conic Gradient) -->
         <div 
           class="w-32 h-32 rounded-full relative flex-shrink-0" 
-          style="background: conic-gradient(
-            #A6C4FF 0% 65%, 
-            #8CA8F9 65% 85%, 
-            #FFB78C 85% 100%
-          );"
+          :style="donutStyle"
         >
           <!-- Inner circle to create donut hole -->
           <div class="absolute inset-[12px] bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-full flex flex-col items-center justify-center shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)]">
-            <span class="text-2xl font-bold text-main dark:text-white leading-tight">142</span>
+            <span class="text-2xl font-bold text-main dark:text-white leading-tight">{{ totalIssues }}</span>
             <span class="text-[10px] text-secondary dark:text-gray-400">Total Issues</span>
           </div>
         </div>

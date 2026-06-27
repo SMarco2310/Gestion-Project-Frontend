@@ -5,21 +5,53 @@ definePageMeta({
 })
 
 
-const { projets, getProjets,createProjet,deleteProjet } = useProjets()
-await getProjets()
+import useTasks from '~/composables/useTasks'
+
+const { projets, getProjets, createProjet, deleteProjet } = useProjets()
+const { tasks, getTasks } = useTasks()
+
+await Promise.all([
+  getProjets(),
+  getTasks()
+])
+
+const getProjectMetrics = (projectId: number | string) => {
+  const projectTasks = tasks.value.filter(t => String(t.projet_id) === String(projectId))
+  const totalTasks = projectTasks.length
+  const doneTasks = projectTasks.filter(t => t.status === 'terminé').length
+  const inProgressTasks = projectTasks.filter(t => t.status === 'en cours').length
+  const todoTasks = projectTasks.filter(t => t.status === 'à faire').length
+  const tasksProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+
+  return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }
+}
 
 const isCreateModalOpen = ref(false)
+const isSideSheetOpen = ref(false)
+const selectedProjectId = ref<number | string | null>(null)
 
 const handleProjectClick = (projectId: number | string) => {
-  navigateTo(`/projets/${projectId}`)
+  selectedProjectId.value = projectId
+  isSideSheetOpen.value = true
 }
+
+const handleCloseSideSheet = () => {
+  isSideSheetOpen.value = false
+  selectedProjectId.value = null
+}
+
+import { useToast } from '~/composables/useToast'
 
 const handleDeleteProject = async (projectId: number | string) => {
   try {
     await deleteProjet(projectId)
     await getProjets() // Refresh the list after deletion
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
   } catch (error) {
     console.error('Error deleting project:', error)
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
   }
 }
 const handleCreateProjectSubmit = async (data: any) => {
@@ -28,13 +60,18 @@ const handleCreateProjectSubmit = async (data: any) => {
       data.name,
       data.description,
       data.reference_code,
+      data.start_date,
       data.end_date,
       data.status,
       data.user_id
     )
     await getProjets()
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet créé', message: 'Le projet a été créé avec succès.' })
   } catch (error) {
     console.error(error)
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer le projet.' })
     throw error
   }
 }
@@ -74,8 +111,9 @@ const handleCreateProjectSubmit = async (data: any) => {
         :reference_code="p.reference_code"
         :name="p.name"
         :description="p.description"
-        :status="(p as any).status || 'TO_DO'"
+        :status="(p as any).status || 'à faire'"
         :end_date="(p as any).end_date || ''"
+        :metrics="getProjectMetrics(p.id)"
         @cardClick="handleProjectClick"
         @delete="handleDeleteProject"
       />
@@ -88,7 +126,11 @@ const handleCreateProjectSubmit = async (data: any) => {
       @close="isCreateModalOpen = false"
     />
 
-    <!-- Nested route renders here: empty on /projets, detail sheet on /projets/:id -->
-    <NuxtPage />
+    <!-- Project Side Sheet -->
+    <ProjectSideSheet
+      :is-open="isSideSheetOpen"
+      :project-id="selectedProjectId"
+      @close="handleCloseSideSheet"
+    />
   </div>
 </template>

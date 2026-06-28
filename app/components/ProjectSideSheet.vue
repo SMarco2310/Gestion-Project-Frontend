@@ -28,6 +28,7 @@ const isEditing = ref(false)
 const projectTitle = ref('')
 const projectDescription = ref('')
 const projectRef = ref('')
+const projectStartDate = ref('')
 const projectEndDate = ref('')
 const editTitle = ref('')
 const editDescription = ref('')
@@ -38,6 +39,7 @@ const todoTasks = ref(0)
 const inProgressTasks = ref(0)
 const doneTasks = ref(0)
 const tasksProgress = ref(0)
+const projectTasks = ref<any[]>([])
 
 const formatDate = (dateString: string) => {
   if (!dateString) return 'Non définie'
@@ -57,6 +59,7 @@ const fetchProject = async (id: number | string | null) => {
       projectTitle.value = projet.name || 'Sans titre'
       projectDescription.value = projet.description || 'Ajouter une description...'
       projectRef.value = projet.reference_code || `PROJ-${id}`
+      projectStartDate.value = (projet as any).start_date || ''
       projectEndDate.value = (projet as any).end_date || ''
       
       // The API returns the status as defined in ProjectStatus (e.g. 'à faire', 'en cours', 'terminé')
@@ -66,6 +69,7 @@ const fetchProject = async (id: number | string | null) => {
     // Fetch tasks to calculate progress metrics
     const tasksData = await getTasks(id)
     if (tasksData) {
+      projectTasks.value = tasksData
       totalTasks.value = tasksData.length
       todoTasks.value = tasksData.filter(t => t.status === 'à faire').length
       inProgressTasks.value = tasksData.filter(t => t.status === 'en cours').length
@@ -76,6 +80,8 @@ const fetchProject = async (id: number | string | null) => {
       } else {
         tasksProgress.value = 0
       }
+    } else {
+      projectTasks.value = []
     }
   } catch (error) {
     console.error('Failed to fetch project details:', error)
@@ -96,7 +102,8 @@ const saveEdit = async () => {
       props.projectId,
       editTitle.value,
       editDescription.value,
-      editEndDate.value ? new Date(editEndDate.value) : new Date(),
+      projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
+      editEndDate.value ? String(editEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
       projectStatus.value
     )
     
@@ -149,6 +156,14 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
   'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
 }
 
+const getTodayDate = () => {
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 const updateStatus = async (status: string) => {
   projectStatus.value = status
   isStatusDropdownOpen.value = false
@@ -160,7 +175,8 @@ const updateStatus = async (status: string) => {
       props.projectId,
       projectTitle.value,
       projectDescription.value,
-      projectEndDate.value ? new Date(projectEndDate.value) : new Date(),
+      projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
+      projectEndDate.value ? String(projectEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
       status
     )
     addToast({ title: 'Statut modifié', message: 'Le statut du projet a été mis à jour.', type: 'success' })
@@ -295,7 +311,49 @@ const updateStatus = async (status: string) => {
             </div>
           </div>
 
-
+          <!-- Tasks List -->
+          <div class="mb-8">
+            <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Tâches du projet</h3>
+            <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
+              <div
+                v-for="task in projectTasks" :key="task.id"
+                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group"
+              >
+                <div class="flex items-center gap-3 overflow-hidden">
+                  <div
+                    class="w-2.5 h-2.5 rounded-full shrink-0"
+                    :class="{
+                      'bg-orange-400': task.status === 'à faire',
+                      'bg-blue-500': task.status === 'en cours',
+                      'bg-emerald-500': task.status === 'terminé'
+                    }"
+                  ></div>
+                  <span
+                    class="text-sm text-main dark:text-gray-300 truncate font-medium"
+                    :class="{ 'line-through text-secondary dark:text-gray-500': task.status === 'terminé' }"
+                  >{{ task.title }}</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <div v-if="task.commentaires_count && task.commentaires_count > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400 mr-2">
+                    <Icon name="ph:chat-teardrop-text" class="text-[14px]" />
+                    <span class="text-xs font-medium">{{ task.commentaires_count }}</span>
+                  </div>
+                  <span
+                    class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+                    :class="{
+                      'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': task.status === 'à faire',
+                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': task.status === 'en cours',
+                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'terminé'
+                    }"
+                  >{{ task.status }}</span>
+                  <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-sm text-secondary dark:text-gray-500 p-4 border border-dashed border-form-border dark:border-gray-800 rounded-lg text-center bg-canvas dark:bg-transparent">
+              Aucune tâche dans ce projet.
+            </div>
+          </div>
           
         </div>
       </div>

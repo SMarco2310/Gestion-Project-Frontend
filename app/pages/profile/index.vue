@@ -12,6 +12,14 @@ const name = ref(user.value?.name ?? '');
 const email = ref(user.value?.email ?? '');
 const bio = ref(user.value?.bio ?? '');
 
+watch(() => user.value, (newUser) => {
+  if (newUser) {
+    name.value = newUser.name;
+    email.value = newUser.email;
+    bio.value = newUser.bio || '';
+  }
+}, { immediate: true });
+
 const HandleProfileUpdate = async ()=>{
     
     try {
@@ -21,15 +29,15 @@ const HandleProfileUpdate = async ()=>{
         await updateProfile(name.value, email.value,bio.value);
 
     } catch (error) {
-        console.error;
+        console.error('Failed to update profile:', error);
     } finally {
         // loading.value = false;
     }
 }
 const handleCancel = () => {
-  name.value = user.value?.name ?? 'John Doe'
-  email.value = user.value?.email ?? 'john.doe@email.com'
-  bio.value = user.value?.bio ?? 'Say Something'
+  name.value = user.value?.name ?? '';
+  email.value = user.value?.email ?? '';
+  bio.value = user.value?.bio ?? '';
 }
 
 const isPasswordModalOpen = ref(false)
@@ -37,6 +45,16 @@ const isPasswordModalOpen = ref(false)
 const handleLogout = async () => {
     await logout();
     router.push('/auth/login');
+}
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 }
 </script>
 
@@ -75,11 +93,11 @@ const handleLogout = async () => {
                     <div class="flex justify-between w-full mt-4 px-2">
                         <div>
                             <p class="text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1">Inscrit le</p>
-                            <p class="text-main dark:text-gray-200 text-sm">{{ user?.created_at }}</p>
+                            <p class="text-main dark:text-gray-200 text-sm whitespace-nowrap">{{ formatDate(user?.created_at) }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1">Fuseau horaire</p>
-                            <p class="text-main dark:text-gray-200 text-sm">UTC-08:00</p>
+                            <p class="text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">Fuseau horaire</p>
+                            <p class="text-main dark:text-gray-200 text-sm whitespace-nowrap">UTC-08:00</p>
                         </div>
                     </div>
                 </div>
@@ -111,14 +129,14 @@ const handleLogout = async () => {
                     <h3 class="font-bold text-main dark:text-gray-200">Sécurité</h3>
                 </div>
                 
-                <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 mb-3 transition-colors">
-                    <span class="text-main dark:text-gray-300 text-sm font-medium">Changer le mot de passe</span>
-                    <Icon name="heroicons:chevron-right" class="w-4 h-4 text-gray-500" />
+                <button @click="isPasswordModalOpen = true" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg px-3 py-3 mb-3 transition-colors">
+                    <span class="text-main dark:text-gray-300 text-sm font-medium text-left whitespace-nowrap truncate mr-2">Changer le mot de passe</span>
+                    <Icon name="heroicons:chevron-right" class="w-4 h-4 text-gray-500 flex-shrink-0" />
                 </button>
                 
-                <button @click="handleLogout" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg p-3.5 transition-colors group">
-                    <span class="text-[#FCA5A5] text-sm font-medium group-hover:text-red-400 transition-colors">Se déconnecter partout</span>
-                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 text-[#FCA5A5] group-hover:text-red-400 transition-colors" />
+                <button @click="handleLogout" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg px-3 py-3 transition-colors group">
+                    <span class="text-[#FCA5A5] text-sm font-medium text-left whitespace-nowrap truncate mr-2 group-hover:text-red-400 transition-colors">Se déconnecter partout</span>
+                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 text-[#FCA5A5] flex-shrink-0 group-hover:text-red-400 transition-colors" />
                 </button>
             </div>
         </div>

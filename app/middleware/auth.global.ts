@@ -3,7 +3,7 @@ export default defineNuxtRouteMiddleware((to) => {
     default: () => null,
   })
 
-  const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forget-password']
+  const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forget-password', '/auth/reset-password']
   const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/'
 
   if (!token.value && !isPublicRoute) {

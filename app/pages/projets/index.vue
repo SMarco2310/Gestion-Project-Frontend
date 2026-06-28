@@ -58,12 +58,12 @@ const handleCreateProjectSubmit = async (data: any) => {
   try {
     await createProjet(
       data.name,
-      data.description,
       data.reference_code,
-      data.start_date,
-      data.end_date,
+      data.description,
       data.status,
-      data.user_id
+      data.user_id,
+      data.start_date,
+      data.end_date
     )
     await getProjets()
     const { addToast } = useToast()

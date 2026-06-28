@@ -118,6 +118,7 @@ const mapTaskToBoardItem = (task: any) => ({
   issueTypeColorClass: 'text-emerald-600',
   statusIcon: 'ph:check',
   statusColorClass: 'text-emerald-500',
+  commentairesCount: task.commentaires_count || 0,
   assignee: {
     initials: 'U',
     colorClass: 'bg-gray-600',

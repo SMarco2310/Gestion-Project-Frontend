@@ -11,21 +11,6 @@ const props = defineProps<{
 const { user } = useAuth()
 const emit = defineEmits(['close', 'submit'])
 
-const form = ref({
-  name: '',
-  reference_code: '',
-  description: '',
-  status: ProjectStatus.TO_DO,
-  user_id: null as number | string | null,
-  start_date: '',
-  end_date: ''
-})
-
-const errors = ref({
-  title: false,
-  description: false
-})
-
 const getTodayDate = () => {
   const today = new Date()
   const yyyy = today.getFullYear()
@@ -34,6 +19,22 @@ const getTodayDate = () => {
   return `${yyyy}-${mm}-${dd}`
 }
 const minDate = ref(getTodayDate())
+
+const form = ref({
+  name: '',
+  reference_code: '',
+  description: '',
+  status: ProjectStatus.TO_DO,
+  user_id: null as number | string | null,
+  start_date: getTodayDate(),
+  end_date: getTodayDate()
+})
+
+const errors = ref({
+  title: false,
+  description: false,
+  dates: false
+})
 
 // Reset form when modal opens
 watch(() => props.isOpen, (newVal) => {
@@ -44,10 +45,10 @@ watch(() => props.isOpen, (newVal) => {
       description: '',
       status: ProjectStatus.TO_DO,
       user_id: user.value?.id ?? null,
-      start_date: '',
-      end_date: ''
+      start_date: getTodayDate(),
+      end_date: getTodayDate()
     }
-    errors.value = { title: false, description: false }
+    errors.value = { title: false, description: false, dates: false }
   }
 })
 
@@ -59,8 +60,9 @@ const submit = async () => {
   // Simple validation
   errors.value.title = !form.value.name.trim()
   errors.value.description = !form.value.description.trim()
+  errors.value.dates = !form.value.start_date || !form.value.end_date
 
-  if (errors.value.title || errors.value.description) {
+  if (errors.value.title || errors.value.description || errors.value.dates) {
     return // Stop submission if validation fails
   }
 
@@ -142,9 +144,9 @@ const submit = async () => {
                     v-model="form.status"
                     class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="TO_DO">À faire</option>
-                    <option value="EN_COURS">En cours</option>
-                    <option value="TERMINE">Terminé</option>
+                    <option :value="ProjectStatus.TO_DO">À faire</option>
+                    <option :value="ProjectStatus.IN_PROGRESS">En cours</option>
+                    <option :value="ProjectStatus.DONE">Terminé</option>
                   </select>
                 </div>
               </div>

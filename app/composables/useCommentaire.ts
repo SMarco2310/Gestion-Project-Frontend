@@ -3,13 +3,9 @@ interface Commentaire {
   content: string
   user_id: number | string | null
   tache_id: number | string | null
+  user?: { id: number | string; name: string } | null
   created_at?: string
   updated_at?: string
-  user?: {
-    id: number | string
-    name: string
-    avatar?: string
-  }
 }
 
 interface CommentairePayload {
@@ -34,13 +30,9 @@ export default function useCommentaire() {
     content: item.content ?? item.body ?? '',
     user_id: item.user_id ?? item.userId ?? null,
     tache_id: item.tache_id ?? item.task_id ?? null,
+    user: item.user ?? null,
     created_at: item.created_at ?? item.createdAt ?? '',
     updated_at: item.updated_at ?? item.updatedAt ?? '',
-    user: item.user ? {
-      id: item.user.id ?? item.user._id ?? '',
-      name: item.user.name ?? item.user.full_name ?? 'Utilisateur',
-      avatar: "`https://api.dicebear.com/7.x/initials/svg?seed=${item.user.name ?? 'U'}&chars=1`",
-    } : undefined,
   })
 
   const getCommentaires = async (tacheId?: number | string | null) => {
@@ -50,12 +42,12 @@ export default function useCommentaire() {
     const query = tacheId ? `?tache_id=${tacheId}` : ''
 
     try {
-      const data = await $fetch<{ commentaires: Commentaire[]; success: boolean }>(`http://localhost:8000/api/commentaires${query}`, {
+      const { $api } = useNuxtApp()
+      const data = await $api<{ commentaires: Commentaire[]; success: boolean }>(`/api/commentaires${query}`, {
         method: 'GET',
-        headers: { Authorization: `Bearer ${token.value}` },
       })
 
-      commentaires.value = (data.commentaires ?? []).map(normalizeCommentaire)
+      commentaires.value = (data.commentaires ?? data ?? []).map(normalizeCommentaire)
       return commentaires.value
     } catch (err) {
       console.error('Failed to fetch commentaires:', err)
@@ -73,17 +65,41 @@ export default function useCommentaire() {
     }
 
     try {
-      const data = await $fetch<{ commentaire: Commentaire; success: boolean }>('http://localhost:8000/api/commentaires', {
+      const { $api } = useNuxtApp()
+      const data = await $api<{ commentaire: Commentaire; success: boolean }>('/api/commentaires', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token.value}` },
         body: payload,
       })
 
-      const created = normalizeCommentaire(data.commentaire)
+      const created = normalizeCommentaire(data.commentaire ?? data)
       commentaires.value = [created, ...commentaires.value]
       return created
     } catch (err) {
       console.error('Failed to create commentaire:', err)
+      throw err
+    }
+  }
+
+  const updateCommentaire = async (id: number | string, content: string) => {
+    if (!content.trim()) {
+      throw new Error('Le message de commentaire ne peut pas être vide.')
+    }
+
+    try {
+      const { $api } = useNuxtApp()
+      const data = await $api<{ commentaire: Commentaire; success: boolean }>(`/api/commentaires/${id}`, {
+        method: 'PUT',
+        body: { content },
+      })
+
+      const updated = normalizeCommentaire(data.commentaire ?? data)
+      const index = commentaires.value.findIndex(c => String(c.id) === String(id))
+      if (index !== -1) {
+        commentaires.value[index] = updated
+      }
+      return updated
+    } catch (err) {
+      console.error('Failed to update commentaire:', err)
       throw err
     }
   }
@@ -94,5 +110,6 @@ export default function useCommentaire() {
     error,
     getCommentaires,
     createCommentaire,
+    updateCommentaire,
   }
 }

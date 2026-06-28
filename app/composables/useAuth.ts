@@ -99,6 +99,7 @@ export default function useAuth() {
       const data = await $api<{ user: User; message: string }>('/api/update', {
         method: 'PUT',
         body: { name, email, bio },
+        headers: {Authorization: `Bearer ${token.value}`},
       })
 
       user.value = data.user

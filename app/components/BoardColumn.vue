@@ -27,6 +27,7 @@ export interface Task {
   issueTypeColorClass?: string
   statusIcon?: string
   statusColorClass?: string
+  commentairesCount?: number
   assignee: TaskAssignee
 }
 
@@ -255,8 +256,13 @@ onUnmounted(() => {
                   <span :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
                </div>
 
-               <!-- Assignee & Status -->
+               <!-- Assignee, Comments & Status -->
                <div class="flex items-center gap-2.5">
+                  <div v-if="item.commentairesCount && item.commentairesCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:chat-teardrop-text" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.commentairesCount }}</span>
+                  </div>
+                  
                   <Icon 
                     v-if="item.statusIcon" 
                     :name="item.statusIcon" 

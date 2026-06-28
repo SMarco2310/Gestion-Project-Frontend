@@ -16,8 +16,10 @@ const close = () => {
   emit('close')
 }
 
-const { commentaires, getCommentaires, createCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
-const { getTask, updateTask } = useTasks()
+
+
+const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
+const { getTask, updateTask, getTasks, createTask, deleteTask } = useTasks()
 const { user } = useAuth()
 const { addToast } = useToast()
 
@@ -28,6 +30,15 @@ const taskTitle = ref('')
 const taskDescription = ref('Ajouter une description...')
 const editTitle = ref('')
 const editDescription = ref('')
+const taskStatus = ref('')
+const taskPriority = ref('')
+const taskReference = ref('')
+const taskTag = ref('')
+const taskDueDate = ref('')
+const taskCreatedAt = ref('')
+const taskUpdatedAt = ref('')
+const taskProjetId = ref<string | number>('')
+const taskSubtasks = ref<any[]>([])
 
 const setTask = async (id: string | number | null) => {
   if (!id) return
@@ -37,6 +48,7 @@ const setTask = async (id: string | number | null) => {
       taskTitle.value = task.title || 'Sans titre'
       taskDescription.value = task.description || 'Ajouter une description...'
       if (task.status) taskStatus.value = task.status
+      if (task.priority) taskPriority.value = task.priority
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
       taskTag.value = task.tag || 'Aucune'
       taskDueDate.value = task.due_date || 'Aucune'
@@ -76,7 +88,7 @@ const cancelEdit = () => {
   isEditing.value = false
 }
 
-const { deleteTask } = useTasks()
+
 
 const handleDelete = async () => {
   if (!props.taskId) return
@@ -91,22 +103,33 @@ const handleDelete = async () => {
   }
 }
 
+
+
 const isTagDropdownOpen = ref(false)
+const isStatusDropdownOpen = ref(false)
+const isPriorityDropdownOpen = ref(false)
 const isCreateSubtaskModalOpen = ref(false)
-const taskStatus = ref('TERMINÉ')
-const taskReference = ref('')
-const taskTag = ref('')
-const taskDueDate = ref('')
-const taskCreatedAt = ref('')
-const taskUpdatedAt = ref('')
-const taskProjetId = ref('')
 const commentText = ref('')
-const taskSubtasks = ref<any[]>([])
+const editingCommentId = ref<number | string | null>(null)
+const editingCommentText = ref('')
+
+const formatDisplayDate = (dateStr: string) => {
+  if (!dateStr) return 'Aucune'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return 'Aucune'
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+}
 
 const statusConfig: Record<string, { label: string; colorClass: string }> = {
   'à faire': { label: 'À FAIRE', colorClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500' },
   'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
   'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
+}
+
+const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
+  faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
+  moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-500', icon: 'ph:equals-bold' },
+  'élevé': { label: 'ÉLEVÉ', colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-500', icon: 'ph:caret-double-up-bold' }
 }
 
 const tagConfig: Record<string, { label: string; colorClass: string }> = {
@@ -120,28 +143,38 @@ const tagConfig: Record<string, { label: string; colorClass: string }> = {
 }
 
 const updateStatus = async (newStatus: string) => {
-  if (task.value && task.value.id) {
-    try {
-      await updateTask(task.value.id, { status: newStatus })
-      taskStatus.value = newStatus
-      isStatusDropdownOpen.value = false
-      addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
-    } catch (err) {
-      addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
-    }
+  if (!props.taskId) return
+  try {
+    await updateTask(props.taskId, { status: newStatus })
+    taskStatus.value = newStatus
+    isStatusDropdownOpen.value = false
+    addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  }
+}
+
+const updatePriority = async (newPriority: string) => {
+  if (!props.taskId) return
+  try {
+    await updateTask(props.taskId, { priority: newPriority })
+    taskPriority.value = newPriority
+    isPriorityDropdownOpen.value = false
+    addToast({ title: 'Priorité modifiée', message: 'La priorité de la tâche a été mise à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier la priorité.', type: 'error' })
   }
 }
 
 const updateTag = async (newTag: string) => {
-  if (task.value && task.value.id) {
-    try {
-      await updateTask(task.value.id, { tag: newTag })
-      taskTag.value = newTag
-      isTagDropdownOpen.value = false
-      addToast({ title: 'Étiquette modifiée', message: 'L’étiquette a été mise à jour.', type: 'success' })
-    } catch (err) {
-      addToast({ title: 'Erreur', message: 'Impossible de modifier l’étiquette.', type: 'error' })
-    }
+  if (!props.taskId) return
+  try {
+    await updateTask(props.taskId, { tag: newTag })
+    taskTag.value = newTag
+    isTagDropdownOpen.value = false
+    addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'étiquette.', type: 'error' })
   }
 }
 
@@ -165,13 +198,47 @@ const sendComment = async () => {
     await createCommentaire({
       content: commentText.value.trim(),
       tache_id: props.taskId,
-      user_id: user.value?.id ?? null,
     })
 
     commentText.value = ''
+    await getCommentaires(props.taskId)
+    
+    // Update the task's comment count locally in the global state
+    const { tasks } = useTasks()
+    const taskIndex = tasks.value.findIndex(t => String(t.id) === String(props.taskId))
+    if (taskIndex !== -1) {
+      const task = tasks.value[taskIndex]
+      if (task) {
+        task.commentaires_count = (task.commentaires_count || 0) + 1
+      }
+    }
+
     addToast({ title: 'Commentaire ajouté', message: 'Votre commentaire a été publié.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible d’ajouter le commentaire.', type: 'error' })
+    console.error(err)
+  }
+}
+
+const startEditComment = (comment: any) => {
+  editingCommentId.value = comment.id
+  editingCommentText.value = comment.content
+}
+
+const cancelEditComment = () => {
+  editingCommentId.value = null
+  editingCommentText.value = ''
+}
+
+const saveEditComment = async () => {
+  if (!editingCommentId.value || !editingCommentText.value.trim()) return
+
+  try {
+    await updateCommentaire(editingCommentId.value, editingCommentText.value.trim())
+    cancelEditComment()
+    addToast({ title: 'Commentaire modifié', message: 'Votre commentaire a été mis à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier le commentaire.', type: 'error' })
     console.error(err)
   }
 }
@@ -274,8 +341,10 @@ watch(() => props.taskId, async (newTaskId) => {
                 </div>
 
                 <!-- Add Comment Input -->
-                <div class="flex gap-4">
-                  <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">MS</div>
+                <div class="flex gap-4 mb-6">
+                  <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">
+                    {{ user?.name ? user.name.substring(0, 2).toUpperCase() : 'U' }}
+                  </div>
                   <div class="flex-1 rounded-lg overflow-hidden neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500">
                     <textarea v-model="commentText" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
                     <div class="px-3 py-2 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-4 text-xs font-medium text-secondary dark:text-gray-400">
@@ -285,6 +354,38 @@ watch(() => props.taskId, async (newTaskId) => {
                       </button>
                     </div>
                   </div>
+                </div>
+
+                <!-- Comments List -->
+                <div v-if="commentaires && commentaires.length > 0" class="flex flex-col gap-4">
+                  <div v-for="comment in commentaires" :key="comment.id" class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-0.5">
+                      {{ (comment as any).user?.name ? (comment as any).user.name.substring(0, 2).toUpperCase() : 'U' }}
+                    </div>
+                    <div class="flex-1">
+                      <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                          <span class="text-sm font-semibold text-main dark:text-gray-200">{{ (comment as any).user?.name || 'Utilisateur' }}</span>
+                          <span class="text-xs text-secondary dark:text-gray-500">{{ comment.created_at ? formatDisplayDate(comment.created_at) : '' }}</span>
+                        </div>
+                        <button v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" @click="startEditComment(comment)" class="p-1 text-secondary hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Modifier le commentaire">
+                          <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      
+                      <div v-if="editingCommentId === comment.id" class="mt-2">
+                        <textarea v-model="editingCommentText" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-lg p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 resize-none" rows="2"></textarea>
+                        <div class="flex items-center justify-end gap-2 mt-2">
+                          <button @click="cancelEditComment" class="px-3 py-1.5 text-xs font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors">Annuler</button>
+                          <button @click="saveEditComment" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
+                        </div>
+                      </div>
+                      <p v-else class="text-sm text-secondary dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{{ comment.content }}</p>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="text-sm text-secondary dark:text-gray-500 text-center py-4">
+                  Aucun commentaire pour le moment.
                 </div>
               </div>
             </div>
@@ -351,8 +452,30 @@ watch(() => props.taskId, async (newTaskId) => {
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Priorité</div>
+                    <div class="col-span-2 relative">
+                      <button @click="isPriorityDropdownOpen = !isPriorityDropdownOpen" :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase', priorityConfig[taskPriority]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300']">
+                        <Icon v-if="priorityConfig[taskPriority]?.icon" :name="priorityConfig[taskPriority]?.icon || ''" class="w-3.5 h-3.5" />
+                        {{ priorityConfig[taskPriority]?.label || taskPriority || 'SANS PRIORITÉ' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
+                      </button>
+
+                      <!-- Priority Dropdown Menu -->
+                      <div v-if="isPriorityDropdownOpen" @click="isPriorityDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                      <div v-if="isPriorityDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
+                        <button @click="updatePriority(key as string)" v-for="(config, key) in priorityConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskPriority === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
+                          <div class="flex items-center gap-1.5">
+                            <Icon :name="config.icon" class="w-4 h-4" />
+                            {{ config.label }}
+                          </div>
+                          <Icon v-if="taskPriority === key" name="heroicons:check" class="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium">Échéance</div>
-                    <div class="col-span-2 text-main dark:text-gray-300">{{ taskDueDate ? new Date(taskDueDate).toLocaleDateString() : 'Aucune' }}</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">{{ formatDisplayDate(taskDueDate) }}</div>
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">

@@ -22,7 +22,15 @@ const isCreateProjectModalOpen = ref(false)
 
 const handleCreateProjectSubmit = async (payload: any) => {
   try {
-    await createProjet(payload)
+    await createProjet(
+      payload.name,
+      payload.reference_code,
+      payload.description,
+      payload.status,
+      payload.user_id,
+      payload.start_date,
+      payload.end_date
+    )
     await getProjets()
     isCreateProjectModalOpen.value = false
   } catch (err) {

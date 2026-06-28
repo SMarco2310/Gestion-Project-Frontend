@@ -11,6 +11,8 @@ interface Tache {
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
+  commentaires_count?: number
+  due_date?: string
   created_at?: string
   updated_at?: string
 }
@@ -27,38 +29,9 @@ interface TaskPayload {
   due_date?: string
 }
 
-const defaultTasks: Tache[] = [
-  {
-    id: 1,
-    title: 'Write Sprint 2 report — goal, completed stories, velocity, retrospective notes',
-    description: 'Prepare the sprint summary for the team review.',
-    status: TaskStatus.DONE,
-    priority: TaskPriority.MEDIUM,
-    tag: TaskTag.DOCUMENTATION,
-    projet_id: 1,
-  },
-  {
-    id: 2,
-    title: 'Write integration tests for emergency and contacts endpoints',
-    description: 'Add regression coverage for the API endpoints.',
-    status: TaskStatus.DONE,
-    priority: TaskPriority.HIGH,
-    tag: TaskTag.TESTING,
-    projet_id: 1,
-  },
-  {
-    id: 3,
-    title: 'Deploy frontend to Vercel or Netlify — connected to live backend',
-    description: 'Prepare the deployment checklist and verify the live environment.',
-    status: TaskStatus.DONE,
-    priority: TaskPriority.HIGH,
-    tag: TaskTag.DEPLOYMENT,
-    projet_id: 1,
-  },
-]
 
 export default function useTasks() {
-  const tasks = useState<Tache[]>('tasks', () => [...defaultTasks])
+  const tasks = useState<Tache[]>('tasks', () => [])
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
@@ -75,6 +48,8 @@ export default function useTasks() {
     projet_id: task.projet_id ?? task.project_id ?? null,
     parent_task_id: task.parent_task_id ?? null,
     sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
+    commentaires_count: task.commentaires_count ?? 0,
+    due_date: task.due_date ?? '',
     created_at: task.created_at ?? '',
     updated_at: task.updated_at ?? '',
   })
@@ -95,7 +70,7 @@ export default function useTasks() {
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
       if (!tasks.value.length) {
-        tasks.value = [...defaultTasks]
+        tasks.value = []
       }
       error.value = 'Impossible de charger les tâches.'
       return tasks.value
@@ -110,7 +85,7 @@ export default function useTasks() {
         method: 'GET',
       })
 
-      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const rawTask = data.tache ?? data.task ?? data.Tache ?? data.data ?? data
       const nextTask = normalizeTask(rawTask)
       const index = tasks.value.findIndex((item) => String(item.id) === String(id))
       if (index !== -1) {
@@ -133,7 +108,7 @@ export default function useTasks() {
         body: payload,
       })
 
-      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const rawTask = data.tache ?? data.task ?? data.Tache ?? data.data ?? data
       const createdTask = normalizeTask(rawTask)
       tasks.value = [createdTask, ...tasks.value]
       return createdTask
@@ -150,7 +125,7 @@ export default function useTasks() {
         body: payload,
       })
 
-      const rawTask = data.task ?? data.Tache ?? data.data ?? data
+      const rawTask = data.tache ?? data.task ?? data.Tache ?? data.data ?? data
       const updatedTask = normalizeTask(rawTask)
       const index = tasks.value.findIndex((item) => String(item.id) === String(id))
       if (index !== -1) {

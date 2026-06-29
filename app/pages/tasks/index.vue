@@ -206,7 +206,7 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.TO_DO)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.TO_DO)"
       />
       
       <!-- In Progress State Column -->
@@ -217,7 +217,7 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.IN_PROGRESS)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.IN_PROGRESS)"
       />
     
       <!-- Loaded State Column -->
@@ -228,7 +228,7 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.DONE)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.DONE)"
       />
     </div>
     <!-- Task Modal -->

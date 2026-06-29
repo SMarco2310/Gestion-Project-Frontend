@@ -68,7 +68,10 @@ const submit = async () => {
     const { $api } = useNuxtApp()
     await $api('/api/update', {
       method: 'PUT',
-      body: { password: newPassword.value },
+      body: { 
+        current_password: currentPassword.value,
+        password: newPassword.value 
+      },
     })
     isSuccess.value = true
     // Auto-close after 2 seconds on success
@@ -79,6 +82,7 @@ const submit = async () => {
     if (error?.data?.errors) {
       const errors = error.data.errors
       if (errors.password) fieldErrors.value.newPassword = errors.password[0]
+      if (errors.current_password) fieldErrors.value.currentPassword = errors.current_password[0]
     } else if (error?.data?.message) {
       errorMessage.value = error.data.message
     } else {

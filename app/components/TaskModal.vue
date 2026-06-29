@@ -243,8 +243,32 @@ const saveEditComment = async () => {
   }
 }
 
+const resetState = () => {
+  isEditing.value = false
+  taskTitle.value = ''
+  taskDescription.value = 'Chargement...'
+  editTitle.value = ''
+  editDescription.value = ''
+  taskStatus.value = ''
+  taskPriority.value = ''
+  taskReference.value = ''
+  taskTag.value = ''
+  taskDueDate.value = ''
+  taskCreatedAt.value = ''
+  taskUpdatedAt.value = ''
+  taskProjetId.value = ''
+  taskSubtasks.value = []
+  commentText.value = ''
+  editingCommentId.value = null
+  editingCommentText.value = ''
+  isTagDropdownOpen.value = false
+  isStatusDropdownOpen.value = false
+  isPriorityDropdownOpen.value = false
+}
+
 watch(() => props.taskId, async (newTaskId) => {
   if (newTaskId) {
+    resetState()
     await setTask(newTaskId)
     await getCommentaires(newTaskId)
   }

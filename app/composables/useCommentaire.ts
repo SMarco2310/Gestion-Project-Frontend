@@ -38,6 +38,7 @@ export default function useCommentaire() {
   const getCommentaires = async (tacheId?: number | string | null) => {
     isLoading.value = true
     error.value = null
+    commentaires.value = []
 
     const query = tacheId ? `?tache_id=${tacheId}` : ''
 

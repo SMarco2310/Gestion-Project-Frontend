@@ -2,8 +2,15 @@
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
+const {logout,user}=useAuth();
+
 const isActive = (path: string) => route.path.startsWith(path)
 
+
+const handleLogout= async () =>{
+    await logout();
+    navigateTo('/auth/login');
+}
 const isNotifOpen = ref(false)
 const isProfileOpen = ref(false)
 const isMobileMenuOpen = ref(false)
@@ -12,7 +19,7 @@ const isMobileMenuOpen = ref(false)
 <template>
     <div>
         <!-- Top Horizontal Bar -->
-        <header class="fixed top-0 md:left-64 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800">
+        <header class="fixed top-0 md:left-80 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800">
             <!-- Mobile Left Actions (Branding) -->
             <div class="flex md:hidden items-center gap-3">
                 <NuxtLink to="/dashboard" class="flex items-center gap-2">
@@ -53,7 +60,7 @@ const isMobileMenuOpen = ref(false)
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <div @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 hover:ring-primary dark:hover:ring-primary overflow-hidden cursor-pointer transition-all">
-                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="w-full h-full object-cover">
+                        <img :src="`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                     </div>
                     <!-- Overlay for closing -->
                     <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
@@ -62,7 +69,7 @@ const isMobileMenuOpen = ref(false)
                         <NuxtLink to="/profile" @click="isProfileOpen = false" class="block px-4 py-3 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors">
                             Profil
                         </NuxtLink>
-                        <button @click="isProfileOpen = false" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <button @click="() => { isProfileOpen = false; handleLogout() }" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                             Déconnexion
                         </button>
                     </div>
@@ -89,7 +96,7 @@ const isMobileMenuOpen = ref(false)
         <!-- Left-Aligned Navigation (Stem of the L) -->
         <aside 
             :class="[
-                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] md:w-64 bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
+                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] md:w-80 bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
                 isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
             ]"
         >
@@ -154,7 +161,7 @@ const isMobileMenuOpen = ref(false)
                     <!-- Profile -->
                     <NuxtLink to="/profile" @click="isMobileMenuOpen = false" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 overflow-hidden shrink-0">
-                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="Avatar" class="w-full h-full object-cover">
+                            <img :src="`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                     </NuxtLink>
                     <!-- Notifications -->
@@ -164,7 +171,7 @@ const isMobileMenuOpen = ref(false)
                     </button>
                 </div>
 
-                <NuxtLink to="/auth/login" class="w-full px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 group">
+                <NuxtLink to="/auth/login" @click="handleLogout" class="w-full px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 group">
                     <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                     <span class="tracking-wide font-medium">Déconnexion</span>
                 </NuxtLink>

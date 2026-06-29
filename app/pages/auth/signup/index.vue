@@ -6,9 +6,75 @@ definePageMeta({
   }
 })
 
+const { signup } = useAuth();
+
+const name = ref('');
+const email = ref('');
+const password = ref('');
+const confirmPassword = ref('');
+const errorMessage = ref('');
+const fieldErrors = ref<Record<string, string>>({});
+const loading = ref(false);
+
 const showPassword = ref(false);
 const togglePassword = () => {
     showPassword.value = !showPassword.value;
+}
+
+// Client-side validation
+const validateFields = (): boolean => {
+  fieldErrors.value = {};
+
+  if (!name.value.trim()) {
+    fieldErrors.value.name = 'Le nom est requis.';
+  }
+
+  if (!email.value.trim()) {
+    fieldErrors.value.email = "L'adresse e-mail est requise.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    fieldErrors.value.email = "Veuillez entrer une adresse e-mail valide.";
+  }
+
+  if (!password.value) {
+    fieldErrors.value.password = 'Le mot de passe est requis.';
+  } else if (password.value.length < 8) {
+    fieldErrors.value.password = 'Le mot de passe doit contenir au moins 8 caractères.';
+  }
+
+  if (!confirmPassword.value) {
+    fieldErrors.value.confirmPassword = 'Veuillez confirmer le mot de passe.';
+  } else if (password.value !== confirmPassword.value) {
+    fieldErrors.value.confirmPassword = 'Les mots de passe ne correspondent pas.';
+  }
+
+  return Object.keys(fieldErrors.value).length === 0;
+}
+
+const handleSignup = async () => {
+    errorMessage.value = '';
+
+    if (!validateFields()) return;
+
+    loading.value = true;
+
+    try {
+        await signup(name.value, email.value, password.value);
+        navigateTo('/dashboard');
+    } catch (error: any) {
+        // Parse Laravel validation errors
+        if (error?.data?.errors) {
+            const errors = error.data.errors;
+            if (errors.name) fieldErrors.value.name = errors.name[0];
+            if (errors.email) fieldErrors.value.email = errors.email[0];
+            if (errors.password) fieldErrors.value.password = errors.password[0];
+        } else if (error?.data?.message) {
+            errorMessage.value = error.data.message;
+        } else {
+            errorMessage.value = "Une erreur est survenue lors de l'inscription.";
+        }
+    } finally {
+        loading.value = false;
+    }
 }
 </script>
 
@@ -55,54 +121,66 @@ const togglePassword = () => {
             <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
           </div>
 
+          <!-- General Error -->
+          <div v-if="errorMessage" class="flex items-center gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50">
+            <Icon name="heroicons:exclamation-circle" class="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
+            <span class="text-red-600 dark:text-red-400 text-sm">{{ errorMessage }}</span>
+          </div>
+
           <!-- Form -->
-          <form @submit.prevent="" class="space-y-6">
+          <form @submit.prevent="handleSignup" class="space-y-6">
             
+            <!-- Name -->
             <div>
               <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
-              <input type="text" id="name" placeholder="Entrez votre nom" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+              <input v-model="name" id="name" type="text" placeholder="Entrez votre nom" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.name ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
+              <p v-if="fieldErrors.name" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.name }}
+              </p>
             </div>
 
+            <!-- Email -->
             <div>
               <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
-              <input type="email" id="email" placeholder="Entrez votre e-mail" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none text-base" />
+              <input v-model="email" id="email" type="email" placeholder="Entrez votre e-mail" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.email ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
+              <p v-if="fieldErrors.email" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.email }}
+              </p>
             </div>
 
+            <!-- Password -->
             <div>
               <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
+                <input v-model="password" :type="showPassword ? 'text' : 'password'" id="password" placeholder="Entrez votre mot de passe" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none pr-12 text-base transition-all', fieldErrors.password ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
               </div>
+              <p v-if="fieldErrors.password" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.password }}
+              </p>
             </div>
 
+            <!-- Confirm Password -->
             <div>
               <label for="password-confirm" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirmer le mot de passe</label>
               <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" class="w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 focus:ring-black/50 dark:focus:ring-white/50 outline-none pr-12 text-base" />
+                <input v-model="confirmPassword" :type="showPassword ? 'text' : 'password'" id="password-confirm" placeholder="Confirmez votre mot de passe" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none pr-12 text-base transition-all', fieldErrors.confirmPassword ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
                 <button type="button" @click="togglePassword" class="absolute inset-y-0 right-0 px-5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                   <Icon :name="showPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                 </button>
               </div>
+              <p v-if="fieldErrors.confirmPassword" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.confirmPassword }}
+              </p>
             </div>
 
-            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all">
-              Créer un compte
+            <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" :disabled="loading">
+              <svg v-if="loading" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              {{ loading ? 'Création...' : 'Créer un compte' }}
             </button>
 
-            <!-- <div class="relative flex items-center py-6">
-              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-              <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
-              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-
-            <button type="button" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]">
-              <Icon name="logos:google-icon" class="w-6 h-6" />
-              Continuer avec Google
-            </button>
-             -->
           </form>
 
           <p class="text-center text-base text-gray-600 dark:text-gray-400 mt-10">

@@ -1,12 +1,19 @@
 <script setup lang="ts">
+import { TaskStatus, TaskTag } from '~/utils/enums'
 
 definePageMeta({
-    layout: "custom",
-    // middleware: "auth"
+    layout: 'custom',
+    // middleware: 'auth',
 })
+
+import { useToast } from '~/composables/useToast'
+
+const { tasks, getTasks, deleteTask, updateTask } = useTasks()
+const { addToast } = useToast()
 
 const todoItems = ref<any[]>([])
 const inProgressItems = ref<any[]>([])
+const doneItems = ref<any[]>([])
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
@@ -16,157 +23,162 @@ const handleTaskClick = (taskId: string) => {
   isTaskModalOpen.value = true
 }
 
+const handleEditTask = (taskId: string) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
+
+const handleDeleteTask = async (taskId: string) => {
+  if (confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
+    try {
+      await deleteTask(taskId)
+      addToast({ type: 'success', title: 'Tâche supprimée', message: 'La tâche a été supprimée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+    }
+  }
+}
+
 const handleCloseTaskModal = () => {
   isTaskModalOpen.value = false
   selectedTaskId.value = null
 }
 
-const doneItems = ref([
-  {
-    id: '1',
-    title: 'Write Sprint 2 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-69',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
+const handleTaskMoved = async (taskId: string, newStatus: string) => {
+  try {
+    // Map internal enum/status to the backend status string (en cours, à faire, terminé)
+    let mappedStatus = newStatus
+    if (newStatus === TaskStatus.TO_DO) mappedStatus = 'à faire'
+    if (newStatus === TaskStatus.IN_PROGRESS) mappedStatus = 'en cours'
+    if (newStatus === TaskStatus.DONE) mappedStatus = 'terminé'
+
+    await updateTask(taskId, { status: mappedStatus })
+    // No toast here to avoid spamming on drag and drop
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de déplacer la tâche.' })
+    await getTasks() // Reset the board if it failed
+  }
+}
+
+const getTagColorClass = (tag: string) => {
+  switch (tag) {
+    case TaskTag.TESTING:
+      return 'bg-amber-500 text-black'
+    case TaskTag.DEPLOYMENT:
+      return 'bg-sky-300 text-black'
+    case TaskTag.BUG:
+      return 'bg-red-500 text-white'
+    case TaskTag.FEATURE:
+      return 'bg-blue-500 text-white'
+    case TaskTag.IMPROVEMENT:
+      return 'bg-emerald-500 text-white'
+    case TaskTag.DOCUMENTATION:
+      return 'bg-purple-500 text-white'
+    case TaskTag.DESIGN:
+      return 'bg-pink-500 text-white'
+    default:
+      return 'bg-[#3A3A3D] text-gray-300'
+  }
+}
+
+const getTagIcon = (tag: string) => {
+  switch (tag) {
+    case TaskTag.TESTING:
+      return 'ph:pencil-simple-duotone'
+    case TaskTag.DEPLOYMENT:
+      return 'ph:rocket-launch-duotone'
+    case TaskTag.BUG:
+      return 'ph:bug-duotone'
+    case TaskTag.FEATURE:
+      return 'ph:star-duotone'
+    case TaskTag.IMPROVEMENT:
+      return 'ph:trend-up-duotone'
+    case TaskTag.DOCUMENTATION:
+      return 'ph:book-open-duotone'
+    case TaskTag.DESIGN:
+      return 'ph:palette-duotone'
+    default:
+      return 'ph:file-duotone'
+  }
+}
+
+const mapTaskToBoardItem = (task: any) => ({
+  id: String(task.id),
+  title: task.title,
+  description: task.description,
+  status: task.status,
+  priority: task.priority,
+  tag: {
+    label: task.tag || TaskTag.DOCUMENTATION,
+    colorClass: getTagColorClass(task.tag || TaskTag.DOCUMENTATION),
+    icon: getTagIcon(task.tag || TaskTag.DOCUMENTATION),
   },
-  {
-    id: '2',
-    title: 'Write Sprint 3 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-70',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
+  reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
+  issueTypeIcon: 'ph:bookmark-simple-fill',
+  issueTypeColorClass: 'text-emerald-600',
+  statusIcon: 'ph:check',
+  statusColorClass: 'text-emerald-500',
+  commentairesCount: task.commentaires_count || 0,
+  assignee: {
+    initials: 'U',
+    colorClass: 'bg-gray-600',
   },
-  {
-    id: '3',
-    title: 'Write Sprint 1 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-68',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '4',
-    title: 'Write Sprint 0 report — goal, completed stories, velocity, retrospective notes',
-    tag: {
-      label: 'AGILE DOCUMENTATION',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-67',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '5',
-    title: 'Write integration tests for emergency and contacts endpoints',
-    tag: {
-      label: 'TESTING & QUALITY',
-      colorClass: 'bg-amber-500 text-black',
-      icon: 'ph:pencil-simple-duotone'
-    },
-    reference: 'SAMS-58',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'F',
-      colorClass: 'bg-cyan-600'
-    }
-  },
-  {
-    id: '6',
-    title: 'Record a backup demo video in case of live demo technical issues',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-78',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      icon: 'ph:user',
-      colorClass: 'bg-gray-600'
-    }
-  },
-  {
-    id: '7',
-    title: 'Prepare demo script — 5 minute walkthrough of all key features',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-77',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'SY',
-      colorClass: 'bg-orange-600'
-    }
-  },
-  {
-    id: '8',
-    title: 'Deploy frontend to Vercel or Netlify — connected to live backend',
-    tag: {
-      label: 'DEPLOYMENT & DEMO PREP',
-      colorClass: 'bg-sky-300 text-black',
-      icon: 'ph:rocket-launch-duotone'
-    },
-    reference: 'SAMS-74',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    statusIcon: 'ph:check',
-    statusColorClass: 'text-emerald-500',
-    assignee: {
-      initials: 'D',
-      colorClass: 'bg-indigo-500'
+})
+
+const syncBoardItems = () => {
+  todoItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.TO_DO)
+    .map(mapTaskToBoardItem)
+
+  inProgressItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.IN_PROGRESS)
+    .map(mapTaskToBoardItem)
+
+  doneItems.value = tasks.value
+    .filter((task) => task.status === TaskStatus.DONE)
+    .map(mapTaskToBoardItem)
+}
+
+watch(tasks, () => {
+  const totalInBoard = todoItems.value.length + inProgressItems.value.length + doneItems.value.length
+  let needsFullSync = tasks.value.length !== totalInBoard
+
+  if (!needsFullSync) {
+    for (const t of tasks.value) {
+      const mappedStatus = t.status === 'TO_DO' || t.status === 'à faire' ? TaskStatus.TO_DO : 
+                           (t.status === 'IN_PROGRESS' || t.status === 'en cours' ? TaskStatus.IN_PROGRESS : 
+                           (t.status === 'DONE' || t.status === 'terminé' ? TaskStatus.DONE : t.status))
+                           
+      const inTodo = todoItems.value.some(i => i.id === String(t.id))
+      const inInProgress = inProgressItems.value.some(i => i.id === String(t.id))
+      const inDone = doneItems.value.some(i => i.id === String(t.id))
+      
+      if (mappedStatus === TaskStatus.TO_DO && !inTodo) needsFullSync = true
+      if (mappedStatus === TaskStatus.IN_PROGRESS && !inInProgress) needsFullSync = true
+      if (mappedStatus === TaskStatus.DONE && !inDone) needsFullSync = true
     }
   }
-]);
+
+  if (needsFullSync) {
+    syncBoardItems()
+  } else {
+    tasks.value.forEach(t => {
+      const mapped = mapTaskToBoardItem(t)
+      const updateItem = (list: any[]) => {
+        const item = list.find(i => i.id === mapped.id)
+        if (item) Object.assign(item, mapped)
+      }
+      updateItem(todoItems.value)
+      updateItem(inProgressItems.value)
+      updateItem(doneItems.value)
+    })
+  }
+}, { deep: true })
+
+onMounted(async () => {
+  await getTasks()
+  syncBoardItems()
+})
 </script>
 
 <template>
@@ -192,6 +204,9 @@ const doneItems = ref([
         v-model:items="todoItems" 
         :allowCreate="true"
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.TO_DO)"
       />
       
       <!-- In Progress State Column -->
@@ -200,6 +215,9 @@ const doneItems = ref([
         v-model:items="inProgressItems" 
         :allowCreate="false"
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.IN_PROGRESS)"
       />
     
       <!-- Loaded State Column -->
@@ -208,6 +226,9 @@ const doneItems = ref([
         v-model:items="doneItems" 
         :isDone="true" 
         @taskClick="handleTaskClick"
+        @editTask="handleEditTask"
+        @deleteTask="handleDeleteTask"
+        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.DONE)"
       />
     </div>
     <!-- Task Modal -->

@@ -1,36 +1,54 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import useAuth from '~/composables/useAuth'
+import { ProjectStatus } from '~/utils/enums'
 
 const props = defineProps<{
   isOpen: boolean
+  createProject?: (data: any) => Promise<unknown> | unknown
 }>()
 
+const { user } = useAuth()
 const emit = defineEmits(['close', 'submit'])
 
+const getTodayDate = () => {
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+const minDate = ref(getTodayDate())
+
 const form = ref({
-  title: '',
+  name: '',
   reference_code: '',
   description: '',
-  status: 'TO_DO',
-  end_date: ''
+  status: ProjectStatus.TO_DO,
+  user_id: null as number | string | null,
+  start_date: getTodayDate(),
+  end_date: getTodayDate()
 })
 
 const errors = ref({
   title: false,
-  description: false
+  description: false,
+  dates: false
 })
 
 // Reset form when modal opens
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     form.value = {
-      title: '',
+      name: '',
       reference_code: '',
       description: '',
-      status: 'TO_DO',
-      end_date: ''
+      status: ProjectStatus.TO_DO,
+      user_id: user.value?.id ?? null,
+      start_date: getTodayDate(),
+      end_date: getTodayDate()
     }
-    errors.value = { title: false, description: false }
+    errors.value = { title: false, description: false, dates: false }
   }
 })
 
@@ -38,17 +56,34 @@ const close = () => {
   emit('close')
 }
 
-const submit = () => {
+const submit = async () => {
   // Simple validation
-  errors.value.title = !form.value.title.trim()
+  errors.value.title = !form.value.name.trim()
   errors.value.description = !form.value.description.trim()
+  errors.value.dates = !form.value.start_date || !form.value.end_date
 
-  if (errors.value.title || errors.value.description) {
+  if (errors.value.title || errors.value.description || errors.value.dates) {
     return // Stop submission if validation fails
   }
 
-  emit('submit', { ...form.value })
-  close()
+  const payload = {
+    ...form.value,
+    status: form.value.status,
+    user_id: user.value?.id ?? null,
+  }
+
+  try {
+    if (props.createProject) {
+      await props.createProject(payload)
+    } else {
+      emit('submit', payload)
+    }
+
+    close()
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
 }
 </script>
 
@@ -83,7 +118,7 @@ const submit = () => {
                   Titre du projet <span class="text-red-500">*</span>
                 </label>
                 <input 
-                  v-model="form.title" 
+                  v-model="form.name" 
                   type="text" 
                   class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all"
                   :class="errors.title ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
@@ -109,23 +144,37 @@ const submit = () => {
                     v-model="form.status"
                     class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="TO_DO">À faire</option>
-                    <option value="EN_COURS">En cours</option>
-                    <option value="TERMINE">Terminé</option>
+                    <option :value="ProjectStatus.TO_DO">À faire</option>
+                    <option :value="ProjectStatus.IN_PROGRESS">En cours</option>
+                    <option :value="ProjectStatus.DONE">Terminé</option>
                   </select>
                 </div>
               </div>
 
-              <!-- End Date -->
-              <div>
-                <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Date de fin prévue</label>
-                <div class="relative">
-                  <Icon name="heroicons:calendar" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
-                  <input 
-                    v-model="form.end_date" 
-                    type="date" 
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
-                  />
+              <!-- Dates -->
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Date de début</label>
+                  <div class="relative">
+                    <Icon name="heroicons:calendar" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
+                    <input 
+                      v-model="form.start_date" 
+                      type="date" 
+                      class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Date de fin prévue</label>
+                  <div class="relative">
+                    <Icon name="heroicons:calendar" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
+                    <input 
+                      v-model="form.end_date" 
+                      type="date" 
+                      :min="form.start_date || minDate"
+                      class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
+                    />
+                  </div>
                 </div>
               </div>
 

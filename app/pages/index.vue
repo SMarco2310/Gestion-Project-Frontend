@@ -1,10 +1,8 @@
 <script setup lang="ts">
+import authGlobal from '~/middleware/auth.global';
+
 definePageMeta({
-  middleware: [
-    function (to, from) {
-      return navigateTo('/auth/login')
-    }
-  ]
+  // middleware: [authGlobal]
 })
 </script>
 

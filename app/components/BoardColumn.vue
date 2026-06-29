@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useToast } from '~/composables/useToast'
+import useProjets from '~/composables/useProjets'
+import useTasks from '~/composables/useTasks'
 import draggable from 'vuedraggable'
+import { TaskTag as TaskTagEnum } from '~/utils/enums'
 
 export interface TaskTag {
   label: string
@@ -24,6 +27,7 @@ export interface Task {
   issueTypeColorClass?: string
   statusIcon?: string
   statusColorClass?: string
+  commentairesCount?: number
   assignee: TaskAssignee
 }
 
@@ -38,56 +42,86 @@ const items = defineModel<Task[]>('items', { default: () => [] })
 const itemCount = computed(() => items.value.length)
 
 const activeDropdownId = ref<string | null>(null)
-const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask'])
+const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved'])
+
+const onChange = (evt: any) => {
+  if (evt.added) {
+    emit('taskMoved', evt.added.element.id)
+  }
+}
 
 const isCreating = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
 const newTaskProject = ref('')
 
-const availableProjects = [
-  { id: 'PRJ-101', name: 'Refonte UI' },
-  { id: 'PRJ-102', name: 'Backend API' },
-  { id: 'PRJ-103', name: 'Mobile App' }
-]
+const getTodayDate = () => {
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+const minDate = ref(getTodayDate())
 
-const submitNewTask = () => {
+const { projets } = useProjets()
+
+const availableProjects = computed(() => projets.value.map((project) => ({
+  id: String(project.id),
+  name: project.name,
+})))
+
+const { createTask } = useTasks()
+
+const submitNewTask = async () => {
   if (!newTaskTitle.value.trim()) return
+  if (!newTaskProject.value) {
+    const { addToast } = useToast()
+    addToast({
+      type: 'warning',
+      title: 'Projet requis',
+      message: 'Sélectionnez un projet avant de créer la tâche.',
+    })
+    return
+  }
   
-  items.value.push({
-    id: Date.now().toString(),
-    title: newTaskTitle.value.trim(),
-    tag: {
-      label: 'NOUVEAU',
-      colorClass: 'bg-[#3A3A3D] text-gray-300',
-      icon: 'ph:file-duotone'
-    },
-    reference: 'SAMS-NEW',
-    issueTypeIcon: 'ph:bookmark-simple-fill',
-    issueTypeColorClass: 'text-emerald-600',
-    assignee: {
-      initials: '?',
-      colorClass: 'bg-gray-600'
-    }
-  })
-  
-  // Fire a toast notification!
-  const { addToast } = useToast()
-  
-  let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée.`
-  if (newTaskProject.value) successMsg += ` Projet: ${availableProjects.find(p => p.id === newTaskProject.value)?.name}.`
-  if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
-  
-  addToast({
-    type: 'success',
-    title: 'Tâche créée',
-    message: successMsg,
-  })
-  
-  newTaskTitle.value = ''
-  newTaskDueDate.value = ''
-  newTaskProject.value = ''
-  isCreating.value = false
+  try {
+    const statusVal = props.title === 'En cours' ? 'en cours' : (props.title === 'Terminé' ? 'terminé' : 'à faire')
+    const referenceCode = `T-${Math.floor(1000 + Math.random() * 9000)}`
+    await createTask({
+      title: newTaskTitle.value.trim(),
+      reference_code: referenceCode,
+      projet_id: newTaskProject.value,
+      status: statusVal,
+      priority: 'moyen',
+      tag: 'feature',
+      due_date: newTaskDueDate.value || getTodayDate(),
+    })
+    
+    const project = availableProjects.value.find((p) => String(p.id) === String(newTaskProject.value))
+    const { addToast } = useToast()
+    
+    let successMsg = `La tâche "${newTaskTitle.value.trim()}" a été ajoutée au projet ${project?.name ?? 'inconnu'}.`
+    if (newTaskDueDate.value) successMsg += ` Échéance: ${newTaskDueDate.value}.`
+    
+    addToast({
+      type: 'success',
+      title: 'Tâche créée',
+      message: successMsg,
+    })
+    
+    newTaskTitle.value = ''
+    newTaskDueDate.value = ''
+    newTaskProject.value = ''
+    isCreating.value = false
+  } catch (error) {
+    const { addToast } = useToast()
+    addToast({
+      type: 'error',
+      title: 'Erreur',
+      message: 'Impossible de créer la tâche. Vérifiez les informations.',
+    })
+  }
 }
 
 const createFormRef = ref<HTMLElement | null>(null)
@@ -150,7 +184,7 @@ onUnmounted(() => {
             
             <!-- Calendar Date Picker -->
             <div class="relative flex items-center">
-              <input type="date" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
+              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
             </div>
             
             <!-- User -->
@@ -172,6 +206,7 @@ onUnmounted(() => {
         item-key="id" 
         class="flex flex-col gap-2.5 min-h-[100px] h-full"
         ghost-class="opacity-40"
+        @change="onChange"
       >
         <template #item="{ element: item }">
           <div 
@@ -221,8 +256,13 @@ onUnmounted(() => {
                   <span :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
                </div>
 
-               <!-- Assignee & Status -->
+               <!-- Assignee, Comments & Status -->
                <div class="flex items-center gap-2.5">
+                  <div v-if="item.commentairesCount && item.commentairesCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:chat-teardrop-text" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.commentairesCount }}</span>
+                  </div>
+                  
                   <Icon 
                     v-if="item.statusIcon" 
                     :name="item.statusIcon" 

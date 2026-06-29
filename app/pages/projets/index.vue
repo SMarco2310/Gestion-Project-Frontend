@@ -1,123 +1,136 @@
 <script setup lang="ts">
-
 definePageMeta({
-    layout: "custom"
+  layout: "custom",
+  // middleware: 'auth',
 })
 
 
-const projects = ref([
-    {
-        id: 1,
-        reference_code: 'PRJ-0001',
-        name: 'Project 1',
-        description: 'Project 1 description',
-        status: 'TO_DO',
-        end_date: '2022-12-31'
-    },
-    {
-        id: 2,
-        reference_code: 'PRJ-0002',
-        name: 'Project 2',
-        description: 'Project 2 description',
-        status: 'EN_COURS',
-        end_date: '2022-12-31'
-    },
-    
+import useTasks from '~/composables/useTasks'
+
+const { projets, getProjets, createProjet, deleteProjet } = useProjets()
+const { tasks, getTasks } = useTasks()
+
+await Promise.all([
+  getProjets(),
+  getTasks()
 ])
 
-const isProjectSheetOpen = ref(false)
-const selectedProjectId = ref<number | null>(null)
-const startSheetInEditMode = ref(false)
+const getProjectMetrics = (projectId: number | string) => {
+  const projectTasks = tasks.value.filter(t => String(t.projet_id) === String(projectId))
+  const totalTasks = projectTasks.length
+  const doneTasks = projectTasks.filter(t => t.status === 'terminé').length
+  const inProgressTasks = projectTasks.filter(t => t.status === 'en cours').length
+  const todoTasks = projectTasks.filter(t => t.status === 'à faire').length
+  const tasksProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+
+  return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }
+}
 
 const isCreateModalOpen = ref(false)
+const isSideSheetOpen = ref(false)
+const selectedProjectId = ref<number | string | null>(null)
 
-const handleProjectClick = (projectId: number) => {
+const handleProjectClick = (projectId: number | string) => {
   selectedProjectId.value = projectId
-  startSheetInEditMode.value = false
-  isProjectSheetOpen.value = true
+  isSideSheetOpen.value = true
 }
 
-const handleProjectEdit = (projectId: number) => {
-  selectedProjectId.value = projectId
-  startSheetInEditMode.value = true
-  isProjectSheetOpen.value = true
-}
-
-const handleCloseProjectSheet = () => {
-  isProjectSheetOpen.value = false
+const handleCloseSideSheet = () => {
+  isSideSheetOpen.value = false
   selectedProjectId.value = null
 }
 
-const handleCreateProjectSubmit = (data: any) => {
-  // Mock add to list
-  projects.value.push({
-    id: Date.now(),
-    reference_code: data.reference_code || 'PRJ-NEW',
-    name: data.title,
-    description: data.description,
-    status: data.status,
-    end_date: data.end_date || 'N/A'
-  })
+import { useToast } from '~/composables/useToast'
+
+const handleDeleteProject = async (projectId: number | string) => {
+  try {
+    await deleteProjet(projectId)
+    await getProjets() // Refresh the list after deletion
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
+  }
 }
-
-
-
-
+const handleCreateProjectSubmit = async (data: any) => {
+  try {
+    await createProjet(
+      data.name,
+      data.reference_code,
+      data.description,
+      data.status,
+      data.user_id,
+      data.start_date,
+      data.end_date
+    )
+    await getProjets()
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet créé', message: 'Le projet a été créé avec succès.' })
+  } catch (error) {
+    console.error(error)
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer le projet.' })
+    throw error
+  }
+}
 </script>
 
 <template>
   <div>
     <header>
-        <div class="pb-5"> 
-            <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
-            <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer et suivre l'avancement de tous vos projets.</p>
-        </div>
-        <div class="flex flex-row justify-between md:items-center pb-5 gap-2 md:gap-4 w-full">
-            
-            <div id="search-bar" class="flex-1 md:flex-none">
-                <div class="relative flex items-center w-full">
-                    <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-                    <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder w-full px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 md:w-96">
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2 md:gap-3 shrink-0">
-                <FilterDropdown :showProjects="false" :showStatus="true" :showPriority="false" class="shrink-0" />
-                <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
-                    <Icon name="heroicons:plus" class="w-5 h-5" /> 
-                    <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
-                </button>
-            </div>
+      <div class="pb-5">
+        <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
+        <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer et suivre l'avancement de tous vos projets.</p>
+      </div>
+      <div class="flex flex-row justify-between md:items-center pb-5 gap-2 md:gap-4 w-full">
 
+        <div id="search-bar" class="flex-1 md:flex-none">
+          <div class="relative flex items-center w-full">
+            <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
+            <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder w-full px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 md:w-96">
+          </div>
         </div>
+
+        <div class="flex items-center gap-2 md:gap-3 shrink-0">
+          <FilterDropdown :showProjects="false" :showStatus="true" :showPriority="false" class="shrink-0" />
+          <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+            <Icon name="heroicons:plus" class="w-5 h-5" />
+            <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
+          </button>
+        </div>
+
+      </div>
     </header>
-    <section id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" >
-        <ProjetCard 
-            v-for="(p, index) in projects" :key="index" 
-            :id="p.id"
-            :reference_code="p.reference_code"
-            :name="p.name"
-            :description="p.description"
-            :status="p.status"
-            :end_date="p.end_date"
-            @cardClick="handleProjectClick"
-            @edit="handleProjectEdit"
-        />    
+
+    <section id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <ProjetCard
+        v-for="p in projets" :key="p.id"
+        :id="p.id"
+        :reference_code="p.reference_code"
+        :name="p.name"
+        :description="p.description"
+        :status="(p as any).status || 'à faire'"
+        :end_date="(p as any).end_date || ''"
+        :metrics="getProjectMetrics(p.id)"
+        @cardClick="handleProjectClick"
+        @delete="handleDeleteProject"
+      />
     </section>
 
-    <!-- Project Side Sheet -->
-    <ProjectSideSheet 
-      :isOpen="isProjectSheetOpen" 
-      :project-id="selectedProjectId" 
-      :startInEditMode="startSheetInEditMode"
-      @close="handleCloseProjectSheet" 
+    <!-- Create Project Modal -->
+    <CreateProjectModal
+      :is-open="isCreateModalOpen"
+      :create-project="handleCreateProjectSubmit"
+      @close="isCreateModalOpen = false"
     />
 
-    <!-- Create Project Modal -->
-    <CreateProjectModal 
-      :is-open="isCreateModalOpen" 
-      @close="isCreateModalOpen = false" 
-      @submit="handleCreateProjectSubmit"
+    <!-- Project Side Sheet -->
+    <ProjectSideSheet
+      :is-open="isSideSheetOpen"
+      :project-id="selectedProjectId"
+      @close="handleCloseSideSheet"
     />
   </div>
 </template>

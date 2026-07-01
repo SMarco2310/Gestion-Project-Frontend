@@ -219,15 +219,24 @@ const formatNotifTime = (dateStr: string) => {
                     <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md" />
                     <span class="relative z-10 tracking-wide">Tâches</span>
                 </NuxtLink>
-                <!-- <NuxtLink to="/manage_members" :class="[
-                    'px-4 py-3 text-sm rounded-lg transition-all flex items-center gap-3',
-                    isActive('/manage_members') 
-                        ? 'font-semibold text-white bg-primary dark:bg-primary shadow-lg shadow-primary/20 dark:shadow-primary/20' 
-                        : 'font-medium text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                <NuxtLink to="/team" @click="isMobileMenuOpen = false" :class="[
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
+                    isActive('/team') 
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:user-group" class="w-5 h-5" />
-                    Membres
-                </NuxtLink> -->
+                    <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Équipe</span>
+                </NuxtLink>
+                <NuxtLink to="/settings" @click="isMobileMenuOpen = false" :class="[
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
+                    isActive('/settings') 
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                ]">
+                    <Icon name="heroicons:cog-6-tooth" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Paramètres</span>
+                </NuxtLink>
             </nav>
             
             <!-- Bottom Actions -->

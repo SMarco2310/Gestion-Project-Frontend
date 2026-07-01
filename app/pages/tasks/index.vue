@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TaskStatus, TaskTag } from '~/utils/enums'
+import { TaskStatus } from '~/utils/enums'
 
 definePageMeta({
     layout: 'custom',
@@ -77,47 +77,7 @@ const handleTaskMoved = async (taskId: string, newStatus: string) => {
   }
 }
 
-const getTagColorClass = (tag: string) => {
-  switch (tag) {
-    case TaskTag.TESTING:
-      return 'bg-amber-500 text-black'
-    case TaskTag.DEPLOYMENT:
-      return 'bg-sky-300 text-black'
-    case TaskTag.BUG:
-      return 'bg-red-500 text-white'
-    case TaskTag.FEATURE:
-      return 'bg-blue-500 text-white'
-    case TaskTag.IMPROVEMENT:
-      return 'bg-emerald-500 text-white'
-    case TaskTag.DOCUMENTATION:
-      return 'bg-purple-500 text-white'
-    case TaskTag.DESIGN:
-      return 'bg-pink-500 text-white'
-    default:
-      return 'bg-[#3A3A3D] text-gray-300'
-  }
-}
-
-const getTagIcon = (tag: string) => {
-  switch (tag) {
-    case TaskTag.TESTING:
-      return 'ph:pencil-simple-duotone'
-    case TaskTag.DEPLOYMENT:
-      return 'ph:rocket-launch-duotone'
-    case TaskTag.BUG:
-      return 'ph:bug-duotone'
-    case TaskTag.FEATURE:
-      return 'ph:star-duotone'
-    case TaskTag.IMPROVEMENT:
-      return 'ph:trend-up-duotone'
-    case TaskTag.DOCUMENTATION:
-      return 'ph:book-open-duotone'
-    case TaskTag.DESIGN:
-      return 'ph:palette-duotone'
-    default:
-      return 'ph:file-duotone'
-  }
-}
+// Tag colors are handled directly via the tag object now
 
 const mapTaskToBoardItem = (task: any) => ({
   id: String(task.id),
@@ -126,9 +86,9 @@ const mapTaskToBoardItem = (task: any) => ({
   status: task.status,
   priority: task.priority,
   tag: {
-    label: task.tag || TaskTag.DOCUMENTATION,
-    colorClass: getTagColorClass(task.tag || TaskTag.DOCUMENTATION),
-    icon: getTagIcon(task.tag || TaskTag.DOCUMENTATION),
+    label: task.tag?.name || 'SANS ÉTIQUETTE',
+    colorHex: task.tag?.color || '#9CA3AF',
+    icon: 'ph:tag-duotone',
   },
   reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',

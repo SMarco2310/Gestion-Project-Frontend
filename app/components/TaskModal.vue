@@ -5,6 +5,7 @@ import useAuth from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
+import useTags from '~/composables/useTags'
 
 const props = defineProps<{
   isOpen: boolean
@@ -23,6 +24,7 @@ const close = () => {
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
 const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
 const { getProjet } = useProjets()
+const { tags, getTags } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
 
@@ -38,7 +40,8 @@ const projectEndDate = ref('')
 const taskStatus = ref('')
 const taskPriority = ref('')
 const taskReference = ref('')
-const taskTag = ref('')
+const taskTagId = ref<number | string | null>(null)
+const taskTag = ref<any>(null)
 const taskDueDate = ref('')
 const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
@@ -56,7 +59,8 @@ const setTask = async (id: string | number | null) => {
       if (task.status) taskStatus.value = task.status
       if (task.priority) taskPriority.value = task.priority
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
-      taskTag.value = task.tag || 'Aucune'
+      taskTagId.value = task.tag_id || null
+      taskTag.value = task.tag || null
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
@@ -194,17 +198,7 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
   moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-500', icon: 'ph:equals-bold' },
-  'élevé': { label: 'ÉLEVÉ', colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-500', icon: 'ph:caret-double-up-bold' }
-}
-
-const tagConfig: Record<string, { label: string; colorClass: string }> = {
-  bug: { label: 'BUG', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  feature: { label: 'FEATURE', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  improvement: { label: 'IMPROVEMENT', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  documentation: { label: 'DOCUMENTATION', colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  design: { label: 'DESIGN', colorClass: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' },
-  testing: { label: 'TESTING', colorClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  deployment: { label: 'DEPLOYMENT', colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' }
+  'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
 const updateStatus = async (newStatus: string) => {
@@ -231,11 +225,12 @@ const updatePriority = async (newPriority: string) => {
   }
 }
 
-const updateTag = async (newTag: string) => {
+const updateTag = async (newTagId: number | string | null) => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, { tag: newTag })
-    taskTag.value = newTag
+    await updateTask(props.taskId, { tag_id: newTagId })
+    taskTagId.value = newTagId
+    taskTag.value = tags.value.find(t => t.id === newTagId) || null
     isTagDropdownOpen.value = false
     addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
   } catch (err) {
@@ -319,7 +314,7 @@ const resetState = () => {
   taskStatus.value = ''
   taskPriority.value = ''
   taskReference.value = ''
-  taskTag.value = ''
+  taskTag.value = null
   taskDueDate.value = ''
   taskCreatedAt.value = ''
   taskUpdatedAt.value = ''
@@ -334,11 +329,14 @@ const resetState = () => {
   isPriorityDropdownOpen.value = false
 }
 
-watch(() => props.taskId, async (newTaskId) => {
-  if (newTaskId) {
+watch(() => props.taskId, async (newVal) => {
+  if (newVal) {
     resetState()
-    await setTask(newTaskId)
-    await getCommentaires(newTaskId)
+    if (props.taskId) {
+      setTask(props.taskId)
+    }
+    getTags()
+    await getCommentaires(newVal)
     if (props.startInEditMode) {
       startEditing()
     }
@@ -559,16 +557,20 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Étiquettes</div>
                     <div class="col-span-2 relative">
-                      <button @click="isTagDropdownOpen = !isTagDropdownOpen" :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase', tagConfig[taskTag]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300']">
-                        {{ tagConfig[taskTag]?.label || taskTag || 'SANS ÉTIQUETTE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
+                      <button @click="isTagDropdownOpen = !isTagDropdownOpen" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase" :style="{ backgroundColor: taskTag ? (taskTag.color || '#9CA3AF') + '20' : '#F3F4F6', color: taskTag ? (taskTag.color || '#9CA3AF') : '#374151' }">
+                        {{ taskTag?.name || 'SANS ÉTIQUETTE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
                       </button>
 
                       <!-- Tag Dropdown Menu -->
                       <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
-                        <button @click="updateTag(key as string)" v-for="(config, key) in tagConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTag === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
-                          {{ config.label }}
-                          <Icon v-if="taskTag === key" name="heroicons:check" class="w-4 h-4" />
+                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto">
+                        <button @click="updateTag(null)" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === null ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', 'text-gray-600 dark:text-gray-400']">
+                          SANS ÉTIQUETTE
+                          <Icon v-if="taskTagId === null" name="heroicons:check" class="w-4 h-4" />
+                        </button>
+                        <button @click="updateTag(tag.id)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === tag.id ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
+                          {{ tag.name }}
+                          <Icon v-if="taskTagId === tag.id" name="heroicons:check" class="w-4 h-4" />
                         </button>
                       </div>
                     </div>

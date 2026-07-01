@@ -7,7 +7,8 @@ interface Tache {
   description: string
   status: string
   priority: string
-  tag: string
+  tag_id?: number | null
+  tag?: any | null
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
@@ -23,7 +24,7 @@ interface TaskPayload {
   description?: string
   status?: string
   priority?: string
-  tag?: string
+  tag_id?: number | string | null
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   due_date?: string
@@ -45,7 +46,8 @@ export default function useTasks() {
     description: task.description ?? '',
     status: task.status ?? TaskStatus.TO_DO,
     priority: task.priority ?? TaskPriority.MEDIUM,
-    tag: task.tag ?? TaskTag.FEATURE,
+    tag_id: task.tag_id ?? null,
+    tag: task.tag ?? null,
     projet_id: task.projet_id ?? task.project_id ?? null,
     parent_task_id: task.parent_task_id ?? null,
     sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],

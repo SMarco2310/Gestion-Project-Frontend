@@ -4,11 +4,9 @@ import { useToast } from '~/composables/useToast'
 import useProjets from '~/composables/useProjets'
 import useTasks from '~/composables/useTasks'
 import draggable from 'vuedraggable'
-import { TaskTag as TaskTagEnum } from '~/utils/enums'
-
 export interface TaskTag {
   label: string
-  colorClass: string
+  colorHex: string
   icon: string
 }
 
@@ -93,7 +91,7 @@ const submitNewTask = async () => {
       projet_id: newTaskProject.value,
       status: statusVal,
       priority: 'moyen',
-      tag: 'feature',
+      tag_id: 4,
       due_date: newTaskDueDate.value || getTodayDate(),
     })
     
@@ -249,7 +247,7 @@ onUnmounted(() => {
 
             <!-- Tag -->
             <div class="flex items-start">
-               <div :class="['inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge', item.tag.colorClass]">
+               <div :style="{ backgroundColor: (item.tag.colorHex || '#9CA3AF') + '20', color: item.tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
                   {{ item.tag.label }}
                </div>
             </div>

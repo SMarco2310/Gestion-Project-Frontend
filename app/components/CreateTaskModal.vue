@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import { TaskStatus, TaskPriority, TaskTag } from '~/utils/enums'
+import { TaskStatus, TaskPriority } from '~/utils/enums'
 import useProjets from '~/composables/useProjets'
+import useTags from '~/composables/useTags'
 
 const props = defineProps<{
   isOpen: boolean
@@ -17,7 +18,7 @@ const form = ref({
   description: '',
   status: TaskStatus.TO_DO,
   priority: TaskPriority.MEDIUM,
-  tag: TaskTag.FEATURE,
+  tag_id: '' as string | number,
   due_date: '',
   projet_id: props.projetId || ''
 })
@@ -28,11 +29,13 @@ const errors = ref({
 })
 
 const { projets, getProjets } = useProjets()
+const { tags, getTags } = useTags()
 
 onMounted(async () => {
   if (!props.projetId) {
     await getProjets()
   }
+  await getTags()
 })
 
 const getTodayDate = () => {
@@ -52,7 +55,7 @@ watch(() => props.isOpen, (newVal) => {
       description: '',
       status: TaskStatus.TO_DO,
       priority: TaskPriority.MEDIUM,
-      tag: TaskTag.FEATURE,
+      tag_id: tags.value[0]?.id ?? '',
       due_date: getTodayDate(),
       projet_id: props.projetId || ''
     }
@@ -158,16 +161,12 @@ const submit = async () => {
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Étiquette</label>
                   <select 
-                    v-model="form.tag"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer uppercase text-xs font-bold"
+                    v-model="form.tag_id"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer text-xs font-bold"
                   >
-                    <option value="bug">BUG</option>
-                    <option value="feature">FEATURE</option>
-                    <option value="improvement">IMPROVEMENT</option>
-                    <option value="documentation">DOCUMENTATION</option>
-                    <option value="design">DESIGN</option>
-                    <option value="testing">TESTING</option>
-                    <option value="deployment">DEPLOYMENT</option>
+                    <option v-for="tag in tags" :key="tag.id" :value="tag.id">
+                      {{ tag.name }}
+                    </option>
                   </select>
                 </div>
                 <div class="flex-1">

@@ -56,17 +56,15 @@ export default function useProjets() {
 
     // create projet
 
-    const createProjet = async (name:string,reference_code:string,description:string,status:string,user_id:number,start_date:string|Date,end_date:string|Date)=>{
+    const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date)=>{
         try{
             const { $api } = useNuxtApp();
             const data = await $api<{projet:Projet,success:boolean}>(`/api/projets`,{
                 method:'POST',
                 body:{
                    name: name,
-                   reference_code:reference_code,
                    description:description,
                    status:status,
-                   user_id:user_id,
                    start_date:start_date,
                    end_date:end_date,
                 }
@@ -112,26 +110,16 @@ export default function useProjets() {
     const deleteProjet = async (id:number|string|any)=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{message:string}>(`/api/projets/${id}`,{
+            const data = await $api<{message:string,success:boolean}>(`/api/projets/${id}`,{
                 method:"DELETE"
             });
-
-                projets.value = projets.value.filter((p) => String(p.id) !== String(id));
-                return data.message;
+            projets.value = projets.value.filter((p) => String(p.id) !== String(id));
+            return data.message ?? data.success;
         }catch(error){
             console.error(error)
             throw error
         }
-
-        
-    }
-
-
-
-
-
-
-    
+    }   
 
     return {
         projets,

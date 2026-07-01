@@ -4,10 +4,12 @@ import useCommentaire from '~/composables/useCommentaire'
 import useAuth from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import useTasks from '~/composables/useTasks'
+import useProjets from '~/composables/useProjets'
 
 const props = defineProps<{
   isOpen: boolean
   taskId?: string|any|null
+  startInEditMode?: boolean
 }>()
 
 const emit = defineEmits(['close'])
@@ -19,7 +21,8 @@ const close = () => {
 
 
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
-const { getTask, updateTask, getTasks, createTask, deleteTask } = useTasks()
+const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
+const { getProjet } = useProjets()
 const { user } = useAuth()
 const { addToast } = useToast()
 
@@ -30,6 +33,8 @@ const taskTitle = ref('')
 const taskDescription = ref('Ajouter une description...')
 const editTitle = ref('')
 const editDescription = ref('')
+const editDueDate = ref('')
+const projectEndDate = ref('')
 const taskStatus = ref('')
 const taskPriority = ref('')
 const taskReference = ref('')
@@ -39,6 +44,7 @@ const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
 const taskSubtasks = ref<any[]>([])
+const taskBannerImage = ref('')
 
 const setTask = async (id: string | number | null) => {
   if (!id) return
@@ -54,7 +60,24 @@ const setTask = async (id: string | number | null) => {
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
+      taskUpdatedAt.value = task.updated_at || ''
       taskProjetId.value = task.projet_id || ''
+      taskBannerImage.value = task.banner_image || ''
+      if (task.projet_id) {
+        try {
+          const projet = await getProjet(task.projet_id)
+          if (projet && (projet as any).end_date) {
+            projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
+          } else {
+            projectEndDate.value = ''
+          }
+        } catch (e) {
+          projectEndDate.value = ''
+        }
+      } else {
+        projectEndDate.value = ''
+      }
+      
       taskSubtasks.value = task.sub_tasks || []
     }
   } catch (e) {
@@ -65,18 +88,26 @@ const setTask = async (id: string | number | null) => {
 const startEditing = () => {
   editTitle.value = taskTitle.value
   editDescription.value = taskDescription.value
+  editDueDate.value = taskDueDate.value && taskDueDate.value !== 'Aucune' ? (String(taskDueDate.value).split('T')[0] || '') : ''
   isEditing.value = true
 }
 
 const saveEdit = async () => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, {
+    const payload: any = {
       title: editTitle.value,
       description: editDescription.value
-    })
+    }
+    if (editDueDate.value) {
+      payload.due_date = editDueDate.value
+    } else {
+      payload.due_date = null
+    }
+    await updateTask(props.taskId, payload)
     taskTitle.value = editTitle.value
     taskDescription.value = editDescription.value
+    taskDueDate.value = editDueDate.value || 'Aucune'
     isEditing.value = false
     addToast({ title: 'Tâche modifiée', message: 'Les modifications ont été enregistrées.', type: 'success' })
   } catch (err) {
@@ -99,6 +130,40 @@ const handleDelete = async () => {
       close()
     } catch (e) {
       addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+    }
+  }
+}
+
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0 && props.taskId) {
+    const file = target.files[0] as File
+    if (!file) return
+    try {
+      const updatedTask = await uploadBanner(props.taskId, file)
+      taskBannerImage.value = updatedTask.banner_image || ''
+      addToast({ type: 'success', title: 'Couverture modifiée', message: 'L\'image a été ajoutée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+    }
+  }
+}
+
+const removeBanner = async () => {
+  if (!props.taskId) return
+  if (confirm('Voulez-vous vraiment supprimer cette couverture ?')) {
+    try {
+      await updateTask(props.taskId, { banner_image: null })
+      taskBannerImage.value = ''
+      addToast({ type: 'success', title: 'Couverture supprimée', message: 'L\'image a été supprimée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'image.' })
     }
   }
 }
@@ -249,6 +314,8 @@ const resetState = () => {
   taskDescription.value = 'Chargement...'
   editTitle.value = ''
   editDescription.value = ''
+  editDueDate.value = ''
+  projectEndDate.value = ''
   taskStatus.value = ''
   taskPriority.value = ''
   taskReference.value = ''
@@ -257,6 +324,7 @@ const resetState = () => {
   taskCreatedAt.value = ''
   taskUpdatedAt.value = ''
   taskProjetId.value = ''
+  taskBannerImage.value = ''
   taskSubtasks.value = []
   commentText.value = ''
   editingCommentId.value = null
@@ -271,8 +339,17 @@ watch(() => props.taskId, async (newTaskId) => {
     resetState()
     await setTask(newTaskId)
     await getCommentaires(newTaskId)
+    if (props.startInEditMode) {
+      startEditing()
+    }
   }
 }, { immediate: true })
+
+watch(() => props.isOpen, (newIsOpen) => {
+  if (newIsOpen && props.startInEditMode) {
+    startEditing()
+  }
+})
 </script>
 
 <template>
@@ -299,7 +376,7 @@ watch(() => props.taskId, async (newTaskId) => {
               <span class="hover:underline cursor-pointer" v-if="taskProjetId">PROJ-{{ taskProjetId }}</span>
               <span v-if="taskProjetId">/</span>
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <span class="hover:underline cursor-pointer">{{ taskReference }}</span>
+              <NuxtLink :to="`/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>
             </div>
             
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -312,10 +389,31 @@ watch(() => props.taskId, async (newTaskId) => {
             </div>
           </header>
 
+          <!-- Banner Image -->
+          <div v-if="taskBannerImage" class="w-full h-48 sm:h-72 shrink-0 bg-gray-100 dark:bg-[#1A1A1D] border-b border-black/5 dark:border-white/5 relative group">
+            <img :src="taskBannerImage" class="w-full h-full object-cover" alt="Task banner" />
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <button @click="triggerFileInput" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm">
+                <Icon name="heroicons:camera" class="w-5 h-5" /> Changer la couverture
+              </button>
+              <button @click="removeBanner" class="flex items-center gap-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm">
+                <Icon name="heroicons:trash" class="w-5 h-5" /> Supprimer
+              </button>
+            </div>
+          </div>
+          <div v-else class="w-full h-32 shrink-0 bg-[#F4F5F7] dark:bg-[#1A1A1D] border-b border-black/5 dark:border-white/5 flex items-center justify-center group cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" @click="triggerFileInput">
+            <div class="flex flex-col items-center gap-2 text-secondary dark:text-gray-500 group-hover:text-main dark:group-hover:text-gray-300 transition-colors">
+              <Icon name="heroicons:photo" class="w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <span class="text-sm font-medium">Ajouter une couverture</span>
+            </div>
+          </div>
+          <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleFileUpload" />
+
           <!-- Content Layout -->
           <div class="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar">
             <!-- Main Column (Left) -->
-            <div class="flex-1 md:overflow-y-auto px-4 sm:px-8 py-6 custom-scrollbar shrink-0">
+            <div class="flex-1 md:overflow-y-auto custom-scrollbar shrink-0 flex flex-col">
+              <div class="px-4 sm:px-8 py-6 flex-1">
               <h1 v-if="!isEditing" class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
                 {{ taskTitle }}
               </h1>
@@ -412,6 +510,7 @@ watch(() => props.taskId, async (newTaskId) => {
                   Aucun commentaire pour le moment.
                 </div>
               </div>
+              </div>
             </div>
 
             <!-- Sidebar (Right) -->
@@ -498,8 +597,11 @@ watch(() => props.taskId, async (newTaskId) => {
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
-                    <div class="text-secondary dark:text-gray-500 font-medium">Échéance</div>
-                    <div class="col-span-2 text-main dark:text-gray-300">{{ formatDisplayDate(taskDueDate) }}</div>
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Échéance</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">
+                      <span v-if="!isEditing" class="pt-1 inline-block">{{ formatDisplayDate(taskDueDate) }}</span>
+                      <input v-else v-model="editDueDate" type="date" :max="projectEndDate" class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1.5 text-sm text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">

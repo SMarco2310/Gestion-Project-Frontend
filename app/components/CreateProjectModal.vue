@@ -22,10 +22,8 @@ const minDate = ref(getTodayDate())
 
 const form = ref({
   name: '',
-  reference_code: '',
   description: '',
   status: ProjectStatus.TO_DO,
-  user_id: null as number | string | null,
   start_date: getTodayDate(),
   end_date: getTodayDate()
 })
@@ -41,10 +39,8 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     form.value = {
       name: '',
-      reference_code: '',
       description: '',
       status: ProjectStatus.TO_DO,
-      user_id: user.value?.id ?? null,
       start_date: getTodayDate(),
       end_date: getTodayDate()
     }
@@ -68,8 +64,7 @@ const submit = async () => {
 
   const payload = {
     ...form.value,
-    status: form.value.status,
-    user_id: user.value?.id ?? null,
+    status: form.value.status
   }
 
   try {
@@ -127,17 +122,8 @@ const submit = async () => {
                 <p v-if="errors.title" class="text-red-500 text-xs mt-1 font-medium">Ce champ est requis.</p>
               </div>
 
-              <!-- Reference Code & Status Row -->
+              <!-- Status Row -->
               <div class="flex gap-4">
-                <div class="flex-1">
-                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Code de référence</label>
-                  <input 
-                    v-model="form.reference_code" 
-                    type="text" 
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all uppercase"
-                    placeholder="ex: PRJ-001"
-                  />
-                </div>
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Statut</label>
                   <select 

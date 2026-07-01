@@ -29,15 +29,24 @@ const getProjectMetrics = (projectId: number | string) => {
 const isCreateModalOpen = ref(false)
 const isSideSheetOpen = ref(false)
 const selectedProjectId = ref<number | string | null>(null)
+const sideSheetEditMode = ref(false)
 
 const handleProjectClick = (projectId: number | string) => {
   selectedProjectId.value = projectId
+  sideSheetEditMode.value = false
+  isSideSheetOpen.value = true
+}
+
+const handleEditProject = (projectId: number | string) => {
+  selectedProjectId.value = projectId
+  sideSheetEditMode.value = true
   isSideSheetOpen.value = true
 }
 
 const handleCloseSideSheet = () => {
   isSideSheetOpen.value = false
   selectedProjectId.value = null
+  sideSheetEditMode.value = false
 }
 
 import { useToast } from '~/composables/useToast'
@@ -58,10 +67,8 @@ const handleCreateProjectSubmit = async (data: any) => {
   try {
     await createProjet(
       data.name,
-      data.reference_code,
       data.description,
       data.status,
-      data.user_id,
       data.start_date,
       data.end_date
     )
@@ -75,6 +82,38 @@ const handleCreateProjectSubmit = async (data: any) => {
     throw error
   }
 }
+
+const filterText = ref('')
+const selectedStatuses = ref<(string | number)[]>([])
+
+const statusOptions = [
+  { id: 'à faire', label: 'À faire' },
+  { id: 'en cours', label: 'En cours' },
+  { id: 'terminé', label: 'Terminé' },
+]
+
+const handleFilterUpdate = (filters: { priorities: (string | number)[]; projects: (string | number)[]; statuses: (string | number)[] }) => {
+  selectedStatuses.value = filters.statuses
+}
+
+const filteredProjets = computed(() => {
+  let result = projets.value
+
+  if (selectedStatuses.value.length > 0) {
+    result = result.filter(p => selectedStatuses.value.includes((p as any).status || 'à faire'))
+  }
+
+  if (filterText.value) {
+    const searchTerm = filterText.value.toLowerCase()
+    result = result.filter(p => 
+      p.name.toLowerCase().includes(searchTerm) ||
+      (p.reference_code && p.reference_code.toLowerCase().includes(searchTerm)) ||
+      (p.description && p.description.toLowerCase().includes(searchTerm))
+    )
+  }
+
+  return result
+})
 </script>
 
 <template>
@@ -89,12 +128,19 @@ const handleCreateProjectSubmit = async (data: any) => {
         <div id="search-bar" class="flex-1 md:flex-none">
           <div class="relative flex items-center w-full">
             <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-            <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder w-full px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 md:w-96">
+            <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder w-full px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 md:w-96">
           </div>
         </div>
 
         <div class="flex items-center gap-2 md:gap-3 shrink-0">
-          <FilterDropdown :showProjects="false" :showStatus="true" :showPriority="false" class="shrink-0" />
+          <FilterDropdown 
+            :showProjects="false" 
+            :showStatus="true" 
+            :showPriority="false" 
+            :statusOptions="statusOptions"
+            @update:filters="handleFilterUpdate"
+            class="shrink-0" 
+          />
           <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
             <Icon name="heroicons:plus" class="w-5 h-5" />
             <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
@@ -106,7 +152,7 @@ const handleCreateProjectSubmit = async (data: any) => {
 
     <section id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       <ProjetCard
-        v-for="p in projets" :key="p.id"
+        v-for="p in filteredProjets" :key="p.id"
         :id="p.id"
         :reference_code="p.reference_code"
         :name="p.name"
@@ -116,6 +162,7 @@ const handleCreateProjectSubmit = async (data: any) => {
         :metrics="getProjectMetrics(p.id)"
         @cardClick="handleProjectClick"
         @delete="handleDeleteProject"
+        @edit="handleEditProject"
       />
     </section>
 
@@ -130,6 +177,7 @@ const handleCreateProjectSubmit = async (data: any) => {
     <ProjectSideSheet
       :is-open="isSideSheetOpen"
       :project-id="selectedProjectId"
+      :start-in-edit-mode="sideSheetEditMode"
       @close="handleCloseSideSheet"
     />
   </div>

@@ -7,6 +7,7 @@ interface User {
   email_verified_at: string
   created_at: string
   updated_at: string
+  profile_picture?: string
 }
 
 export default function useAuth() {
@@ -20,8 +21,15 @@ export default function useAuth() {
 
   const isAuthenticated = computed(() => Boolean(token.value))
 
+  const formatUser = (u: User | null) => {
+    if (u && u.profile_picture && !u.profile_picture.startsWith('http')) {
+      u.profile_picture = `http://localhost:8000${u.profile_picture}`
+    }
+    return u
+  }
+
   const setAuth = (authUser: User | null, authToken: string | null) => {
-    user.value = authUser
+    user.value = formatUser(authUser)
     token.value = authToken
   }
 
@@ -79,7 +87,7 @@ export default function useAuth() {
         headers: {Authorization: `Bearer ${token.value}`},
       })
 
-      user.value = data.user
+      user.value = formatUser(data.user)
       return data
     } catch (error) {
       console.error('Failed to fetch profile:', error)
@@ -102,10 +110,34 @@ export default function useAuth() {
         headers: {Authorization: `Bearer ${token.value}`},
       })
 
-      user.value = data.user
+      user.value = formatUser(data.user)
       return data
     } catch (error) {
       console.error('Failed to update profile:', error)
+      throw error
+    }
+  }
+
+  const uploadProfilePicture = async (file: File) => {
+    if (!token.value) {
+      return null
+    }
+
+    const { $api } = useNuxtApp()
+    const formData = new FormData()
+    formData.append('profile_picture', file)
+
+    try {
+      const data = await $api<{ user: User; message: string }>('/api/users/profile-picture', {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: `Bearer ${token.value}` },
+      })
+
+      user.value = formatUser(data.user)
+      return data
+    } catch (error) {
+      console.error('Failed to upload profile picture:', error)
       throw error
     }
   }
@@ -152,6 +184,7 @@ export default function useAuth() {
     logout,
     getProfile,
     updateProfile,
+    uploadProfilePicture,
     forgotPassword,
     resetPassword,
   }

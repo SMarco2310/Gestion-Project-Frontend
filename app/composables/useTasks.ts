@@ -15,11 +15,11 @@ interface Tache {
   due_date?: string
   created_at?: string
   updated_at?: string
+  banner_image?: string
 }
 
 interface TaskPayload {
   title: string
-  reference_code: string
   description?: string
   status?: string
   priority?: string
@@ -27,6 +27,7 @@ interface TaskPayload {
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   due_date?: string
+  banner_image?: string | null
 }
 
 
@@ -52,6 +53,7 @@ export default function useTasks() {
     due_date: task.due_date ?? '',
     created_at: task.created_at ?? '',
     updated_at: task.updated_at ?? '',
+    banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
   })
 
   const getTasks = async (projectId?: number | string) => {
@@ -139,6 +141,30 @@ export default function useTasks() {
     }
   }
 
+  const uploadBanner = async (id: number | string, file: File) => {
+    try {
+      const formData = new FormData()
+      formData.append('banner_image', file)
+
+      const data = await $api<any>(`/api/taches/${id}/banner`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const rawTask = data.tache ?? data.task ?? data.Tache ?? data.data ?? data
+      const updatedTask = normalizeTask(rawTask)
+      const index = tasks.value.findIndex((item) => String(item.id) === String(id))
+      if (index !== -1) {
+        tasks.value[index] = updatedTask
+      }
+
+      return updatedTask
+    } catch (err) {
+      console.error('Failed to upload task banner:', err)
+      throw err
+    }
+  }
+
   const deleteTask = async (id: number | string) => {
     try {
       await $api<{ message: string }>(`/api/taches/${id}`, {
@@ -161,6 +187,7 @@ export default function useTasks() {
     getTask,
     createTask,
     updateTask,
+    uploadBanner,
     deleteTask,
   }
 }

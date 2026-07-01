@@ -152,7 +152,7 @@ const submit = async () => {
                 <div>
                   <label class="block text-sm font-bold text-secondary dark:text-gray-400 mb-2">Mot de passe actuel</label>
                   <div class="relative">
-                    <input :type="showCurrentPassword ? 'text' : 'password'" v-model="currentPassword" placeholder="Entrez votre mot de passe actuel" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.currentPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
+                    <input :type="showCurrentPassword ? 'text' : 'password'" v-model="currentPassword" autocomplete="new-password" placeholder="Entrez votre mot de passe actuel" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.currentPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
                     <button type="button" @click="showCurrentPassword = !showCurrentPassword" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                       <Icon :name="showCurrentPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                     </button>
@@ -166,7 +166,7 @@ const submit = async () => {
                 <div>
                   <label class="block text-sm font-bold text-secondary dark:text-gray-400 mb-2">Nouveau mot de passe</label>
                   <div class="relative">
-                    <input :type="showNewPassword ? 'text' : 'password'" v-model="newPassword" placeholder="Minimum 8 caractères" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.newPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
+                    <input :type="showNewPassword ? 'text' : 'password'" v-model="newPassword" autocomplete="new-password" placeholder="Minimum 8 caractères" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.newPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
                     <button type="button" @click="showNewPassword = !showNewPassword" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                       <Icon :name="showNewPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                     </button>
@@ -180,7 +180,7 @@ const submit = async () => {
                 <div>
                   <label class="block text-sm font-bold text-secondary dark:text-gray-400 mb-2">Confirmer le nouveau mot de passe</label>
                   <div class="relative">
-                    <input :type="showConfirmPassword ? 'text' : 'password'" v-model="confirmPassword" placeholder="Confirmez le nouveau mot de passe" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.confirmPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
+                    <input :type="showConfirmPassword ? 'text' : 'password'" v-model="confirmPassword" autocomplete="new-password" placeholder="Confirmez le nouveau mot de passe" :class="['w-full bg-canvas dark:bg-[#161616] border rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:ring-1 transition-all shadow-inner pr-12', fieldErrors.confirmPassword ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : 'border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-gray-500 focus:ring-primary dark:focus:ring-gray-500']" />
                     <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute inset-y-0 right-0 px-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                       <Icon :name="showConfirmPassword ? 'heroicons:eye-slash' : 'heroicons:eye'" class="w-5 h-5" />
                     </button>

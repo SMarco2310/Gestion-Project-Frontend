@@ -29,6 +29,7 @@ export interface Task {
   statusColorClass?: string
   commentairesCount?: number
   assignee: TaskAssignee
+  bannerImage?: string
 }
 
 const props = defineProps<{
@@ -87,10 +88,8 @@ const submitNewTask = async () => {
   
   try {
     const statusVal = props.title === 'En cours' ? 'en cours' : (props.title === 'Terminé' ? 'terminé' : 'à faire')
-    const referenceCode = `T-${Math.floor(1000 + Math.random() * 9000)}`
     await createTask({
       title: newTaskTitle.value.trim(),
-      reference_code: referenceCode,
       projet_id: newTaskProject.value,
       status: statusVal,
       priority: 'moyen',
@@ -210,10 +209,17 @@ onUnmounted(() => {
       >
         <template #item="{ element: item }">
           <div 
-            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] p-4 rounded-xl cursor-pointer hover:brightness-105 transition-all group"
+            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
             @click="emit('taskClick', item.id)"
           >
-            <!-- Header (Title & Actions) -->
+            <!-- Banner Image -->
+            <div v-if="item.bannerImage" class="w-full h-28 shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img :src="item.bannerImage" class="w-full h-full object-cover" alt="Task banner" />
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 flex flex-col gap-2">
+              <!-- Header (Title & Actions) -->
             <div class="flex justify-between items-start gap-2">
               <!-- Title -->
               <h3 class="text-main dark:text-gray-200 text-[15px] leading-snug flex-1">
@@ -280,6 +286,7 @@ onUnmounted(() => {
                     <Icon :name="item.assignee.icon" class="text-xs" />
                   </div>
                </div>
+            </div>
             </div>
           </div>
         </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { TaskStatus, TaskPriority, TaskTag } from '~/utils/enums'
+import useProjets from '~/composables/useProjets'
 
 const props = defineProps<{
   isOpen: boolean
@@ -13,16 +14,25 @@ const emit = defineEmits(['close', 'submit'])
 
 const form = ref({
   title: '',
-  reference_code: '',
   description: '',
   status: TaskStatus.TO_DO,
   priority: TaskPriority.MEDIUM,
   tag: TaskTag.FEATURE,
-  due_date: ''
+  due_date: '',
+  projet_id: props.projetId || ''
 })
 
 const errors = ref({
-  title: false
+  title: false,
+  projet_id: false
+})
+
+const { projets, getProjets } = useProjets()
+
+onMounted(async () => {
+  if (!props.projetId) {
+    await getProjets()
+  }
 })
 
 const getTodayDate = () => {
@@ -37,17 +47,16 @@ const minDate = ref(getTodayDate())
 // Reset form when modal opens
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    const randomCode = `T-${Math.floor(1000 + Math.random() * 9000)}`
     form.value = {
       title: '',
-      reference_code: randomCode,
       description: '',
       status: TaskStatus.TO_DO,
       priority: TaskPriority.MEDIUM,
       tag: TaskTag.FEATURE,
-      due_date: getTodayDate()
+      due_date: getTodayDate(),
+      projet_id: props.projetId || ''
     }
-    errors.value = { title: false }
+    errors.value = { title: false, projet_id: false }
   }
 })
 
@@ -58,15 +67,16 @@ const close = () => {
 const submit = async () => {
   // Simple validation
   errors.value.title = !form.value.title.trim()
+  errors.value.projet_id = !props.projetId && !form.value.projet_id
 
-  if (errors.value.title) {
+  if (errors.value.title || errors.value.projet_id) {
     return // Stop submission if validation fails
   }
 
   const payload = {
     ...form.value,
     parent_task_id: props.parentTaskId ?? null,
-    projet_id: props.projetId ?? null
+    projet_id: props.projetId ?? form.value.projet_id
   }
 
   try {
@@ -123,6 +133,24 @@ const submit = async () => {
                   @keydown.enter="submit"
                 />
                 <p v-if="errors.title" class="text-red-500 text-xs mt-1 font-medium">Ce champ est requis.</p>
+              </div>
+
+              <!-- Project Selector (Only if not provided by parent) -->
+              <div v-if="!props.projetId && !props.parentTaskId">
+                <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">
+                  Projet <span class="text-red-500">*</span>
+                </label>
+                <select 
+                  v-model="form.projet_id"
+                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all appearance-none cursor-pointer text-sm"
+                  :class="errors.projet_id ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
+                >
+                  <option value="" disabled>Sélectionner un projet</option>
+                  <option v-for="projet in projets" :key="projet.id" :value="projet.id">
+                    {{ projet.name }}
+                  </option>
+                </select>
+                <p v-if="errors.projet_id" class="text-red-500 text-xs mt-1 font-medium">Veuillez sélectionner un projet.</p>
               </div>
 
               <!-- Tag & Status Row -->

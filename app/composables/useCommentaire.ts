@@ -11,7 +11,6 @@ interface Commentaire {
 interface CommentairePayload {
   content: string
   tache_id: number | string | null
-  user_id?: number | string | null
 }
 
 export default function useCommentaire() {

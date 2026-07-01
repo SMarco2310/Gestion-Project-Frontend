@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 const isDropdownOpen = ref(false)
 const emit = defineEmits(['edit', 'delete', 'cardClick'])
+const isEditModalOpen = ref(false)
 
 const props = defineProps({
     id: {
@@ -53,6 +54,13 @@ const handleDelete = () => {
   if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
     emit('delete', props.id)
   }
+}
+
+const handleEdit = () => {
+  
+  
+  isEditModalOpen.value = false
+  emit('edit', props.id)
 }
 
 </script>

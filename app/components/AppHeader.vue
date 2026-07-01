@@ -1,11 +1,30 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+
 const route = useRoute()
-const {logout,user}=useAuth();
+const {logout,user}=useAuth()
+
+const { 
+  notifications, 
+  unreadCount, 
+  fetchNotifications, 
+  markAsRead, 
+  markAllAsRead, 
+  startPolling, 
+  stopPolling 
+} = useNotification()
+
+onMounted(() => {
+  fetchNotifications()
+  startPolling()
+})
+
+onUnmounted(() => {
+  stopPolling()
+})
 
 const isActive = (path: string) => route.path.startsWith(path)
-
 
 const handleLogout= async () =>{
     await logout();
@@ -14,6 +33,42 @@ const handleLogout= async () =>{
 const isNotifOpen = ref(false)
 const isProfileOpen = ref(false)
 const isMobileMenuOpen = ref(false)
+
+const handleNotificationClick = async (notif: any) => {
+  if (!notif.read_at) {
+    await markAsRead(notif.id)
+  }
+  isNotifOpen.value = false
+  if (notif.data.task_id) {
+    navigateTo('/tasks')
+  } else if (notif.data.projet_id) {
+    navigateTo('/projets')
+  }
+}
+
+const formatNotifTime = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
+    
+    if (diffInSeconds < 60) return rtf.format(-diffInSeconds, 'second')
+    const diffInMinutes = Math.floor(diffInSeconds / 60)
+    if (diffInMinutes < 60) return rtf.format(-diffInMinutes, 'minute')
+    const diffInHours = Math.floor(diffInMinutes / 60)
+    if (diffInHours < 24) return rtf.format(-diffInHours, 'hour')
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays < 30) return rtf.format(-diffInDays, 'day')
+    const diffInMonths = Math.floor(diffInDays / 30)
+    if (diffInMonths < 12) return rtf.format(-diffInMonths, 'month')
+    const diffInYears = Math.floor(diffInMonths / 12)
+    return rtf.format(-diffInYears, 'year')
+  } catch (e) {
+    return ''
+  }
+}
 </script>
 
 <template>
@@ -42,17 +97,39 @@ const isMobileMenuOpen = ref(false)
                     <button @click="isNotifOpen = !isNotifOpen" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors relative focus:outline-none">
                         <Icon name="heroicons:bell" class="w-6 h-6" />
                         <!-- Optional badge indicator -->
-                        <span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                        <span v-if="unreadCount > 0" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full flex items-center justify-center border-2 border-card dark:border-[#1D1D1D]"></span>
                     </button>
                     <!-- Overlay for closing -->
                     <div v-if="isNotifOpen" @click="isNotifOpen = false" class="fixed inset-0 z-40"></div>
                     <!-- Dropdown Menu -->
-                    <div v-if="isNotifOpen" class="absolute right-0 mt-2 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
-                        <div class="p-3 border-b border-form-border dark:border-gray-800 text-sm font-semibold text-main dark:text-white">
-                            Notifications
+                    <div v-if="isNotifOpen" class="absolute right-0 mt-2 w-80 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[32rem] overflow-hidden">
+                        <div class="p-3 border-b border-form-border dark:border-gray-800 flex justify-between items-center shrink-0">
+                            <span class="text-sm font-bold text-main dark:text-white tracking-wide">Notifications</span>
+                            <button v-if="unreadCount > 0" @click="markAllAsRead" class="text-xs font-medium text-primary dark:text-blue-400 hover:underline">
+                              Tout marquer lu
+                            </button>
                         </div>
-                        <div class="p-3 text-sm text-secondary dark:text-gray-400">
-                            Aucune notification
+                        <div class="overflow-y-auto custom-scrollbar flex-1">
+                          <div v-if="notifications.length === 0" class="p-6 text-center flex flex-col items-center justify-center text-secondary dark:text-gray-500">
+                              <Icon name="heroicons:bell-slash" class="w-8 h-8 mb-2 opacity-50" />
+                              <span class="text-sm">Aucune notification</span>
+                          </div>
+                          <div v-else class="divide-y divide-form-border dark:divide-gray-800">
+                              <div 
+                                v-for="notif in notifications" 
+                                :key="notif.id"
+                                @click="handleNotificationClick(notif)"
+                                class="p-4 hover:bg-canvas dark:hover:bg-gray-800/50 cursor-pointer transition-colors relative group"
+                                :class="{'bg-blue-50/50 dark:bg-blue-900/10': !notif.read_at}"
+                              >
+                                <div v-if="!notif.read_at" class="absolute left-0 top-0 bottom-0 w-1 bg-primary dark:bg-blue-500"></div>
+                                <div class="flex flex-col gap-1 pl-1">
+                                  <span class="text-sm font-semibold text-main dark:text-gray-200">{{ notif.data.title }}</span>
+                                  <span class="text-xs text-secondary dark:text-gray-400 line-clamp-2">{{ notif.data.message }}</span>
+                                  <span class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-medium">{{ formatNotifTime(notif.created_at) }}</span>
+                                </div>
+                              </div>
+                          </div>
                         </div>
                     </div>
                 </div>
@@ -60,7 +137,7 @@ const isMobileMenuOpen = ref(false)
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <div @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 hover:ring-primary dark:hover:ring-primary overflow-hidden cursor-pointer transition-all">
-                        <img :src="`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
+                        <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                     </div>
                     <!-- Overlay for closing -->
                     <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
@@ -161,13 +238,13 @@ const isMobileMenuOpen = ref(false)
                     <!-- Profile -->
                     <NuxtLink to="/profile" @click="isMobileMenuOpen = false" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 overflow-hidden shrink-0">
-                            <img :src="`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
+                            <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                     </NuxtLink>
                     <!-- Notifications -->
-                    <button class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors relative focus:outline-none">
+                    <button @click="isNotifOpen = !isNotifOpen; isMobileMenuOpen = false" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors relative focus:outline-none">
                         <Icon name="heroicons:bell" class="w-7 h-7" />
-                        <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                        <span v-if="unreadCount > 0" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card dark:border-[#1D1D1D]"></span>
                     </button>
                 </div>
 

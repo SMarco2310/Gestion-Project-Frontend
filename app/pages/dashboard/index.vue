@@ -24,15 +24,14 @@ const handleCreateProjectSubmit = async (payload: any) => {
   try {
     await createProjet(
       payload.name,
-      payload.reference_code,
       payload.description,
       payload.status,
-      payload.user_id,
       payload.start_date,
       payload.end_date
     )
     await getProjets()
     isCreateProjectModalOpen.value = false
+    navigateTo('/projets')
   } catch (err) {
     console.error('Failed to create project', err)
   }

@@ -315,9 +315,11 @@ const updateStatus = async (status: string) => {
           <div class="mb-8">
             <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Tâches du projet</h3>
             <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
-              <div
+              <NuxtLink
                 v-for="task in projectTasks" :key="task.id"
-                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group"
+                :to="`/tasks/${task.id}`"
+                @click="close"
+                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer"
               >
                 <div class="flex items-center gap-3 overflow-hidden">
                   <div
@@ -348,7 +350,7 @@ const updateStatus = async (status: string) => {
                   >{{ task.status }}</span>
                   <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>
                 </div>
-              </div>
+              </NuxtLink>
             </div>
             <div v-else class="text-sm text-secondary dark:text-gray-500 p-4 border border-dashed border-form-border dark:border-gray-800 rounded-lg text-center bg-canvas dark:bg-transparent">
               Aucune tâche dans ce projet.

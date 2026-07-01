@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-const {user,updateProfile,logout}=useAuth();
+const {user,updateProfile,logout,uploadProfilePicture}=useAuth();
 
 const router = useRouter();
 definePageMeta({
@@ -20,6 +20,8 @@ watch(() => user.value, (newUser) => {
   }
 }, { immediate: true });
 
+const { addToast } = useToast();
+
 const HandleProfileUpdate = async ()=>{
     
     try {
@@ -27,9 +29,11 @@ const HandleProfileUpdate = async ()=>{
         return
         }
         await updateProfile(name.value, email.value,bio.value);
+        addToast({ title: 'Profil mis à jour', message: 'Vos informations ont été enregistrées avec succès.', type: 'success' })
 
     } catch (error) {
         console.error('Failed to update profile:', error);
+        addToast({ title: 'Erreur', message: 'Impossible de mettre à jour le profil.', type: 'error' })
     } finally {
         // loading.value = false;
     }
@@ -38,6 +42,26 @@ const handleCancel = () => {
   name.value = user.value?.name ?? '';
   email.value = user.value?.email ?? '';
   bio.value = user.value?.bio ?? '';
+}
+
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    const file = target.files[0] as File
+    if (!file) return
+    try {
+      await uploadProfilePicture(file)
+      addToast({ type: 'success', title: 'Avatar modifié', message: 'Votre photo de profil a été mise à jour avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+    }
+  }
 }
 
 const isPasswordModalOpen = ref(false)
@@ -68,7 +92,7 @@ const formatDate = (dateString?: string) => {
             </div>
             <div class="flex gap-4 w-full md:w-auto justify-end">
                 <button  @click="handleCancel" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Annuler</button>
-                <button @click="HandleProfileUpdate" class="px-5 py-2 bg-primary dark:bg-blue-500 hover:bg-blue-600 dark:hover:bg-blue-600 text-white rounded-md text-sm font-medium transition-colors shadow-md">Enregistrer</button>
+                <button @click="HandleProfileUpdate" class="px-5 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-md text-sm font-medium transition-all neo-emboss active:neo-inset hover:brightness-110">Enregistrer</button>
             </div>
         </header>
 
@@ -77,16 +101,17 @@ const formatDate = (dateString?: string) => {
             
             <!-- Avatar Card -->
             <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
-                    <div class="relative mb-4 mt-2">
-                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner">
-                            <img :src="`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
+                    <div class="relative mb-4 mt-2 group">
+                        <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner relative">
+                            <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
                         </div>
-                        <button class="absolute -bottom-2 -right-2 bg-[#CCD9FC] hover:bg-[#A6C4FF] text-[#1D1D1D] p-1.5 rounded-lg border border-gray-700 transition-colors shadow-sm">
+                        <button @click="triggerFileInput" class="absolute -bottom-2 -right-2 bg-[#CCD9FC] hover:bg-[#A6C4FF] text-[#1D1D1D] p-1.5 rounded-lg border border-gray-700 transition-colors shadow-sm">
                             <Icon name="heroicons:camera" class="w-4 h-4" />
                         </button>
                     </div>
                     <h2 class="text-xl font-bold text-main dark:text-gray-200">{{ user?.name }}</h2>
-                    <button class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors mb-6">Changer d'avatar</button>
+                    <button @click="triggerFileInput" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors mb-6">Changer d'avatar</button>
+                    <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleFileUpload" />
                     
                     <div class="w-full border-t border-form-border dark:border-gray-700/60 my-2"></div>
                     

@@ -8,6 +8,7 @@ interface User {
   created_at: string
   updated_at: string
   profile_picture?: string
+  role?: string // e.g. 'owner', 'member', 'admin'
 }
 
 export default function useAuth() {
@@ -20,6 +21,10 @@ export default function useAuth() {
   })
 
   const isAuthenticated = computed(() => Boolean(token.value))
+  
+  // Basic RBAC properties
+  const isOwner = computed(() => user.value?.role === 'owner')
+  const isMember = computed(() => user.value?.role === 'member')
 
   const formatUser = (u: User | null) => {
     if (u && u.profile_picture && !u.profile_picture.startsWith('http')) {
@@ -179,6 +184,8 @@ export default function useAuth() {
     user,
     token,
     isAuthenticated,
+    isOwner,
+    isMember,
     login,
     signup,
     logout,

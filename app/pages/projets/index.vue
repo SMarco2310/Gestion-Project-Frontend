@@ -7,6 +7,7 @@ definePageMeta({
 
 import useTasks from '~/composables/useTasks'
 
+const { isOwner } = useAuth()
 const { projets, getProjets, createProjet, deleteProjet } = useProjets()
 const { tasks, getTasks } = useTasks()
 
@@ -141,7 +142,7 @@ const filteredProjets = computed(() => {
             @update:filters="handleFilterUpdate"
             class="shrink-0" 
           />
-          <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+          <button v-if="isOwner" @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
             <Icon name="heroicons:plus" class="w-5 h-5" />
             <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
           </button>

@@ -1,15 +1,18 @@
 export default defineNuxtRouteMiddleware(async (to) => {
+  return; // Bypass auth for seamless navigation
   const token = useCookie<string | null>('auth_token', {
     default: () => null,
   })
 
   const { user, getProfile } = useAuth()
 
-  const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forget-password', '/auth/reset-password']
+  const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forget-password', '/auth/reset-password','/organizations']
   const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/'
 
   if (!token.value && !isPublicRoute) {
     return navigateTo('/auth/login')
+    // return navigateTo('/organisations')
+
   }
 
   // Hydrate user state if token exists but user is not loaded

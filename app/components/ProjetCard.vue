@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+const { isOwner } = useAuth()
 const isDropdownOpen = ref(false)
 const emit = defineEmits(['edit', 'delete', 'cardClick'])
 const isEditModalOpen = ref(false)
@@ -72,7 +73,7 @@ const handleEdit = () => {
             <span>{{ props.reference_code }}</span>
             <div class="flex items-center gap-3">
                 <span :class="{ 'neo-badge px-3 py-1 rounded-md bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 font-bold' : props.status === 'à faire' , 'neo-badge px-3 py-1 rounded-md bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-bold' : props.status === 'en cours' , 'neo-badge px-3 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold' : props.status === 'terminé'}">{{ props.status.toUpperCase() }}</span>
-                <div class="relative">
+                <div class="relative" v-if="isOwner">
                     <div @click.stop="isDropdownOpen = !isDropdownOpen" class="cursor-pointer p-1 -mr-2 hover:bg-canvas dark:hover:bg-gray-700 rounded-md transition-colors">
                         <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5 text-secondary dark:text-gray-400" />
                     </div>

@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const {logout,user}=useAuth()
+const {logout,user,isOwner}=useAuth()
 
 const { 
   notifications, 
@@ -219,6 +219,15 @@ const formatNotifTime = (dateStr: string) => {
                     <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md" />
                     <span class="relative z-10 tracking-wide">Tâches</span>
                 </NuxtLink>
+                <NuxtLink to="/calendar" @click="isMobileMenuOpen = false" :class="[
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
+                    isActive('/calendar') 
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                ]">
+                    <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Planning</span>
+                </NuxtLink>
                 <NuxtLink to="/team" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/team') 
@@ -228,7 +237,26 @@ const formatNotifTime = (dateStr: string) => {
                     <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 drop-shadow-md" />
                     <span class="relative z-10 tracking-wide">Équipe</span>
                 </NuxtLink>
-                <NuxtLink to="/settings" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink to="/organization" @click="isMobileMenuOpen = false" :class="[
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
+                    isActive('/organization') && !isActive('/organizations')
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                ]">
+                    <Icon name="heroicons:building-office" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Organisation</span>
+                </NuxtLink>
+                <NuxtLink to="/notifications" @click="isMobileMenuOpen = false" :class="[
+                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
+                    isActive('/notifications') 
+                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
+                ]">
+                    <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 drop-shadow-md" />
+                    <span class="relative z-10 tracking-wide">Notifications</span>
+                    <span v-if="unreadCount > 0" class="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ unreadCount }}</span>
+                </NuxtLink>
+                <NuxtLink v-if="isOwner" to="/settings" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/settings') 
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 

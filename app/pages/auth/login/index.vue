@@ -7,8 +7,10 @@ definePageMeta({
 })
 
 import useAuth from '../../../composables/useAuth'
+import { useRoute } from 'vue-router'
 
 const {login}= useAuth();
+const route = useRoute();
 
 const showPassword = ref(false);
 const togglePassword = () => {
@@ -50,7 +52,12 @@ const handleLogin = async () => {
     loading.value = true;
     try {
         await login(email.value,password.value);
-        navigateTo('/organizations');
+        const redirect = route.query.redirect as string;
+        if (redirect) {
+            navigateTo(redirect);
+        } else {
+            navigateTo('/organizations');
+        }
     } catch (error: any) {
         if (error?.data?.errors) {
             const errors = error.data.errors;

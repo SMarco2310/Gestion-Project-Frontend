@@ -104,8 +104,7 @@ const handleCreateOrganization = async () => {
           <div 
             v-for="invite in invitations" 
             :key="invite.id"
-            class="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800 hover:border-primary transition-all relative group shadow-sm"
-          >
+            class="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800 hover:border-primary transition-all relative group shadow-sm">
             <div class="flex items-center gap-3 mb-4">
               <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xl uppercase shadow-md overflow-hidden">
                 <img v-if="invite.organization?.logo" :src="invite.organization.logo.startsWith('http') ? invite.organization.logo : 'http://localhost:8000' + invite.organization.logo" class="w-full h-full object-cover" />

@@ -20,11 +20,9 @@ export default function useTags() {
     isLoading.value = true
     error.value = null
     try {
-      const response = await $fetch<{ tags: Tag[], success: boolean }>(`${config.public.apiBaseUrl}/api/tags`, {
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Accept': 'application/json'
-        }
+      const { $api } = useNuxtApp()
+      const response = await $api<{ tags: Tag[], success: boolean }>('/api/tags', {
+        method: 'GET'
       })
       tags.value = response.tags
       return response.tags
@@ -41,13 +39,9 @@ export default function useTags() {
     isLoading.value = true
     error.value = null
     try {
-      const response = await $fetch<{ tag: Tag, success: boolean }>(`${config.public.apiBaseUrl}/api/tags`, {
+      const { $api } = useNuxtApp()
+      const response = await $api<{ tag: Tag, success: boolean }>('/api/tags', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
         body: payload
       })
       tags.value.push(response.tag)
@@ -61,16 +55,36 @@ export default function useTags() {
     }
   }
 
+  const updateTag = async (tagId: number | string, payload: { name: string, color?: string }) => {
+    isLoading.value = true
+    error.value = null
+    try {
+      const { $api } = useNuxtApp()
+      const response = await $api<{ tag: Tag, success: boolean }>(`/api/tags/${tagId}`, {
+        method: 'PUT',
+        body: payload
+      })
+      const index = tags.value.findIndex(t => t.id === Number(tagId))
+      if (index !== -1) {
+        tags.value[index] = response.tag
+      }
+      return response.tag
+    } catch (e: any) {
+      error.value = e.message || 'Erreur lors de la modification de l\'étiquette'
+      console.error(e)
+      throw e
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const deleteTag = async (tagId: number | string) => {
     isLoading.value = true
     error.value = null
     try {
-      await $fetch(`${config.public.apiBaseUrl}/api/tags/${tagId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token.value}`,
-          'Accept': 'application/json'
-        }
+      const { $api } = useNuxtApp()
+      await $api(`/api/tags/${tagId}`, {
+        method: 'DELETE'
       })
       tags.value = tags.value.filter(t => t.id !== Number(tagId))
     } catch (e: any) {
@@ -88,6 +102,7 @@ export default function useTags() {
     error,
     getTags,
     createTag,
+    updateTag,
     deleteTag
   }
 }

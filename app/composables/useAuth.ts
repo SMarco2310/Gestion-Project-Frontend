@@ -180,6 +180,46 @@ export default function useAuth() {
     return data.message
   }
 
+  const verifyEmail = async (verifyUrl: string) => {
+    const { $api } = useNuxtApp()
+    try {
+      // The verifyUrl might be a full URL, we extract the path
+      let endpoint = verifyUrl;
+      try {
+          const urlObj = new URL(verifyUrl);
+          endpoint = urlObj.pathname + urlObj.search;
+      } catch (e) {
+          // If it's not a full URL, use it as is
+      }
+      
+      const data = await $api<{ message: string, success: boolean }>(endpoint, {
+        method: 'GET',
+      })
+      // If successful, update the user state
+      if (user.value) {
+        user.value.email_verified_at = new Date().toISOString()
+      }
+      return data
+    } catch (error) {
+      console.error('Email verification failed:', error)
+      throw error
+    }
+  }
+
+  const resendVerificationEmail = async () => {
+    const { $api } = useNuxtApp()
+    try {
+      const data = await $api<{ message: string, success: boolean }>('/api/email/verification-notification', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      return data
+    } catch (error) {
+      console.error('Failed to resend verification email:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     token,
@@ -194,5 +234,7 @@ export default function useAuth() {
     uploadProfilePicture,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
   }
 }

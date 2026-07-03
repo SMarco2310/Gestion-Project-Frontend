@@ -8,6 +8,7 @@ definePageMeta({
 
 const { activeOrganization, updateOrganization, deleteOrganization, setActiveOrganization, uploadLogo } = useOrganizations()
 const { addToast } = useToast()
+const { tags: orgTags, getTags, createTag, updateTag, deleteTag } = useTags()
 
 const form = ref({
   name: '',
@@ -43,6 +44,71 @@ watch(activeOrganization, (newOrg) => {
 }, { immediate: true })
 
 const activeTab = ref('general')
+
+const loadTags = async () => {
+  try {
+    await getTags()
+  } catch (error) {
+    // Error handled in composable
+  }
+}
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'tags') {
+    loadTags()
+  }
+})
+
+// Tags logic
+const isTagModalOpen = ref(false)
+const editingTag = ref<any>(null)
+const tagForm = ref({ name: '', color: '#3B82F6' })
+
+const openCreateTagModal = () => {
+  editingTag.value = null
+  tagForm.value = { name: '', color: '#3B82F6' }
+  isTagModalOpen.value = true
+}
+
+const openEditTagModal = (tag: any) => {
+  editingTag.value = tag
+  tagForm.value = { name: tag.name, color: tag.color || '#3B82F6' }
+  isTagModalOpen.value = true
+}
+
+const handleSaveTag = async () => {
+  if (!activeOrganization.value) return;
+  try {
+    if (editingTag.value) {
+      await updateTag(editingTag.value.id, {
+        name: tagForm.value.name,
+        color: tagForm.value.color,
+      });
+      addToast({ type: 'success', title: 'Succès', message: 'Étiquette modifiée.' });
+    } else {
+      await createTag({
+        name: tagForm.value.name,
+        color: tagForm.value.color,
+        organization_id: activeOrganization.value.id
+      } as any);
+      addToast({ type: 'success', title: 'Succès', message: 'Étiquette créée.' });
+    }
+    isTagModalOpen.value = false;
+  } catch (err) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Opération échouée.' });
+  }
+}
+
+const handleDeleteTag = async (tag: any) => {
+  if (confirm(`Voulez-vous supprimer l'étiquette "${tag.name}" ?`)) {
+    try {
+      await deleteTag(tag.id)
+      addToast({ type: 'success', title: 'Succès', message: 'Étiquette supprimée.' })
+    } catch (err) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Suppression échouée.' })
+    }
+  }
+}
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const triggerFileInput = () => fileInput.value?.click()
@@ -147,6 +213,11 @@ const confirmDelete = async () => {
           <Icon v-if="activeTab === 'reminders'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
         </button>
 
+        <button @click="activeTab = 'tags'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between border" :class="activeTab === 'tags' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
+          <span class="flex items-center gap-2"><Icon name="heroicons:tag" class="w-5 h-5" /> Étiquettes</span>
+          <Icon v-if="activeTab === 'tags'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
+        </button>
+
         <button @click="activeTab = 'security'" class="w-full text-left px-4 py-3 rounded-xl border font-medium transition-colors flex items-center justify-between" :class="activeTab === 'security' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
           <span class="flex items-center gap-2"><Icon name="heroicons:shield-check" class="w-5 h-5" /> Sécurité</span>
           <Icon v-if="activeTab === 'security'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
@@ -248,6 +319,44 @@ const confirmDelete = async () => {
           </div>
         </template>
 
+        <template v-if="activeTab === 'tags'">
+          <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 class="text-xl font-bold text-main dark:text-white">Étiquettes</h2>
+                <p class="text-sm text-secondary dark:text-gray-400 mt-1">Gérez les étiquettes personnalisées pour cette organisation.</p>
+              </div>
+              <button @click="openCreateTagModal" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
+                <Icon name="heroicons:plus" class="w-4 h-4" />
+                Créer une étiquette
+              </button>
+            </div>
+            
+            <div class="p-6">
+              <div v-if="orgTags.length === 0" class="text-center py-8 text-secondary dark:text-gray-500">
+                Aucune étiquette trouvée. Créez-en une pour commencer à organiser vos tâches.
+              </div>
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div v-for="tag in orgTags" :key="tag.id" class="flex items-center justify-between p-3 rounded-xl border border-form-border dark:border-gray-800 bg-canvas dark:bg-[#151515]">
+                  <div class="flex items-center gap-3">
+                    <div class="w-4 h-4 rounded-full shadow-sm" :style="{ backgroundColor: tag.color || '#9CA3AF' }"></div>
+                    <span class="font-medium text-main dark:text-gray-200 text-sm truncate max-w-[120px]">{{ tag.name }}</span>
+                    <span v-if="tag.is_default" class="text-[10px] bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300">Défaut</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button v-if="!tag.is_default" @click="openEditTagModal(tag)" class="p-1.5 text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier">
+                      <Icon name="heroicons:pencil" class="w-4 h-4" />
+                    </button>
+                    <button v-if="!tag.is_default" @click="handleDeleteTag(tag)" class="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Supprimer">
+                      <Icon name="heroicons:trash" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <template v-if="activeTab === 'security'">
           <!-- Danger Zone at the bottom of Security -->
           <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 md:p-8 border border-red-200 dark:border-red-900/30 shadow-sm">
@@ -263,5 +372,41 @@ const confirmDelete = async () => {
 
       </div>
     </div>
+
+    <!-- Tag Create/Edit Modal -->
+    <div v-if="isTagModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-main dark:text-white">{{ editingTag ? 'Modifier l\'étiquette' : 'Nouvelle étiquette' }}</h3>
+          <button @click="isTagModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        <form @submit.prevent="handleSaveTag">
+          <div class="p-6 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'étiquette</label>
+              <input v-model="tagForm.name" required type="text" placeholder="Ex: Bug, Feature..." class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Couleur</label>
+              <div class="flex items-center gap-4">
+                <input v-model="tagForm.color" type="color" class="w-12 h-12 rounded cursor-pointer border-0 p-0 bg-transparent" />
+                <input v-model="tagForm.color" type="text" class="flex-1 px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white uppercase font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+            </div>
+          </div>
+          <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
+            <button type="button" @click="isTagModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+              Annuler
+            </button>
+            <button type="submit" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+              {{ editingTag ? 'Mettre à jour' : 'Créer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>

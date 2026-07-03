@@ -48,6 +48,7 @@ const taskDueDate = ref('')
 const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
+const taskProjetReference = ref('')
 const taskSubtasks = ref<any[]>([])
 const taskBannerImage = ref('')
 
@@ -94,10 +95,16 @@ const setTask = async (id: string | number | null) => {
       if (task.projet_id) {
         try {
           const projet = await getProjet(task.projet_id)
-          if (projet && (projet as any).end_date) {
-            projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
+          if (projet) {
+            taskProjetReference.value = (projet as any).reference_code || `PROJ-${task.projet_id}`
+            if ((projet as any).end_date) {
+              projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
+            } else {
+              projectEndDate.value = ''
+            }
           } else {
             projectEndDate.value = ''
+            taskProjetReference.value = `PROJ-${task.projet_id}`
           }
         } catch (e) {
           projectEndDate.value = ''
@@ -345,6 +352,7 @@ const resetState = () => {
   taskCreatedAt.value = ''
   taskUpdatedAt.value = ''
   taskProjetId.value = ''
+  taskProjetReference.value = ''
   taskBannerImage.value = ''
   taskSubtasks.value = []
   commentText.value = ''
@@ -401,7 +409,7 @@ watch(() => props.isOpen, (newIsOpen) => {
           <header class="flex items-center justify-between px-6 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
             <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <span class="hover:underline cursor-pointer" v-if="taskProjetId">PROJ-{{ taskProjetId }}</span>
+              <span class="hover:underline cursor-pointer" v-if="taskProjetId">{{ taskProjetReference }}</span>
               <span v-if="taskProjetId">/</span>
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
               <NuxtLink :to="`/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>

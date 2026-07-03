@@ -96,6 +96,15 @@ export default defineNuxtPlugin(() => {
         token.value = null
         // navigateTo('/auth/login') // Uncomment when reverting mock
       }
+      if (response.status === 403) {
+        const { addToast } = useToast()
+        const message = response._data?.message || "Vous n'êtes pas autorisé à effectuer cette action."
+        addToast({
+          title: "Accès refusé",
+          message: message,
+          type: "error"
+        })
+      }
     },
   })) as typeof $fetch
 

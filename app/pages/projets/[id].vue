@@ -73,7 +73,7 @@ const assignTeam = (team: any) => {
               <Icon name="heroicons:briefcase" class="w-6 h-6" />
             </div>
             <div>
-              <p class="text-sm text-secondary dark:text-gray-400">PROJ-{{ projet?.id }}</p>
+              <p class="text-sm text-secondary dark:text-gray-400">{{ projet?.reference_code || `PROJ-${projet?.id}` }}</p>
               <h2 class="text-xl font-bold text-main dark:text-gray-200">{{ projet?.name }}</h2>
             </div>
           </div>

@@ -6,13 +6,29 @@ definePageMeta({
   layout: 'custom'
 })
 
-const { isOwner } = useAuth()
+const { isOwner, user } = useAuth()
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 const { addToast } = useToast()
 
 const members = ref<any[]>([])
 const isLoading = ref(true)
+
+const currentUserRole = computed(() => {
+  const me = members.value.find(m => String(m.id) === String(user.value?.id))
+  return me?.pivot?.role || ''
+})
+
+const canManageMembers = computed(() => ['proprietaire', 'admin'].includes(currentUserRole.value.toLowerCase()))
+
+const canEditRole = (member: any) => {
+  if (!canManageMembers.value) return false;
+  if (String(member.id) === String(user.value?.id)) return false; // Can't edit self here
+  const targetRole = (member.pivot?.role || '').toLowerCase();
+  if (currentUserRole.value.toLowerCase() === 'admin' && targetRole === 'propriétaire') return false;
+  return true;
+}
+
 
 const fetchMembers = async () => {
   if (!activeOrganization.value) return;
@@ -34,23 +50,73 @@ onMounted(() => {
 })
 
 
+const inviteFunction = async ()=>{
+   try {
+
+    const data = await $api<{success:boolean, message:string, invitation:any}>(`/api/invitations`, {
+       method: 'POST', 
+       body:{
+         email:inviteEmail.value,
+         organization_id:activeOrganization.value?.id,
+         role:inviteRole.value,
+       }
+    });
+
+    if(data.success){
+      addToast({ type: 'success', title: 'Succès', message: data.message });
+      isInviteModalOpen.value = false
+      inviteEmail.value = ''
+      inviteRole.value = 'member'
+    }
+    console.log(data);
+   } catch (error) {
+    console.log(error);
+    
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'inviter le membre.' });
+   }
+} 
 
 const isInviteModalOpen = ref(false)
 const inviteEmail = ref('')
-const inviteRole = ref('membre')
+const inviteRole = ref('member')
 
 const handleInvite = () => {
-  // Mock invite logic since backend says "Please use invitation system"
-  addToast({ type: 'success', title: 'Succès', message: `Invitation envoyée à ${inviteEmail.value}.` });
-  isInviteModalOpen.value = false
-  inviteEmail.value = ''
-  inviteRole.value = 'membre'
+  inviteFunction();
 }
 
+const isEditRoleModalOpen = ref(false)
+const editingMember = ref<any>(null)
+const editingRole = ref('membre')
+
 const openEditRoleModal = (member: any) => {
-  // Future implementation for role edit modal if needed, otherwise mock
-  console.log('Edit role for', member.name)
-  addToast({ type: 'info', title: 'Info', message: `Fonctionnalité à venir: éditer le rôle de ${member.name}.` });
+  editingMember.value = member;
+  const currentRole = (member.pivot?.role || 'membre').toLowerCase();
+  editingRole.value = currentRole === 'propriétaire' ? 'proprietaire' : currentRole;
+  isEditRoleModalOpen.value = true;
+}
+
+const handleEditRole = async () => {
+  if (!activeOrganization.value || !editingMember.value) return;
+  try {
+    const orgId = activeOrganization.value.id;
+    const res = await $api<{success:boolean, message:string}>(`/api/organizations/${orgId}/members/${editingMember.value.id}`, {
+      method: 'PUT',
+      body: { role: editingRole.value }
+    });
+    
+    if (res.success) {
+      addToast({ type: 'success', title: 'Succès', message: res.message });
+      // Update local state
+      const memberIndex = members.value.findIndex(m => m.id === editingMember.value.id);
+      if (memberIndex !== -1) {
+        members.value[memberIndex].pivot.role = editingRole.value === 'proprietaire' ? 'propriétaire' : editingRole.value;
+      }
+      isEditRoleModalOpen.value = false;
+    }
+  } catch (err: any) {
+    console.error('Error updating role', err);
+    addToast({ type: 'error', title: 'Erreur', message: err?.data?.message || 'Impossible de modifier le rôle.' });
+  }
 }
 
 const removeMember = async (memberId: number) => {
@@ -76,7 +142,7 @@ const removeMember = async (memberId: number) => {
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les détails et les membres de votre organisation.</p>
       </div>
       <div class="flex items-center gap-3">
-        <NuxtLink v-if="isOwner" to="/organization/settings" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
+        <NuxtLink v-if="canManageMembers" to="/organization/settings" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
           <Icon name="heroicons:cog-6-tooth" class="w-5 h-5" />
           Paramètres
         </NuxtLink>
@@ -105,7 +171,7 @@ const removeMember = async (memberId: number) => {
     <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden">
       <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
         <h3 class="text-xl font-bold text-main dark:text-white">Membres</h3>
-        <button @click="isInviteModalOpen = true" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
+        <button v-if="canManageMembers" @click="isInviteModalOpen = true" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
           <Icon name="heroicons:user-plus" class="w-4 h-4" />
           Inviter un membre
         </button>
@@ -146,11 +212,11 @@ const removeMember = async (memberId: number) => {
                 {{ member.pivot?.joined_at ? new Date(member.pivot.joined_at).toLocaleDateString('fr-FR') : '-' }}
               </td>
               <td class="px-6 py-4 text-right">
-                <div v-if="isOwner" class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button class="p-2 text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier le rôle" @click.stop="openEditRoleModal(member)">
+                <div v-if="canManageMembers" class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button v-if="canEditRole(member)" class="p-2 text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier le rôle" @click.stop="openEditRoleModal(member)">
                     <Icon name="heroicons:pencil" class="w-5 h-5" />
                   </button>
-                  <button class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Retirer de l'organisation" @click.stop="removeMember(member.id)">
+                  <button v-if="canEditRole(member)" class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Retirer de l'organisation" @click.stop="removeMember(member.id)">
                     <Icon name="heroicons:trash" class="w-5 h-5" />
                   </button>
                 </div>
@@ -180,7 +246,7 @@ const removeMember = async (memberId: number) => {
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
             <select v-model="inviteRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="membre">Membre</option>
+              <option value="member">Membre</option>
               <option value="admin">Administrateur</option>
             </select>
           </div>
@@ -191,6 +257,39 @@ const removeMember = async (memberId: number) => {
           </button>
           <button @click="handleInvite" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
             Envoyer l'invitation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div v-if="isEditRoleModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-main dark:text-white">Modifier le rôle</h3>
+          <button @click="isEditRoleModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div>
+            <p class="text-sm text-secondary dark:text-gray-400 mb-4">
+              Modifier le rôle de <strong>{{ editingMember?.name }}</strong>.
+            </p>
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
+            <select v-model="editingRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
+              <option value="membre">Membre</option>
+              <option value="admin">Administrateur</option>
+              <option v-if="currentUserRole.toLowerCase() === 'propriétaire' || currentUserRole.toLowerCase() === 'proprietaire'" value="proprietaire">Propriétaire</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
+          <button @click="isEditRoleModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            Annuler
+          </button>
+          <button @click="handleEditRole" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+            Enregistrer
           </button>
         </div>
       </div>

@@ -7,8 +7,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const publicRoutes = ['/auth/login', '/auth/signup', '/auth/forget-password', '/auth/reset-password']
   const isPublicRoute = publicRoutes.includes(to.path) || to.path === '/'
+  const isInviteRoute = to.path.startsWith('/invite')
 
-  if (!token.value && !isPublicRoute) {
+  if (!token.value && !isPublicRoute && !isInviteRoute) {
     return navigateTo('/auth/login')
     // return navigateTo('/organisations')
 
@@ -24,8 +25,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
   }
 
-  // Ensure user has an active organization before accessing protected routes (except profile)
-  if (token.value && !isPublicRoute && to.path !== '/organizations' && !to.path.startsWith('/profile')) {
+  // Ensure user has an active organization before accessing protected routes (except profile and invite)
+  if (token.value && !isPublicRoute && to.path !== '/organizations' && !to.path.startsWith('/profile') && !isInviteRoute) {
     const { activeOrganization } = useOrganizations()
     if (!activeOrganization.value) {
       return navigateTo('/organizations')

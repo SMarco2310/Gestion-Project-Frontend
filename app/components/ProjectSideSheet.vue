@@ -91,7 +91,7 @@ const fetchProject = async (id: number | string | null) => {
     if (projet) {
       projectTitle.value = projet.name || 'Sans titre'
       projectDescription.value = projet.description || 'Ajouter une description...'
-      projectRef.value = projet.reference_code || `PROJ-${id}`
+      projectRef.value = projet.reference_code || `PRJ-${String(id).substring(0, 8)}`
       projectStartDate.value = (projet as any).start_date || ''
       projectEndDate.value = (projet as any).end_date || ''
       

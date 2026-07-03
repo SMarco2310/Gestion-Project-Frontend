@@ -6,7 +6,10 @@ definePageMeta({
   }
 })
 
+import { useRoute } from 'vue-router'
+
 const { signup } = useAuth();
+const route = useRoute();
 
 const name = ref('');
 const email = ref('');
@@ -64,7 +67,12 @@ const handleSignup = async () => {
 
     try {
         await signup(name.value, email.value, password.value);
-        navigateTo('/organizations');
+        const redirect = route.query.redirect as string;
+        if (redirect) {
+            navigateTo(redirect);
+        } else {
+            navigateTo('/organizations');
+        }
     } catch (error: any) {
         // Parse Laravel validation errors
         if (error?.data?.errors) {

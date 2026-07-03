@@ -2,13 +2,27 @@ export interface Organization {
   id: number;
   name: string;
   description?: string;
+  logo?: string;
+  reminder_days_before_start?: number;
+  reminder_days_before_end?: number;
+  reminder_time_start?: string;
+  reminder_time_end?: string;
   created_at: string;
   updated_at: string;
 }
 
 export default function useOrganizations() {
   const organizations = useState<Organization[]>('organizations', () => []);
-  const activeOrganization = useState<Organization | null>('active_organization', () => null);
+  const activeOrganization = useCookie<Organization | null>('active_organization', { default: () => null, watch: true, sameSite: 'lax' });
+
+  // Auto-recover corrupted cookie states from previous bugs
+  if (activeOrganization.value && (activeOrganization.value as any).organization) {
+    activeOrganization.value = (activeOrganization.value as any).organization;
+  }
+  
+  if (activeOrganization.value && (activeOrganization.value as any).data) {
+    activeOrganization.value = (activeOrganization.value as any).data;
+  }
 
   const getOrganizations = async () => {
     try {
@@ -16,7 +30,8 @@ export default function useOrganizations() {
       const data = await $api<{ data: Organization[] } | any>('/api/organizations', {
         method: 'GET'
       });
-      organizations.value = data.data ?? data;
+      // Handle both paginated and non-paginated responses
+      organizations.value = data.data?.data ?? data.data ?? data;
       return organizations.value;
     } catch (error) {
       console.error(error);
@@ -30,7 +45,7 @@ export default function useOrganizations() {
       const data = await $api<{ data: Organization } | any>(`/api/organizations/${id}`, {
         method: 'GET'
       });
-      return data.data ?? data;
+      return data.organization ?? data.data ?? data;
     } catch (error) {
       console.error(error);
       throw error;
@@ -44,21 +59,21 @@ export default function useOrganizations() {
         method: 'POST',
         body: { name, description }
       });
-      return data.data ?? data;
+      return data.organization ?? data.data ?? data;
     } catch (error) {
       console.error(error);
       throw error;
     }
   };
 
-  const updateOrganization = async (id: number | string, name: string, description?: string) => {
+  const updateOrganization = async (id: number | string, payload: Partial<Organization>) => {
     try {
       const { $api } = useNuxtApp();
       const data = await $api<{ data: Organization } | any>(`/api/organizations/${id}`, {
         method: 'PUT',
-        body: { name, description }
+        body: payload
       });
-      return data.data ?? data;
+      return data.organization ?? data.data ?? data;
     } catch (error) {
       console.error(error);
       throw error;
@@ -83,6 +98,23 @@ export default function useOrganizations() {
     activeOrganization.value = org;
   };
 
+  const uploadLogo = async (id: number | string, file: File) => {
+    try {
+      const { $api } = useNuxtApp();
+      const formData = new FormData();
+      formData.append('logo', file);
+      
+      const data = await $api<{ organization: Organization } | any>(`/api/organizations/${id}/logo`, {
+        method: 'POST',
+        body: formData
+      });
+      return data.organization ?? data.data ?? data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
   return {
     organizations,
     activeOrganization,
@@ -91,6 +123,7 @@ export default function useOrganizations() {
     createOrganization,
     updateOrganization,
     deleteOrganization,
-    setActiveOrganization
+    setActiveOrganization,
+    uploadLogo
   };
 }

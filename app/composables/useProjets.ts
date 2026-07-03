@@ -26,12 +26,12 @@ export default function useProjets() {
     const getProjets = async ()=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{projets:[],success:boolean}>('/api/projets',{
+            const data = await $api<any>('/api/projets',{
                 method:'GET'
             });
 
-            projets.value=data.projets;
-            return data.projets
+            projets.value = data.data?.data ?? data.data ?? data.projets ?? [];
+            return projets.value;
         }catch(error){
             console.error(error)
                 throw error
@@ -46,7 +46,7 @@ export default function useProjets() {
                 method:'GET'
             });
 
-            return data.projet ?? data
+            return data.data ?? data.projet ?? data;
         }catch(error){
             console.error(error)
                 throw error
@@ -59,6 +59,7 @@ export default function useProjets() {
     const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date)=>{
         try{
             const { $api } = useNuxtApp();
+            const { activeOrganization } = useOrganizations();
             const data = await $api<{projet:Projet,success:boolean}>(`/api/projets`,{
                 method:'POST',
                 body:{
@@ -67,6 +68,7 @@ export default function useProjets() {
                    status:status,
                    start_date:start_date,
                    end_date:end_date,
+                   organization_id: activeOrganization.value?.id
                 }
             });
 

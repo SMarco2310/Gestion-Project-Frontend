@@ -86,6 +86,7 @@ const handleCreateProjectSubmit = async (data: any) => {
 
 const filterText = ref('')
 const selectedStatuses = ref<(string | number)[]>([])
+const selectedDateSort = ref('recent')
 
 const statusOptions = [
   { id: 'à faire', label: 'À faire' },
@@ -93,12 +94,13 @@ const statusOptions = [
   { id: 'terminé', label: 'Terminé' },
 ]
 
-const handleFilterUpdate = (filters: { priorities: (string | number)[]; projects: (string | number)[]; statuses: (string | number)[] }) => {
+const handleFilterUpdate = (filters: { priorities: (string | number)[]; projects: (string | number)[]; statuses: (string | number)[]; tags: (string | number)[]; dateSort: string }) => {
   selectedStatuses.value = filters.statuses
+  selectedDateSort.value = filters.dateSort || 'recent'
 }
 
 const filteredProjets = computed(() => {
-  let result = projets.value
+  let result = projets.value || []
 
   if (selectedStatuses.value.length > 0) {
     result = result.filter(p => selectedStatuses.value.includes((p as any).status || 'à faire'))
@@ -113,8 +115,17 @@ const filteredProjets = computed(() => {
     )
   }
 
+  // Apply sorting
+  result = [...result].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
+    return selectedDateSort.value === 'recent' ? dateB - dateA : dateA - dateB
+  })
+
   return result
 })
+
+
 </script>
 
 <template>
@@ -142,7 +153,7 @@ const filteredProjets = computed(() => {
             @update:filters="handleFilterUpdate"
             class="shrink-0" 
           />
-          <button v-if="isOwner" @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+          <button @click="isCreateModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
             <Icon name="heroicons:plus" class="w-5 h-5" />
             <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
           </button>
@@ -151,21 +162,49 @@ const filteredProjets = computed(() => {
       </div>
     </header>
 
-    <section id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      <ProjetCard
-        v-for="p in filteredProjets" :key="p.id"
-        :id="p.id"
-        :reference_code="p.reference_code"
-        :name="p.name"
-        :description="p.description"
-        :status="(p as any).status || 'à faire'"
-        :end_date="(p as any).end_date || ''"
-        :metrics="getProjectMetrics(p.id)"
-        @cardClick="handleProjectClick"
-        @delete="handleDeleteProject"
-        @edit="handleEditProject"
-      />
-    </section>
+    <template v-if="projets && projets.length > 0">
+      <section v-if="filteredProjets.length > 0" id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <ProjetCard
+          v-for="p in filteredProjets" :key="p.id"
+          :id="p.id"
+          :reference_code="p.reference_code"
+          :name="p.name"
+          :description="p.description"
+          :status="(p as any).status || 'à faire'"
+          :end_date="(p as any).end_date || ''"
+          :metrics="getProjectMetrics(p.id)"
+          @cardClick="handleProjectClick"
+          @delete="handleDeleteProject"
+          @edit="handleEditProject"
+        />
+      </section>
+      
+      <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+          <Icon name="heroicons:magnifying-glass" class="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 class="text-lg font-bold text-main dark:text-white mb-2">Aucun projet trouvé</h3>
+        <p class="text-secondary dark:text-gray-400 text-sm">Vos filtres ou votre recherche ne correspondent à aucun projet.</p>
+      </div>
+
+
+    </template>
+
+    <template v-else>
+      <div class="flex flex-col items-center justify-center py-20 mt-10 text-center mx-auto max-w-2xl">
+        <div class="w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
+          <Icon name="heroicons:folder-open" class="w-12 h-12 text-primary" />
+        </div>
+        <h2 class="text-2xl font-bold text-main dark:text-white mb-3">Aucun projet pour le moment</h2>
+        <p class="text-secondary dark:text-gray-400 mb-8 max-w-sm px-4 leading-relaxed">
+          Vous n'avez pas encore de projet dans cette organisation. Créez votre premier projet pour commencer à collaborer.
+        </p>
+        <button @click="isCreateModalOpen = true" class="bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold py-3.5 px-8 rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+          <Icon name="heroicons:plus" class="w-6 h-6" />
+          Créer un nouveau projet
+        </button>
+      </div>
+    </template>
 
     <!-- Create Project Modal -->
     <CreateProjectModal

@@ -15,7 +15,7 @@ interface Notification {
 }
 
 export default function useNotification() {
-  const USE_MOCK_DATA = true; // Set to false to revert to real API
+  const USE_MOCK_DATA = false; // Set to false to revert to real API
 
   const mockNotifications: Notification[] = [
     {
@@ -62,11 +62,12 @@ export default function useNotification() {
         unreadCount.value = notifications.value.filter((n) => !n.read_at).length
         return notifications.value
       }
-      const data = await $api<Notification[]>('/api/notifications', { method: 'GET' })
-      notifications.value = data
+      const rawData = await $api<any>('/api/notifications', { method: 'GET' })
+      const notificationsArray = rawData.data?.data ?? rawData.data ?? rawData ?? []
+      notifications.value = notificationsArray
       // Update unread count from the fetched list
-      unreadCount.value = data.filter((n) => !n.read_at).length
-      return data
+      unreadCount.value = notificationsArray.filter((n: any) => !n.read_at).length
+      return notificationsArray
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
       throw error
@@ -170,7 +171,7 @@ export default function useNotification() {
   /**
    * Start polling for unread count every `intervalMs` milliseconds (default 30s).
    */
-  const startPolling = (intervalMs = 60000) => {
+  const startPolling = (intervalMs = 120000) => {
     stopPolling()
     pollInterval = setInterval(() => {
       if (!USE_MOCK_DATA) {

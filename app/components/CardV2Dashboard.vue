@@ -48,10 +48,10 @@ const donutStyle = computed(() => {
         </div>
 
         <!-- Legend -->
-        <div class="flex items-center justify-between w-full px-2">
-          <div v-for="metric in statusMetrics" :key="metric.label" class="flex flex-col items-center gap-1.5">
-            <div :class="['w-2.5 h-2.5 rounded-full', metric.colorClass]"></div>
-            <span class="text-[11px] text-secondary dark:text-gray-400">{{ metric.percentage }} {{ metric.label }}</span>
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 w-full px-2">
+          <div v-for="metric in statusMetrics" :key="metric.label" class="flex items-center gap-1.5">
+            <div :class="['w-2.5 h-2.5 rounded-full shrink-0', metric.colorClass]"></div>
+            <span class="text-[11px] whitespace-nowrap text-secondary dark:text-gray-400">{{ metric.percentage }} {{ metric.label }}</span>
           </div>
         </div>
       </div>

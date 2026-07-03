@@ -68,7 +68,7 @@ export default function useTasks() {
         method: 'GET',
       })
 
-      const rawTasks = Array.isArray(data) ? data : data.tasks ?? data.data ?? []
+      const rawTasks = Array.isArray(data) ? data : (data.data?.data ?? data.data ?? data.tasks ?? [])
       tasks.value = rawTasks.map(normalizeTask)
       return tasks.value
     } catch (err) {

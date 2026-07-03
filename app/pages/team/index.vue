@@ -1,24 +1,60 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useToast } from '~/composables/useToast'
+
 definePageMeta({
   layout: 'custom'
 })
 
-// MOCK DATA
-const teams = ref([
-  { id: 1, name: 'Développement', description: 'Équipe en charge du développement technique.', members_count: 5 },
-  { id: 2, name: 'Design', description: 'Création des interfaces et de l\'expérience utilisateur.', members_count: 3 },
-])
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
+const { addToast } = useToast()
+
+const teams = ref<any[]>([])
+const isLoading = ref(true)
+
+const fetchTeams = async () => {
+  if (!activeOrganization.value) return;
+  isLoading.value = true;
+  try {
+    const orgId = activeOrganization.value.id;
+    const res = await $api<any>(`/api/organizations/${orgId}/teams`, { method: 'GET' });
+    teams.value = res.data?.data || res.data || [];
+  } catch (err) {
+    console.error('Error fetching teams', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de charger les équipes.' });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchTeams();
+})
 
 const isCreateModalOpen = ref(false)
 const newTeamName = ref('')
 const newTeamDesc = ref('')
 
-const handleCreateTeam = () => {
-  // Mock logic
-  isCreateModalOpen.value = false
-  newTeamName.value = ''
-  newTeamDesc.value = ''
+const handleCreateTeam = async () => {
+  if (!activeOrganization.value || !newTeamName.value) return;
+  try {
+    const orgId = activeOrganization.value.id;
+    const res = await $api<any>(`/api/organizations/${orgId}/teams`, {
+      method: 'POST',
+      body: { name: newTeamName.value }
+    });
+    teams.value.push(res.team);
+    addToast({ type: 'success', title: 'Succès', message: 'Équipe créée avec succès.' });
+    isCreateModalOpen.value = false
+    newTeamName.value = ''
+    newTeamDesc.value = ''
+  } catch (err) {
+    console.error('Error creating team', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer l\'équipe.' });
+  }
 }
+
 </script>
 
 <template>
@@ -30,7 +66,7 @@ const handleCreateTeam = () => {
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les équipes au sein de votre organisation.</p>
       </div>
       <div>
-        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-lg shadow-blue-500/30">
+        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-5 h-5" />
           Nouvelle Équipe
         </button>
@@ -57,19 +93,23 @@ const handleCreateTeam = () => {
         
         <div class="flex items-center justify-between pt-4 border-t border-form-border dark:border-gray-800">
           <div class="flex -space-x-2">
-            <!-- Mock member avatars -->
-            <div v-for="i in Math.min(team.members_count, 3)" :key="i" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300">
-              {{ String.fromCharCode(64 + i) }}
-            </div>
-            <div v-if="team.members_count > 3" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-canvas dark:bg-[#151515] flex items-center justify-center text-[10px] font-bold text-secondary dark:text-gray-400">
-              +{{ team.members_count - 3 }}
+            <template v-if="team.members && team.members.length > 0">
+              <div v-for="member in team.members.slice(0, 3)" :key="member.id" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300 overflow-hidden" :title="member.name">
+                <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" :alt="member.name" class="w-full h-full object-cover" />
+                <span v-else>{{ member.name.charAt(0).toUpperCase() }}</span>
+              </div>
+            </template>
+            <div v-if="(team.members_count || 0) > 3" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-canvas dark:bg-[#151515] flex items-center justify-center text-[10px] font-bold text-secondary dark:text-gray-400">
+              +{{ (team.members_count || 0) - 3 }}
             </div>
           </div>
-          <span class="text-xs font-medium text-secondary dark:text-gray-500">{{ team.members_count }} membres</span>
+          <span class="text-xs font-medium text-secondary dark:text-gray-500">{{ team.members_count || 0 }} {{ (team.members_count || 0) > 1 ? 'membres' : 'membre' }}</span>
         </div>
       </div>
 
     </div>
+
+
 
     <!-- Empty State -->
     <div v-if="teams.length === 0" class="flex flex-col items-center justify-center py-20 px-4">
@@ -78,7 +118,8 @@ const handleCreateTeam = () => {
       </div>
       <h3 class="text-xl font-bold text-main dark:text-white mb-2">Aucune équipe</h3>
       <p class="text-secondary dark:text-gray-400 text-center max-w-sm mb-6">Vous n'avez pas encore créé d'équipe. Créez-en une pour organiser vos membres.</p>
-      <button @click="isCreateModalOpen = true" class="px-6 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/30">
+      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+        <Icon name="heroicons:plus" class="w-6 h-6" />
         Créer une équipe
       </button>
     </div>

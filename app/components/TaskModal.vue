@@ -27,6 +27,8 @@ const { getProjet } = useProjets()
 const { tags, getTags } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
 
 const activeTab = ref('comments')
 
@@ -48,6 +50,28 @@ const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
 const taskSubtasks = ref<any[]>([])
 const taskBannerImage = ref('')
+
+const isAssigneeDropdownOpen = ref(false)
+const taskAssignee = ref<any>(null)
+const orgMembers = ref<any[]>([])
+const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+
+const fetchOrgMembers = async () => {
+  if (!activeOrganization.value) return
+  try {
+    const res = await $api<any>(`/api/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const members = res.data?.data ?? res.data ?? []
+    orgMembers.value = members.map((m: any, i: number) => ({
+      id: m.id,
+      name: m.name,
+      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      color: avatarColors[i % avatarColors.length],
+      profile_picture: m.profile_picture || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch org members for assignee dropdown:', err)
+  }
+}
 
 const setTask = async (id: string | number | null) => {
   if (!id) return
@@ -243,8 +267,10 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
     const createdTask = await createTask(payload)
     taskSubtasks.value.push(createdTask)
     isCreateSubtaskModalOpen.value = false
+    addToast({ title: 'Sous-tâche créée', message: 'La sous-tâche a été ajoutée avec succès.', type: 'success' })
   } catch (err) {
     console.error('Failed to create subtask', err)
+    addToast({ title: 'Erreur', message: 'Impossible de créer la sous-tâche.', type: 'error' })
   }
 }
 
@@ -327,6 +353,7 @@ const resetState = () => {
   isTagDropdownOpen.value = false
   isStatusDropdownOpen.value = false
   isPriorityDropdownOpen.value = false
+  isAssigneeDropdownOpen.value = false
 }
 
 watch(() => props.taskId, async (newVal) => {
@@ -344,8 +371,11 @@ watch(() => props.taskId, async (newVal) => {
 }, { immediate: true })
 
 watch(() => props.isOpen, (newIsOpen) => {
-  if (newIsOpen && props.startInEditMode) {
-    startEditing()
+  if (newIsOpen) {
+    if (props.startInEditMode) {
+      startEditing()
+    }
+    fetchOrgMembers()
   }
 })
 </script>
@@ -545,12 +575,48 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <!-- Property -->
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Assigné à</div>
-                    <div class="col-span-2">
-                      <div class="flex items-center gap-2 mb-1">
-                        <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">SY</div>
-                        <span class="text-main dark:text-gray-300 font-medium">Sarah Yeung</span>
+                    <div class="col-span-2 relative">
+                      <div class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-1 -ml-1 rounded transition-colors group" @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen">
+                        <template v-if="taskAssignee">
+                          <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm" :class="taskAssignee.profile_picture ? '' : taskAssignee.color">
+                            <img v-if="taskAssignee.profile_picture" :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : `http://localhost:8000${taskAssignee.profile_picture}`" class="w-full h-full object-cover" />
+                            <span v-else>{{ taskAssignee.initials }}</span>
+                          </div>
+                          <span class="text-main dark:text-gray-300 font-medium">{{ taskAssignee.name }}</span>
+                        </template>
+                        <template v-else>
+                          <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                            <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                          </div>
+                          <span class="text-secondary dark:text-gray-500 font-medium italic">Non assigné</span>
+                        </template>
+                        <Icon name="heroicons:chevron-down" class="w-3 h-3 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                       </div>
-                      <button class="text-primary dark:text-blue-400 hover:underline text-xs">M'assigner</button>
+                      
+                      <!-- Assignee Dropdown Menu -->
+                      <div v-if="isAssigneeDropdownOpen" @click="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                      <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
+                        <div class="p-2 border-b border-form-border dark:border-gray-800">
+                          <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
+                        </div>
+                        <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
+                          <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = null; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                              <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                            </div> 
+                            <span class="text-secondary dark:text-gray-400">Non assigné</span>
+                          </li>
+                          <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = member; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
+                              <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                              <span v-else>{{ member.initials }}</span>
+                            </div> 
+                            {{ member.name }}
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs" @click.stop="taskAssignee = orgMembers.find(m => m.id === user?.id) || taskAssignee">M'assigner</button>
                     </div>
                   </div>
                   
@@ -607,10 +673,13 @@ watch(() => props.isOpen, (newIsOpen) => {
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
-                    <div class="text-secondary dark:text-gray-500 font-medium">Rapporteur</div>
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Rapporteur</div>
                     <div class="col-span-2 flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">MS</div>
-                      <span class="text-main dark:text-gray-300 font-medium">Marc-Etienne SOSSOU</span>
+                      <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm">
+                        <img v-if="user?.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                        <span v-else>{{ user?.name ? user.name.charAt(0).toUpperCase() : 'M' }}</span>
+                      </div>
+                      <span class="text-main dark:text-gray-300 font-medium">{{ user?.name || 'Moi' }}</span>
                     </div>
                   </div>
                 </div>

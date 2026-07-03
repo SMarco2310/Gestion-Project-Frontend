@@ -7,9 +7,21 @@ definePageMeta({
 
 const route = useRoute();
 const { $api } = useNuxtApp();
+const { user } = useAuth();
+import { useToast } from '~/composables/useToast'
 
 const userProfile = ref<any>(null);
 const isLoading = ref(true);
+
+const handleVerifyEmail = () => {
+    const { addToast } = useToast()
+    addToast({
+        type: 'success',
+        title: 'E-mail de confirmation envoyé',
+        message: 'Veuillez vérifier votre boîte de réception pour confirmer votre adresse e-mail.'
+    })
+    // Note: Backend endpoint integration required here
+}
 
 onMounted(async () => {
     try {
@@ -35,7 +47,7 @@ const formatDate = (dateString?: string) => {
 </script>
 
 <template>
-    <div class="max-w-5xl pt-4 pb-10">
+    <div class="w-full pt-4 pb-10">
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-8 gap-4">
             <div>
@@ -93,8 +105,20 @@ const formatDate = (dateString?: string) => {
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse e-mail</label>
-                        <div class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm shadow-inner">
-                            {{ userProfile?.email }}
+                        <div class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm shadow-inner flex justify-between items-center gap-2">
+                            <span class="truncate">{{ userProfile?.email }}</span>
+                            
+                            <span v-if="userProfile?.email_verified_at" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
+                                Vérifié
+                            </span>
+                            <div v-else class="flex items-center gap-2">
+                                <span class="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
+                                    Non vérifié
+                                </span>
+                                <button v-if="user?.id === userProfile?.id" @click="handleVerifyEmail" class="text-xs font-bold text-primary hover:text-blue-600 dark:hover:text-blue-400 underline whitespace-nowrap ml-2">
+                                    Confirmer l'e-mail
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

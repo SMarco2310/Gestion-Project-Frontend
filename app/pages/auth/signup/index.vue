@@ -21,6 +21,11 @@ const togglePassword = () => {
     showPassword.value = !showPassword.value;
 }
 
+watch(name, () => { if (fieldErrors.value.name) delete fieldErrors.value.name; });
+watch(email, () => { if (fieldErrors.value.email) delete fieldErrors.value.email; });
+watch(password, () => { if (fieldErrors.value.password) delete fieldErrors.value.password; });
+watch(confirmPassword, () => { if (fieldErrors.value.confirmPassword) delete fieldErrors.value.confirmPassword; });
+
 // Client-side validation
 const validateFields = (): boolean => {
   fieldErrors.value = {};
@@ -59,7 +64,7 @@ const handleSignup = async () => {
 
     try {
         await signup(name.value, email.value, password.value);
-        navigateTo('/dashboard');
+        navigateTo('/organizations');
     } catch (error: any) {
         // Parse Laravel validation errors
         if (error?.data?.errors) {
@@ -79,21 +84,21 @@ const handleSignup = async () => {
 </script>
 
 <template>
-  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-4 overflow-y-auto">
+  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8 overflow-y-auto">
     <!-- Background Image spanning the entire screen -->
-    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover fixed" />
+    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover fixed hidden lg:block" />
     
     <!-- Dark Gradient Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 fixed"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 fixed hidden lg:block"></div>
 
     <!-- Top Left Branding -->
     <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
-       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
-       <span class="text-white font-bold text-2xl tracking-wide">Gestion de Projets</span>
+       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
+       <span class="hidden lg:block text-white font-bold text-2xl tracking-wide">Gestion de Projets</span>
     </div>
 
     <!-- Main Content Container -->
-    <div class="relative z-10 w-full max-w-[3000px] min-h-[100dvh] lg:min-h-[calc(100vh-2rem)] flex flex-col lg:flex-row items-center justify-between lg:gap-10">
+    <div class="relative z-10 w-full max-w-[3000px] min-h-[100dvh] lg:min-h-[calc(100vh-4rem)] flex flex-col lg:flex-row items-center justify-between lg:gap-10">
       
       <!-- Left Panel - Text content -->
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
@@ -111,7 +116,7 @@ const handleSignup = async () => {
       </div>
 
       <!-- Right Panel - Large Floating Form Card -->
-      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[100dvh] lg:min-h-[calc(100vh-2rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-none lg:rounded-[1.5rem] lg:neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border-0 lg:border border-white/50 dark:border-white/5">
+      <div class="w-full lg:w-1/2 max-w-[700px] min-h-[100dvh] lg:min-h-[calc(100vh-4rem)] flex flex-col justify-center bg-white dark:bg-[#1D1D1D] rounded-none lg:rounded-[1.5rem] lg:neo-card p-8 sm:p-12 lg:p-16 xl:p-20 lg:ml-auto border-0 lg:border border-white/50 dark:border-white/5">
         
         <div class="w-full space-y-8">
           

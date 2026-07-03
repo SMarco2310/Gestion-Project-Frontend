@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const {logout,user,isOwner}=useAuth()
+const { activeOrganization } = useOrganizations()
+
+const isSidebarCollapsed = useState('sidebarCollapsed', () => false)
 
 const { 
   notifications, 
@@ -33,6 +36,7 @@ const handleLogout= async () =>{
 const isNotifOpen = ref(false)
 const isProfileOpen = ref(false)
 const isMobileMenuOpen = ref(false)
+const isOrgMenuExpanded = ref(false)
 
 const handleNotificationClick = async (notif: any) => {
   if (!notif.read_at) {
@@ -74,13 +78,16 @@ const formatNotifTime = (dateStr: string) => {
 <template>
     <div>
         <!-- Top Horizontal Bar -->
-        <header class="fixed top-0 md:left-80 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800">
+        <header class="fixed top-0 left-0 right-0 h-20 bg-canvas dark:bg-[#1D1D1D] z-40 flex justify-between md:justify-end items-center px-4 md:px-8 border-b md:border-b-0 border-form-border dark:border-gray-800 transition-all duration-300 ease-in-out" :class="isSidebarCollapsed ? 'md:left-20' : 'md:left-64'">
             <!-- Mobile Left Actions (Branding) -->
             <div class="flex md:hidden items-center gap-3">
                 <NuxtLink to="/dashboard" class="flex items-center gap-2">
-                    <img src="/assets/logo_app.png" class="w-8 h-8 object-contain" alt="Logo">
-                    <h1 class="text-xl font-bold text-main dark:text-white tracking-tight leading-tight">
-                        Gestion de Projets
+                    <div class="w-8 h-8 rounded-md shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
+                        <img v-if="activeOrganization" :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
+                        <img v-else src="/assets/logo_app.png" class="w-full h-full object-contain p-1" alt="Logo">
+                    </div>
+                    <h1 class="text-lg font-bold text-main dark:text-white tracking-tight leading-tight truncate max-w-[200px]">
+                        {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
                     </h1>
                 </NuxtLink>
             </div>
@@ -173,22 +180,75 @@ const formatNotifTime = (dateStr: string) => {
         <!-- Left-Aligned Navigation (Stem of the L) -->
         <aside 
             :class="[
-                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] md:w-80 bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0',
+                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0',
+                isSidebarCollapsed ? 'md:w-20' : 'md:w-64',
                 isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
             ]"
         >
             <!-- Banner / Logo Area -->
-            <div class="h-20 md:h-28 flex items-center justify-between gap-4 px-6 shrink-0 border-b border-form-border dark:border-gray-800 md:border-b-0">
-                <NuxtLink to="/dashboard" @click="isMobileMenuOpen = false" class="flex items-center gap-4">
-                    <img src="/assets/logo_app.png" class="w-12 h-10 object-contain" alt="Logo">
-                    <h1 class="text-xl font-bold text-main dark:text-white tracking-tight leading-tight">
-                        Gestion de<br>Projets
-                    </h1>
-                </NuxtLink>
+            <div class="relative h-20 md:h-28 flex items-center justify-between gap-2 px-4 shrink-0 border-b border-form-border dark:border-gray-800 md:border-b-0">
+                <div @click="isOrgMenuExpanded = !isOrgMenuExpanded" class="flex items-center gap-3 overflow-hidden cursor-pointer hover:bg-canvas dark:hover:bg-gray-800/50 p-2 rounded-lg flex-1 transition-colors group">
+                    <div class="w-10 h-10 rounded-lg shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
+                        <template v-if="activeOrganization">
+                            <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                            <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
+                        </template>
+                        <img v-else src="/assets/logo_app.png" class="w-8 h-8 object-contain" alt="Logo">
+                    </div>
+                    <div class="flex flex-col flex-1 overflow-hidden" :class="isSidebarCollapsed ? 'md:hidden' : ''">
+                        <h1 class="text-sm font-bold text-main dark:text-white tracking-tight leading-tight truncate">
+                            {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
+                        </h1>
+                        <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5">Organisation</span>
+                    </div>
+                    <Icon :name="isOrgMenuExpanded ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="w-4 h-4 text-secondary shrink-0 transition-transform group-hover:text-main dark:group-hover:text-white" :class="isSidebarCollapsed ? 'md:hidden' : ''" />
+                </div>
                 <!-- Mobile Close Button inside Sidebar -->
-                <button @click="isMobileMenuOpen = false" class="md:hidden p-2 -mr-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+                <button @click="isMobileMenuOpen = false" class="md:hidden p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white shrink-0">
                     <Icon name="heroicons:x-mark" class="w-6 h-6" />
                 </button>
+
+                <!-- Bubble Overlay Background -->
+                <div v-if="isOrgMenuExpanded" @click="isOrgMenuExpanded = false" class="fixed inset-0 z-40"></div>
+
+                <!-- Organization Bubble Menu -->
+                <div v-if="isOrgMenuExpanded" class="absolute top-4 left-2 right-2 md:left-4 md:right-auto md:w-[224px] bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-800 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
+                    <!-- Replicated Header inside Dropdown -->
+                    <div @click="isOrgMenuExpanded = false" class="flex items-center gap-3 cursor-pointer hover:bg-canvas dark:hover:bg-gray-800/50 p-3 border-b border-form-border dark:border-gray-800 transition-colors">
+                        <div class="w-10 h-10 rounded-lg shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
+                            <template v-if="activeOrganization">
+                                <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                                <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
+                            </template>
+                            <img v-else src="/assets/logo_app.png" class="w-8 h-8 object-contain" alt="Logo">
+                        </div>
+                        <div class="flex flex-col flex-1 overflow-hidden">
+                            <h1 class="text-sm font-bold text-main dark:text-white tracking-tight leading-tight truncate">
+                                {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
+                            </h1>
+                            <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5">Organisation actuelle</span>
+                        </div>
+                        <Icon name="heroicons:chevron-up" class="w-4 h-4 text-secondary shrink-0" />
+                    </div>
+                    
+                    <div class="p-2 flex flex-col gap-1">
+                        <NuxtLink to="/organization" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                            <Icon name="heroicons:chart-bar" class="w-4 h-4 text-secondary" />
+                            Vue d'ensemble
+                        </NuxtLink>
+                        <NuxtLink to="/organization/settings" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                            <Icon name="heroicons:cog-8-tooth" class="w-4 h-4 text-secondary" />
+                            Paramètres
+                        </NuxtLink>
+                    </div>
+
+                    <div class="border-t border-form-border dark:border-gray-800 p-2 bg-canvas/30 dark:bg-black/10">
+                        <NuxtLink to="/organizations" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3 text-main dark:text-gray-200">
+                            <Icon name="heroicons:building-office-2" class="w-4 h-4 text-secondary" />
+                            Toutes les organisations
+                        </NuxtLink>
+                    </div>
+                </div>
             </div>
 
             <nav class="flex flex-col gap-2 p-4 pt-6 overflow-y-auto custom-scrollbar">
@@ -198,8 +258,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:home" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Tableau de bord</span>
+                    <Icon name="heroicons:home" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tableau de bord</span>
                 </NuxtLink>
                 <NuxtLink to="/projets" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -207,8 +267,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Projets</span>
+                    <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Projets</span>
                 </NuxtLink>
                 <NuxtLink to="/tasks" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -216,8 +276,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Tâches</span>
+                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tâches</span>
                 </NuxtLink>
                 <NuxtLink to="/calendar" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -225,8 +285,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Planning</span>
+                    <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Planning</span>
                 </NuxtLink>
                 <NuxtLink to="/team" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -234,17 +294,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Équipe</span>
-                </NuxtLink>
-                <NuxtLink to="/organization" @click="isMobileMenuOpen = false" :class="[
-                    'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
-                    isActive('/organization') && !isActive('/organizations')
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
-                        : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
-                ]">
-                    <Icon name="heroicons:building-office" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Organisation</span>
+                    <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Équipe</span>
                 </NuxtLink>
                 <NuxtLink to="/notifications" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -252,9 +303,9 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Notifications</span>
-                    <span v-if="unreadCount > 0" class="ml-auto bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{{ unreadCount }}</span>
+                    <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Notifications</span>
+                    <span v-if="unreadCount > 0" class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full" :class="isSidebarCollapsed ? 'absolute top-2 right-2 md:top-1 md:right-1' : 'ml-auto'">{{ unreadCount }}</span>
                 </NuxtLink>
                 <NuxtLink v-if="isOwner" to="/settings" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
@@ -262,8 +313,8 @@ const formatNotifTime = (dateStr: string) => {
                         ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:cog-6-tooth" class="w-5 h-5 relative z-10 drop-shadow-md" />
-                    <span class="relative z-10 tracking-wide">Paramètres</span>
+                    <Icon name="heroicons:cog-6-tooth" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Paramètres</span>
                 </NuxtLink>
             </nav>
             
@@ -286,9 +337,13 @@ const formatNotifTime = (dateStr: string) => {
                 </div>
 
                 <NuxtLink to="/auth/login" @click="handleLogout" class="w-full px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 group">
-                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-                    <span class="tracking-wide font-medium">Déconnexion</span>
+                    <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 transition-transform group-hover:-translate-x-1 shrink-0" />
+                    <span class="tracking-wide font-medium" :class="isSidebarCollapsed ? 'md:hidden' : ''">Déconnexion</span>
                 </NuxtLink>
+
+                <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="hidden md:flex p-2 mt-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors rounded-xl hover:bg-canvas dark:hover:bg-gray-800 justify-center">
+                    <Icon :name="isSidebarCollapsed ? 'heroicons:chevron-double-right' : 'heroicons:chevron-double-left'" class="w-5 h-5" />
+                </button>
             </div>
         </aside>
     </div>

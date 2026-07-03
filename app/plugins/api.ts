@@ -2,7 +2,7 @@
 export default defineNuxtPlugin(() => {
   const token = useCookie('auth_token')
 
-  const USE_MOCK_DATA = true; // Set to false to revert to real API
+  const USE_MOCK_DATA = false; // Set to false to revert to real API
 
   const mockUser = {
     id: 1, name: 'Test User', email: 'test@example.com', bio: 'Mocked user profile', profile_picture: '', role: 'member' // Change to 'owner' to test owner features

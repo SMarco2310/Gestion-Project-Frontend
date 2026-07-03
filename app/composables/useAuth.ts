@@ -109,7 +109,7 @@ export default function useAuth() {
     const { $api } = useNuxtApp()
 
     try {
-      const data = await $api<{ user: User; message: string }>('/api/update', {
+      const data = await $api<{ user: User; message: string }>('/api/users/profile', {
         method: 'PUT',
         body: { name, email, bio },
         headers: {Authorization: `Bearer ${token.value}`},

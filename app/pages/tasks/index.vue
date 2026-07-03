@@ -116,11 +116,13 @@ const filterText = ref('')
 const selectedProjects = ref<(string | number)[]>([])
 const selectedPriorities = ref<(string | number)[]>([])
 const selectedTags = ref<(string | number)[]>([])
+const selectedDateSort = ref('recent')
 
-const handleFilterUpdate = (filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags?: (string | number)[] }) => {
+const handleFilterUpdate = (filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags?: (string | number)[], dateSort?: string }) => {
   selectedProjects.value = filters.projects
   selectedPriorities.value = filters.priorities
   selectedTags.value = filters.tags || []
+  selectedDateSort.value = filters.dateSort || 'recent'
 }
 
 const filteredTasks = computed(() => {
@@ -146,6 +148,13 @@ const filteredTasks = computed(() => {
       (t.reference_code && t.reference_code.toLowerCase().includes(searchTerm))
     )
   }
+
+  // Apply sorting
+  result = [...result].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
+    return selectedDateSort.value === 'recent' ? dateB - dateA : dateA - dateB
+  })
 
   return result
 })

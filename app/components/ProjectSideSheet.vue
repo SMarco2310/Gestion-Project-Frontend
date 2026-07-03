@@ -46,20 +46,11 @@ const projectTasks = ref<any[]>([])
 const isAddDropdownOpen = ref(false)
 const assignSearchQuery = ref('')
 
-const assignedMembers = ref([
-  { id: 1, name: 'Alice Smith', email: 'alice@example.com' }
-])
-const assignedTeams = ref([
-  { id: 1, name: 'Développement' }
-])
+const assignedMembers = ref<any[]>([])
+const assignedTeams = ref<any[]>([])
 
-const availableMembers = ref([
-  { id: 2, name: 'Bob Jones', email: 'bob@example.com' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com' }
-])
-const availableTeams = ref([
-  { id: 2, name: 'Design' }
-])
+const availableMembers = ref<any[]>([])
+const availableTeams = ref<any[]>([])
 
 const filteredAssignees = computed(() => {
   const query = assignSearchQuery.value.toLowerCase()

@@ -4,7 +4,7 @@ const {user,updateProfile,logout,uploadProfilePicture}=useAuth();
 
 const router = useRouter();
 definePageMeta({
-    layout: "custom",
+    layout: false,
 });
 
 
@@ -83,7 +83,17 @@ const formatDate = (dateString?: string) => {
 </script>
 
 <template>
-    <div class="max-w-5xl pt-4 pb-10">
+  <div class="relative min-h-[100dvh] flex flex-col items-center bg-canvas dark:bg-[#151515] p-4 sm:p-8">
+    
+    <!-- Top Left Return Button -->
+    <div class="absolute top-8 left-8 z-20">
+      <button @click="router.back()" class="flex items-center gap-2 text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors">
+        <Icon name="heroicons:arrow-left" class="w-5 h-5" />
+        <span class="font-bold text-lg">Retour</span>
+      </button>
+    </div>
+
+    <div class="w-full max-w-5xl pt-16 pb-10">
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-8 gap-4">
             <div>
@@ -172,4 +182,5 @@ const formatDate = (dateString?: string) => {
             @close="isPasswordModalOpen = false"
         />
     </div>
+  </div>
 </template>

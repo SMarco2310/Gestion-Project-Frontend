@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useToast } from '~/composables/useToast'
 
 definePageMeta({
   layout: 'custom'
@@ -8,73 +9,121 @@ definePageMeta({
 
 const route = useRoute()
 const { isOwner } = useAuth()
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
 const teamId = route.params.id
+
+const { addToast } = useToast()
+
+const team = ref<any>({ name: '', description: '', created_at: '' })
+const teamMembers = ref<any[]>([])
+const allOrgMembers = ref<any[]>([])
+const isLoading = ref(true)
+
+const fetchTeamData = async () => {
+  if (!activeOrganization.value) return;
+  isLoading.value = true;
+  try {
+    const orgId = activeOrganization.value.id;
+    const res = await $api<any>(`/api/organizations/${orgId}/teams/${teamId}`, { method: 'GET' });
+    team.value = res.team;
+    teamMembers.value = res.team.members || [];
+    
+    // Fetch org members for invitation
+    const membersRes = await $api<any>(`/api/organizations/${orgId}/members`, { method: 'GET' });
+    allOrgMembers.value = membersRes.data?.data || membersRes.data || [];
+  } catch (err) {
+    console.error('Error fetching team data', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de charger l\'équipe.' });
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchTeamData();
+})
 
 // --- Edit Role State ---
 const isEditRoleModalOpen = ref(false)
 const selectedMemberForRole = ref<any>(null)
 
 const openEditRoleModal = (member: any) => {
-  selectedMemberForRole.value = { ...member }
+  selectedMemberForRole.value = { ...member, role: member.pivot?.role || 'membre' }
   isEditRoleModalOpen.value = true
 }
 
-const updateMemberRole = () => {
-  if (selectedMemberForRole.value) {
+const updateMemberRole = async () => {
+  if (!selectedMemberForRole.value || !activeOrganization.value) return;
+  try {
+    const orgId = activeOrganization.value.id;
+    await $api(`/api/organizations/${orgId}/teams/${teamId}/members/${selectedMemberForRole.value.id}`, {
+      method: 'PUT',
+      body: { role: selectedMemberForRole.value.role }
+    });
     const index = teamMembers.value.findIndex((m: any) => m.id === selectedMemberForRole.value.id)
     if (index !== -1) {
-      const memberToUpdate = teamMembers.value[index];
-      if (memberToUpdate) {
-        memberToUpdate.role = selectedMemberForRole.value.role;
+      if (teamMembers.value[index].pivot) {
+        teamMembers.value[index].pivot.role = selectedMemberForRole.value.role;
       }
     }
+    addToast({ type: 'success', title: 'Succès', message: 'Rôle mis à jour.' });
+  } catch (err) {
+    console.error('Error updating role', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de mettre à jour le rôle.' });
+  } finally {
+    isEditRoleModalOpen.value = false
   }
-  isEditRoleModalOpen.value = false
 }
-// -----------------------
 
-// MOCK DATA for Team Detail
-const team = ref({
-  id: Number(teamId),
-  name: teamId == '1' ? 'Développement' : (teamId == '2' ? 'Design' : 'Équipe ' + teamId),
-  description: teamId == '1' ? 'Équipe en charge du développement technique.' : 'Création des interfaces et de l\'expérience utilisateur.',
-  created_at: '2025-01-01',
-})
+const removeTeamMember = async (memberId: number) => {
+  if (!activeOrganization.value) return;
+  try {
+    const orgId = activeOrganization.value.id;
+    await $api(`/api/organizations/${orgId}/teams/${teamId}/members/${memberId}`, { method: 'DELETE' });
+    teamMembers.value = teamMembers.value.filter((m: any) => m.id !== memberId);
+    addToast({ type: 'success', title: 'Succès', message: 'Membre retiré de l\'équipe.' });
+  } catch (err) {
+    console.error('Error removing member', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de retirer le membre.' });
+  }
+}
 
-const teamMembers = ref([
-  { id: 1, name: 'Alice Smith', email: 'alice@example.com', role: 'Team Lead', joined_at: '2025-01-01' },
-  { id: 2, name: 'Bob Jones', email: 'bob@example.com', role: 'Membre', joined_at: '2025-02-15' },
-])
+
 
 // Edit Team Info
 const isEditModalOpen = ref(false)
 const editTeamForm = ref({ name: '', description: '' })
 
 const openEditModal = () => {
-  editTeamForm.value = { name: team.value.name, description: team.value.description }
+  editTeamForm.value = { name: team.value.name, description: team.value.description || '' }
   isEditModalOpen.value = true
 }
 
-const handleEditTeam = () => {
-  team.value.name = editTeamForm.value.name
-  team.value.description = editTeamForm.value.description
-  isEditModalOpen.value = false
+const handleEditTeam = async () => {
+  if (!activeOrganization.value) return;
+  try {
+    const orgId = activeOrganization.value.id;
+    const res = await $api<any>(`/api/organizations/${orgId}/teams/${teamId}`, {
+      method: 'PUT',
+      body: editTeamForm.value
+    });
+    team.value.name = editTeamForm.value.name;
+    team.value.description = editTeamForm.value.description;
+    addToast({ type: 'success', title: 'Succès', message: 'Équipe modifiée.' });
+  } catch (err) {
+    console.error('Error editing team', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de modifier l\'équipe.' });
+  } finally {
+    isEditModalOpen.value = false
+  }
 }
 
 // Add Member / Invite Logic
 const isAddMemberModalOpen = ref(false)
 const searchQuery = ref('')
-const selectedRole = ref('Membre')
+const selectedRole = ref('membre')
 
-// Mock all org members (some might already be in team)
-const allOrgMembers = ref([
-  { id: 1, name: 'Alice Smith', email: 'alice@example.com' },
-  { id: 2, name: 'Bob Jones', email: 'bob@example.com' },
-  { id: 3, name: 'Charlie Brown', email: 'charlie@example.com' },
-  { id: 4, name: 'David Lee', email: 'david@example.com' },
-])
-
-// Don't show members already in the team
 const availableOrgMembers = computed(() => {
   return allOrgMembers.value.filter(orgM => !teamMembers.value.some(tm => tm.id === orgM.id))
 })
@@ -93,28 +142,22 @@ const isEmailQuery = computed(() => {
 })
 
 const handleAddMember = (member: any) => {
+  // Mock adding to local list since there's no backend endpoint to add to team
   teamMembers.value.push({
     id: member.id,
     name: member.name,
     email: member.email,
-    role: selectedRole.value,
-    joined_at: new Date().toISOString()
+    pivot: { role: selectedRole.value, joined_at: new Date().toISOString() }
   })
   isAddMemberModalOpen.value = false
   searchQuery.value = ''
+  addToast({ type: 'success', title: 'Succès', message: 'Membre ajouté.' });
 }
 
 const handleInviteNew = () => {
   if (!isEmailQuery.value) return
   // Mock invite logic
-  console.log('Inviting new user to organization & team:', searchQuery.value)
-  teamMembers.value.push({
-    id: Date.now(),
-    name: 'Invitation Pending',
-    email: searchQuery.value,
-    role: selectedRole.value,
-    joined_at: new Date().toISOString()
-  })
+  addToast({ type: 'success', title: 'Succès', message: `Invitation envoyée à ${searchQuery.value}.` });
   isAddMemberModalOpen.value = false
   searchQuery.value = ''
 }
@@ -133,7 +176,7 @@ const handleInviteNew = () => {
         </div>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">{{ team.description }}</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 self-end sm:self-auto">
         <button @click="openEditModal" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
           <Icon name="heroicons:pencil-square" class="w-5 h-5" />
           Modifier
@@ -145,8 +188,8 @@ const handleInviteNew = () => {
     <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden mt-8">
       <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
         <h3 class="text-xl font-bold text-main dark:text-white">Membres de l'équipe</h3>
-        <button @click="isAddMemberModalOpen = true" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
-          <Icon name="heroicons:user-plus" class="w-4 h-4" />
+        <button @click="isAddMemberModalOpen = true" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
+          <Icon name="heroicons:user-plus" class="w-5 h-5" />
           Ajouter un membre
         </button>
       </div>
@@ -165,32 +208,32 @@ const handleInviteNew = () => {
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300">
-                    {{ member.name.charAt(0) }}
+                    {{ member?.name?.charAt(0)?.toUpperCase() || 'U' }}
                   </div>
                   <div class="flex flex-col">
-                    <span class="font-medium text-main dark:text-white">{{ member.name }}</span>
+                    <span class="font-medium text-main dark:text-white">{{ member?.name || 'Utilisateur' }}</span>
                     <span class="text-xs">{{ member.email }}</span>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4">
                 <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="{
-                  'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': member.role.toLowerCase() === 'team lead',
-                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': member.role.toLowerCase() === 'admin',
-                  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': member.role.toLowerCase() === 'membre'
+                  'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': (member.pivot?.role || 'membre').toLowerCase() === 'team_lead',
+                  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': (member.pivot?.role || 'membre').toLowerCase() === 'admin',
+                  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': (member.pivot?.role || 'membre').toLowerCase() === 'membre'
                 }">
-                  {{ member.role }}
+                  {{ (member.pivot?.role || 'membre') === 'team_lead' ? 'Team Lead' : 'Membre' }}
                 </span>
               </td>
               <td class="px-6 py-4 hidden md:table-cell">
-                {{ new Date(member.joined_at).toLocaleDateString('fr-FR') }}
+                {{ member.pivot?.joined_at ? new Date(member.pivot.joined_at).toLocaleDateString('fr-FR') : '-' }}
               </td>
               <td class="px-6 py-4 text-right">
                 <div class="flex items-center justify-end gap-1">
                   <button class="p-2 text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier le rôle" @click.stop="openEditRoleModal(member)">
                     <Icon name="heroicons:pencil" class="w-5 h-5" />
                   </button>
-                  <button class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Retirer de l'équipe" @click.stop="teamMembers = teamMembers.filter(m => m.id !== member.id)">
+                  <button class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Retirer de l'équipe" @click.stop="removeTeamMember(member.id)">
                     <Icon name="heroicons:trash" class="w-5 h-5" />
                   </button>
                 </div>
@@ -199,7 +242,8 @@ const handleInviteNew = () => {
           </tbody>
         </table>
       </div>
-    </div>
+      
+
 
     <!-- Edit Team Modal -->
     <div v-if="isEditModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -230,6 +274,7 @@ const handleInviteNew = () => {
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Add Member Modal with Search & Invite logic -->
     <div v-if="isAddMemberModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -252,8 +297,8 @@ const handleInviteNew = () => {
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle dans l'équipe</label>
             <select v-model="selectedRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="Membre">Membre</option>
-              <option value="Team Lead">Team Lead</option>
+              <option value="membre">Membre</option>
+              <option value="team_lead">Team Lead</option>
             </select>
           </div>
 
@@ -306,9 +351,8 @@ const handleInviteNew = () => {
             </p>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
             <select v-model="selectedMemberForRole.role" class="w-full px-4 py-2.5 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="Membre">Membre</option>
-              <option value="Team Lead">Team Lead</option>
-              <option value="Admin">Admin</option>
+              <option value="membre">Membre</option>
+              <option value="team_lead">Team Lead</option>
             </select>
           </div>
         </div>

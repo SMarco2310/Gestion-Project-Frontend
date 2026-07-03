@@ -10,6 +10,7 @@ export interface FilterOption {
 }
 
 const props = defineProps({
+  showDateSort: { type: Boolean, default: true },
   showPriority: { type: Boolean, default: true },
   showProjects: { type: Boolean, default: false },
   showStatus: { type: Boolean, default: false },
@@ -37,13 +38,14 @@ const props = defineProps({
 })
 
 const emit = defineEmits<{
-  (e: 'update:filters', filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags: (string | number)[] }): void
+  (e: 'update:filters', filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags: (string | number)[], dateSort: string }): void
 }>()
 
 const selectedPriorities = ref<(string | number)[]>([])
 const selectedProjects = ref<(string | number)[]>([])
 const selectedStatuses = ref<(string | number)[]>([])
 const selectedTags = ref<(string | number)[]>([])
+const selectedDateSort = ref('recent') // default to recent
 
 const togglePriority = (id: string | number) => {
   const index = selectedPriorities.value.indexOf(id)
@@ -73,12 +75,18 @@ const toggleTag = (id: string | number) => {
   emitFilters()
 }
 
+const setDateSort = (sortOption: string) => {
+  selectedDateSort.value = sortOption
+  emitFilters()
+}
+
 const emitFilters = () => {
   emit('update:filters', {
     priorities: selectedPriorities.value,
     projects: selectedProjects.value,
     statuses: selectedStatuses.value,
-    tags: selectedTags.value
+    tags: selectedTags.value,
+    dateSort: selectedDateSort.value
   })
 }
 
@@ -123,6 +131,25 @@ onUnmounted(() => {
     >
       <div v-if="isOpen" class="neo-card absolute right-0 mt-2 w-64 max-h-96 overflow-y-auto custom-scrollbar bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-lg z-50 flex flex-col divide-y divide-gray-200 dark:divide-gray-800">
         
+        <!-- Date Sort -->
+        <div v-if="showDateSort" class="p-3">
+          <h3 class="text-xs font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Trier par date</h3>
+          <div class="flex flex-col gap-2">
+            <label class="flex items-center gap-2 cursor-pointer group" @click.prevent="setDateSort('recent')">
+              <div class="relative flex items-center justify-center w-4 h-4 rounded-full border bg-canvas dark:bg-[#2A2A2D] group-hover:border-primary transition-colors" :class="selectedDateSort === 'recent' ? 'border-primary dark:border-blue-500 bg-primary dark:bg-blue-500 text-white' : 'border-form-border dark:border-gray-600'">
+                <div v-if="selectedDateSort === 'recent'" class="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+              <span class="text-sm font-medium text-main dark:text-gray-300">Plus récent</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer group" @click.prevent="setDateSort('oldest')">
+              <div class="relative flex items-center justify-center w-4 h-4 rounded-full border bg-canvas dark:bg-[#2A2A2D] group-hover:border-primary transition-colors" :class="selectedDateSort === 'oldest' ? 'border-primary dark:border-blue-500 bg-primary dark:bg-blue-500 text-white' : 'border-form-border dark:border-gray-600'">
+                <div v-if="selectedDateSort === 'oldest'" class="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+              <span class="text-sm font-medium text-main dark:text-gray-300">Plus ancien</span>
+            </label>
+          </div>
+        </div>
+
         <!-- Priority Filter -->
         <div v-if="showPriority" class="p-3">
           <h3 class="text-xs font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Priorité</h3>

@@ -6,8 +6,9 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint', '@nuxt/icon'],
   css: ['~/assets/css/main.css'],
   app: {
-    pageTransition: { name: 'fade', mode: 'out-in' },
-    layoutTransition: { name: 'fade', mode: 'out-in' }
+    // Transitions disabled to fix page freezing bugs on route change
+    pageTransition: false,
+    layoutTransition: false
   },
   runtimeConfig: {
     public: {

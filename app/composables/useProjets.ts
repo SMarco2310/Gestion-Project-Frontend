@@ -26,12 +26,12 @@ export default function useProjets() {
     const getProjets = async ()=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{projets:[],success:boolean}>('/api/projets',{
+            const data = await $api<any>('/api/projets',{
                 method:'GET'
             });
 
-            projets.value=data.projets;
-            return data.projets
+            projets.value = data.data?.data ?? data.data ?? data.projets ?? [];
+            return projets.value;
         }catch(error){
             console.error(error)
                 throw error
@@ -46,7 +46,7 @@ export default function useProjets() {
                 method:'GET'
             });
 
-            return data.projet ?? data
+            return data.data ?? data.projet ?? data;
         }catch(error){
             console.error(error)
                 throw error
@@ -56,19 +56,19 @@ export default function useProjets() {
 
     // create projet
 
-    const createProjet = async (name:string,reference_code:string,description:string,status:string,user_id:number,start_date:string|Date,end_date:string|Date)=>{
+    const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date)=>{
         try{
             const { $api } = useNuxtApp();
+            const { activeOrganization } = useOrganizations();
             const data = await $api<{projet:Projet,success:boolean}>(`/api/projets`,{
                 method:'POST',
                 body:{
                    name: name,
-                   reference_code:reference_code,
                    description:description,
                    status:status,
-                   user_id:user_id,
                    start_date:start_date,
                    end_date:end_date,
+                   organization_id: activeOrganization.value?.id
                 }
             });
 
@@ -112,26 +112,16 @@ export default function useProjets() {
     const deleteProjet = async (id:number|string|any)=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{message:string}>(`/api/projets/${id}`,{
+            const data = await $api<{message:string,success:boolean}>(`/api/projets/${id}`,{
                 method:"DELETE"
             });
-
-                projets.value = projets.value.filter((p) => String(p.id) !== String(id));
-                return data.message;
+            projets.value = projets.value.filter((p) => String(p.id) !== String(id));
+            return data.message ?? data.success;
         }catch(error){
             console.error(error)
             throw error
         }
-
-        
-    }
-
-
-
-
-
-
-    
+    }   
 
     return {
         projets,

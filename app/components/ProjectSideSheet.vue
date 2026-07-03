@@ -4,6 +4,8 @@ import useProjets from '~/composables/useProjets'
 import useTasks from '~/composables/useTasks'
 import { useToast } from '~/composables/useToast'
 
+const { isOwner } = useAuth()
+
 const props = defineProps<{
   isOpen: boolean
   projectId?: number|null|any
@@ -41,6 +43,37 @@ const doneTasks = ref(0)
 const tasksProgress = ref(0)
 const projectTasks = ref<any[]>([])
 
+const isAddDropdownOpen = ref(false)
+const assignSearchQuery = ref('')
+
+const assignedMembers = ref<any[]>([])
+const assignedTeams = ref<any[]>([])
+
+const availableMembers = ref<any[]>([])
+const availableTeams = ref<any[]>([])
+
+const filteredAssignees = computed(() => {
+  const query = assignSearchQuery.value.toLowerCase()
+  return {
+    members: availableMembers.value.filter(m => m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query)),
+    teams: availableTeams.value.filter(t => t.name.toLowerCase().includes(query))
+  }
+})
+
+const assignMember = (member: any) => {
+  assignedMembers.value.push(member)
+  availableMembers.value = availableMembers.value.filter(m => m.id !== member.id)
+  isAddDropdownOpen.value = false
+  assignSearchQuery.value = ''
+}
+
+const assignTeam = (team: any) => {
+  assignedTeams.value.push(team)
+  availableTeams.value = availableTeams.value.filter(t => t.id !== team.id)
+  isAddDropdownOpen.value = false
+  assignSearchQuery.value = ''
+}
+
 const formatDate = (dateString: string) => {
   if (!dateString) return 'Non définie'
   const date = new Date(dateString)
@@ -58,7 +91,7 @@ const fetchProject = async (id: number | string | null) => {
     if (projet) {
       projectTitle.value = projet.name || 'Sans titre'
       projectDescription.value = projet.description || 'Ajouter une description...'
-      projectRef.value = projet.reference_code || `PROJ-${id}`
+      projectRef.value = projet.reference_code || `PRJ-${String(id).substring(0, 8)}`
       projectStartDate.value = (projet as any).start_date || ''
       projectEndDate.value = (projet as any).end_date || ''
       
@@ -274,6 +307,77 @@ const updateStatus = async (status: string) => {
             <textarea v-else v-model="editDescription" class="w-full h-32 p-3 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
           </div>
 
+          <!-- Équipe du projet -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
+              <div class="relative" v-if="isOwner">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-primary dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
+                  <Icon name="heroicons:plus" class="w-4 h-4" />
+                  Ajouter
+                </button>
+                
+                <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                <div v-if="isAddDropdownOpen" class="absolute right-0 top-10 mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[300px] overflow-hidden">
+                  <div class="p-2 border-b border-form-border dark:border-gray-800 shrink-0">
+                    <input v-model="assignSearchQuery" type="text" placeholder="Rechercher..." class="w-full bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 rounded px-3 py-2 text-sm text-main dark:text-white focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div class="overflow-y-auto custom-scrollbar flex-1 p-1">
+                    <div v-if="filteredAssignees.teams.length > 0">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipes</div>
+                      <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
+                        <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                          <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
+                        </div>
+                        <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.members.length > 0" :class="{'mt-2 pt-2 border-t border-form-border dark:border-gray-800': filteredAssignees.teams.length > 0}">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Membres</div>
+                      <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
+                        <div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[10px] shrink-0">
+                          {{ member.name.charAt(0) }}
+                        </div>
+                        <div class="flex flex-col truncate">
+                          <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ member.name }}</span>
+                        </div>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.teams.length === 0 && filteredAssignees.members.length === 0" class="p-4 text-center text-xs text-secondary dark:text-gray-500">
+                      Aucun résultat trouvé
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2">
+              <!-- Assigned Teams -->
+              <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm font-medium">
+                <Icon name="heroicons:user-group" class="w-4 h-4" />
+                {{ team.name }}
+                <button v-if="isOwner" @click="assignedTeams = assignedTeams.filter(t => t.id !== team.id); availableTeams.push(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-1">
+                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                </button>
+              </div>
+              
+              <!-- Assigned Members -->
+              <div v-for="member in assignedMembers" :key="'m-'+member.id" @click="navigateTo(`/profile/${member.id}`)" class="flex items-center gap-2 px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-main dark:text-gray-300 border border-form-border dark:border-gray-800 rounded-lg text-sm font-medium cursor-pointer hover:border-primary dark:hover:border-blue-500/50 transition-colors group">
+                <div class="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[8px] font-bold shrink-0">
+                  {{ member.name.charAt(0) }}
+                </div>
+                <span class="group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">{{ member.name }}</span>
+                <button v-if="isOwner" @click.stop="assignedMembers = assignedMembers.filter(m => m.id !== member.id); availableMembers.push(member)" class="hover:text-red-500 dark:hover:text-red-400 ml-1 text-secondary dark:text-gray-500 transition-colors">
+                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                </button>
+              </div>
+              
+              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic">
+                Aucun membre ou équipe assigné.
+              </div>
+            </div>
+          </div>
+
           <!-- Progress -->
           <div class="mb-8 p-5 rounded-xl neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224]">
             <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Progression globale</h3>
@@ -315,9 +419,11 @@ const updateStatus = async (status: string) => {
           <div class="mb-8">
             <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Tâches du projet</h3>
             <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
-              <div
+              <NuxtLink
                 v-for="task in projectTasks" :key="task.id"
-                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group"
+                :to="`/tasks/${task.id}`"
+                @click="close"
+                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer"
               >
                 <div class="flex items-center gap-3 overflow-hidden">
                   <div
@@ -348,7 +454,7 @@ const updateStatus = async (status: string) => {
                   >{{ task.status }}</span>
                   <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>
                 </div>
-              </div>
+              </NuxtLink>
             </div>
             <div v-else class="text-sm text-secondary dark:text-gray-500 p-4 border border-dashed border-form-border dark:border-gray-800 rounded-lg text-center bg-canvas dark:bg-transparent">
               Aucune tâche dans ce projet.

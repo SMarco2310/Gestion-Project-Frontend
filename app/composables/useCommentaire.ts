@@ -11,7 +11,6 @@ interface Commentaire {
 interface CommentairePayload {
   content: string
   tache_id: number | string | null
-  user_id?: number | string | null
 }
 
 export default function useCommentaire() {
@@ -38,6 +37,7 @@ export default function useCommentaire() {
   const getCommentaires = async (tacheId?: number | string | null) => {
     isLoading.value = true
     error.value = null
+    commentaires.value = []
 
     const query = tacheId ? `?tache_id=${tacheId}` : ''
 

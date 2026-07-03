@@ -7,6 +7,8 @@ interface User {
   email_verified_at: string
   created_at: string
   updated_at: string
+  profile_picture?: string
+  role?: string // e.g. 'owner', 'member', 'admin'
 }
 
 export default function useAuth() {
@@ -19,9 +21,20 @@ export default function useAuth() {
   })
 
   const isAuthenticated = computed(() => Boolean(token.value))
+  
+  // Basic RBAC properties
+  const isOwner = computed(() => user.value?.role === 'owner')
+  const isMember = computed(() => user.value?.role === 'member')
+
+  const formatUser = (u: User | null) => {
+    if (u && u.profile_picture && !u.profile_picture.startsWith('http')) {
+      u.profile_picture = `http://localhost:8000${u.profile_picture}`
+    }
+    return u
+  }
 
   const setAuth = (authUser: User | null, authToken: string | null) => {
-    user.value = authUser
+    user.value = formatUser(authUser)
     token.value = authToken
   }
 
@@ -79,7 +92,7 @@ export default function useAuth() {
         headers: {Authorization: `Bearer ${token.value}`},
       })
 
-      user.value = data.user
+      user.value = formatUser(data.user)
       return data
     } catch (error) {
       console.error('Failed to fetch profile:', error)
@@ -96,16 +109,40 @@ export default function useAuth() {
     const { $api } = useNuxtApp()
 
     try {
-      const data = await $api<{ user: User; message: string }>('/api/update', {
+      const data = await $api<{ user: User; message: string }>('/api/users/profile', {
         method: 'PUT',
         body: { name, email, bio },
         headers: {Authorization: `Bearer ${token.value}`},
       })
 
-      user.value = data.user
+      user.value = formatUser(data.user)
       return data
     } catch (error) {
       console.error('Failed to update profile:', error)
+      throw error
+    }
+  }
+
+  const uploadProfilePicture = async (file: File) => {
+    if (!token.value) {
+      return null
+    }
+
+    const { $api } = useNuxtApp()
+    const formData = new FormData()
+    formData.append('profile_picture', file)
+
+    try {
+      const data = await $api<{ user: User; message: string }>('/api/users/profile-picture', {
+        method: 'POST',
+        body: formData,
+        headers: { Authorization: `Bearer ${token.value}` },
+      })
+
+      user.value = formatUser(data.user)
+      return data
+    } catch (error) {
+      console.error('Failed to upload profile picture:', error)
       throw error
     }
   }
@@ -143,16 +180,61 @@ export default function useAuth() {
     return data.message
   }
 
+  const verifyEmail = async (verifyUrl: string) => {
+    const { $api } = useNuxtApp()
+    try {
+      // The verifyUrl might be a full URL, we extract the path
+      let endpoint = verifyUrl;
+      try {
+          const urlObj = new URL(verifyUrl);
+          endpoint = urlObj.pathname + urlObj.search;
+      } catch (e) {
+          // If it's not a full URL, use it as is
+      }
+      
+      const data = await $api<{ message: string, success: boolean }>(endpoint, {
+        method: 'GET',
+      })
+      // If successful, update the user state
+      if (user.value) {
+        user.value.email_verified_at = new Date().toISOString()
+      }
+      return data
+    } catch (error) {
+      console.error('Email verification failed:', error)
+      throw error
+    }
+  }
+
+  const resendVerificationEmail = async () => {
+    const { $api } = useNuxtApp()
+    try {
+      const data = await $api<{ message: string, success: boolean }>('/api/email/verification-notification', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token.value}` }
+      })
+      return data
+    } catch (error) {
+      console.error('Failed to resend verification email:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     token,
     isAuthenticated,
+    isOwner,
+    isMember,
     login,
     signup,
     logout,
     getProfile,
     updateProfile,
+    uploadProfilePicture,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
   }
 }

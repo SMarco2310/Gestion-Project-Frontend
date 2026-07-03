@@ -4,11 +4,9 @@ import { useToast } from '~/composables/useToast'
 import useProjets from '~/composables/useProjets'
 import useTasks from '~/composables/useTasks'
 import draggable from 'vuedraggable'
-import { TaskTag as TaskTagEnum } from '~/utils/enums'
-
 export interface TaskTag {
   label: string
-  colorClass: string
+  colorHex: string
   icon: string
 }
 
@@ -29,6 +27,7 @@ export interface Task {
   statusColorClass?: string
   commentairesCount?: number
   assignee: TaskAssignee
+  bannerImage?: string
 }
 
 const props = defineProps<{
@@ -54,6 +53,31 @@ const isCreating = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
 const newTaskProject = ref('')
+const newTaskAssignee = ref<any>(null)
+const isAssigneeDropdownOpen = ref(false)
+
+const { $api } = useNuxtApp()
+const { activeOrganization } = useOrganizations()
+
+const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const orgMembers = ref<any[]>([])
+
+const fetchOrgMembers = async () => {
+  if (!activeOrganization.value) return
+  try {
+    const res = await $api<any>(`/api/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const members = res.data?.data ?? res.data ?? []
+    orgMembers.value = members.map((m: any, i: number) => ({
+      id: m.id,
+      name: m.name,
+      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      color: avatarColors[i % avatarColors.length],
+      profile_picture: m.profile_picture || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch org members for assignee dropdown:', err)
+  }
+}
 
 const getTodayDate = () => {
   const today = new Date()
@@ -87,14 +111,11 @@ const submitNewTask = async () => {
   
   try {
     const statusVal = props.title === 'En cours' ? 'en cours' : (props.title === 'Terminé' ? 'terminé' : 'à faire')
-    const referenceCode = `T-${Math.floor(1000 + Math.random() * 9000)}`
     await createTask({
       title: newTaskTitle.value.trim(),
-      reference_code: referenceCode,
       projet_id: newTaskProject.value,
       status: statusVal,
       priority: 'moyen',
-      tag: 'feature',
       due_date: newTaskDueDate.value || getTodayDate(),
     })
     
@@ -113,6 +134,8 @@ const submitNewTask = async () => {
     newTaskTitle.value = ''
     newTaskDueDate.value = ''
     newTaskProject.value = ''
+    newTaskAssignee.value = null
+    isAssigneeDropdownOpen.value = false
     isCreating.value = false
   } catch (error) {
     const { addToast } = useToast()
@@ -135,6 +158,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
+  fetchOrgMembers()
 })
 
 onUnmounted(() => {
@@ -188,9 +212,40 @@ onUnmounted(() => {
             </div>
             
             <!-- User -->
-            <button class="w-5 h-5 rounded-full bg-form-border dark:bg-[#3A3A3D] text-secondary dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-              <Icon name="ph:user" class="w-3.5 h-3.5" />
-            </button>
+            <div class="relative flex items-center">
+              <button @click.stop="isAssigneeDropdownOpen = !isAssigneeDropdownOpen" class="w-5 h-5 rounded-full flex items-center justify-center transition-colors shadow-sm overflow-hidden" :class="[
+                newTaskAssignee ? (newTaskAssignee.profile_picture ? '' : newTaskAssignee.color + ' text-white text-[10px] font-bold') : 'bg-form-border dark:bg-[#3A3A3D] text-secondary dark:text-gray-400 hover:bg-gray-300 dark:hover:bg-gray-600'
+              ]">
+                <img v-if="newTaskAssignee?.profile_picture" :src="newTaskAssignee.profile_picture.startsWith('http') ? newTaskAssignee.profile_picture : `http://localhost:8000${newTaskAssignee.profile_picture}`" class="w-full h-full object-cover" />
+                <span v-else-if="newTaskAssignee">{{ newTaskAssignee.initials }}</span>
+                <Icon v-else name="ph:user" class="w-3.5 h-3.5" />
+              </button>
+              
+              <!-- Assignee Dropdown Menu -->
+              <div v-if="isAssigneeDropdownOpen" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden">
+                 <div class="p-2 border-b border-form-border dark:border-gray-800">
+                    <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
+                 </div>
+                 <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
+                    <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = null; isAssigneeDropdownOpen = false">
+                       <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                         <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                       </div> 
+                       <span class="text-secondary dark:text-gray-400">Non assigné</span>
+                    </li>
+                    <li v-for="user in orgMembers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = user; isAssigneeDropdownOpen = false">
+                       <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
+                         <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                         <span v-else>{{ user.initials }}</span>
+                       </div> 
+                       {{ user.name }}
+                    </li>
+                 </ul>
+              </div>
+              
+              <!-- Overlay to close dropdown -->
+              <div v-if="isAssigneeDropdownOpen" @click.stop="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
+            </div>
           </div>
           
           <button @click="submitNewTask" class="p-1 text-secondary dark:text-gray-600 hover:text-primary dark:hover:text-blue-500 border border-form-border dark:border-gray-700 hover:border-primary dark:hover:border-blue-500 rounded transition-colors flex items-center justify-center">
@@ -210,10 +265,17 @@ onUnmounted(() => {
       >
         <template #item="{ element: item }">
           <div 
-            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] p-4 rounded-xl cursor-pointer hover:brightness-105 transition-all group"
+            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
             @click="emit('taskClick', item.id)"
           >
-            <!-- Header (Title & Actions) -->
+            <!-- Banner Image -->
+            <div v-if="item.bannerImage" class="w-full h-28 shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <img :src="item.bannerImage" class="w-full h-full object-cover" alt="Task banner" />
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 flex flex-col gap-2">
+              <!-- Header (Title & Actions) -->
             <div class="flex justify-between items-start gap-2">
               <!-- Title -->
               <h3 class="text-main dark:text-gray-200 text-[15px] leading-snug flex-1">
@@ -243,7 +305,7 @@ onUnmounted(() => {
 
             <!-- Tag -->
             <div class="flex items-start">
-               <div :class="['inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge', item.tag.colorClass]">
+               <div :style="{ backgroundColor: (item.tag.colorHex || '#9CA3AF') + '20', color: item.tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
                   {{ item.tag.label }}
                </div>
             </div>
@@ -280,6 +342,7 @@ onUnmounted(() => {
                     <Icon :name="item.assignee.icon" class="text-xs" />
                   </div>
                </div>
+            </div>
             </div>
           </div>
         </template>

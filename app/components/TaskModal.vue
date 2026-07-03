@@ -4,10 +4,13 @@ import useCommentaire from '~/composables/useCommentaire'
 import useAuth from '~/composables/useAuth'
 import { useToast } from '~/composables/useToast'
 import useTasks from '~/composables/useTasks'
+import useProjets from '~/composables/useProjets'
+import useTags from '~/composables/useTags'
 
 const props = defineProps<{
   isOpen: boolean
   taskId?: string|any|null
+  startInEditMode?: boolean
 }>()
 
 const emit = defineEmits(['close'])
@@ -19,9 +22,13 @@ const close = () => {
 
 
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
-const { getTask, updateTask, getTasks, createTask, deleteTask } = useTasks()
+const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
+const { getProjet } = useProjets()
+const { tags, getTags } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
 
 const activeTab = ref('comments')
 
@@ -30,15 +37,42 @@ const taskTitle = ref('')
 const taskDescription = ref('Ajouter une description...')
 const editTitle = ref('')
 const editDescription = ref('')
+const editDueDate = ref('')
+const projectEndDate = ref('')
 const taskStatus = ref('')
 const taskPriority = ref('')
 const taskReference = ref('')
-const taskTag = ref('')
+const taskTagId = ref<number | string | null>(null)
+const taskTag = ref<any>(null)
 const taskDueDate = ref('')
 const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
+const taskProjetReference = ref('')
 const taskSubtasks = ref<any[]>([])
+const taskBannerImage = ref('')
+
+const isAssigneeDropdownOpen = ref(false)
+const taskAssignee = ref<any>(null)
+const orgMembers = ref<any[]>([])
+const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+
+const fetchOrgMembers = async () => {
+  if (!activeOrganization.value) return
+  try {
+    const res = await $api<any>(`/api/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const members = res.data?.data ?? res.data ?? []
+    orgMembers.value = members.map((m: any, i: number) => ({
+      id: m.id,
+      name: m.name,
+      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      color: avatarColors[i % avatarColors.length],
+      profile_picture: m.profile_picture || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch org members for assignee dropdown:', err)
+  }
+}
 
 const setTask = async (id: string | number | null) => {
   if (!id) return
@@ -50,11 +84,35 @@ const setTask = async (id: string | number | null) => {
       if (task.status) taskStatus.value = task.status
       if (task.priority) taskPriority.value = task.priority
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
-      taskTag.value = task.tag || 'Aucune'
+      taskTagId.value = task.tag_id || null
+      taskTag.value = task.tag || null
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
+      taskUpdatedAt.value = task.updated_at || ''
       taskProjetId.value = task.projet_id || ''
+      taskBannerImage.value = task.banner_image || ''
+      if (task.projet_id) {
+        try {
+          const projet = await getProjet(task.projet_id)
+          if (projet) {
+            taskProjetReference.value = (projet as any).reference_code || `PROJ-${task.projet_id}`
+            if ((projet as any).end_date) {
+              projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
+            } else {
+              projectEndDate.value = ''
+            }
+          } else {
+            projectEndDate.value = ''
+            taskProjetReference.value = `PROJ-${task.projet_id}`
+          }
+        } catch (e) {
+          projectEndDate.value = ''
+        }
+      } else {
+        projectEndDate.value = ''
+      }
+      
       taskSubtasks.value = task.sub_tasks || []
     }
   } catch (e) {
@@ -65,18 +123,26 @@ const setTask = async (id: string | number | null) => {
 const startEditing = () => {
   editTitle.value = taskTitle.value
   editDescription.value = taskDescription.value
+  editDueDate.value = taskDueDate.value && taskDueDate.value !== 'Aucune' ? (String(taskDueDate.value).split('T')[0] || '') : ''
   isEditing.value = true
 }
 
 const saveEdit = async () => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, {
+    const payload: any = {
       title: editTitle.value,
       description: editDescription.value
-    })
+    }
+    if (editDueDate.value) {
+      payload.due_date = editDueDate.value
+    } else {
+      payload.due_date = null
+    }
+    await updateTask(props.taskId, payload)
     taskTitle.value = editTitle.value
     taskDescription.value = editDescription.value
+    taskDueDate.value = editDueDate.value || 'Aucune'
     isEditing.value = false
     addToast({ title: 'Tâche modifiée', message: 'Les modifications ont été enregistrées.', type: 'success' })
   } catch (err) {
@@ -99,6 +165,40 @@ const handleDelete = async () => {
       close()
     } catch (e) {
       addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+    }
+  }
+}
+
+const fileInput = ref<HTMLInputElement | null>(null)
+
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0 && props.taskId) {
+    const file = target.files[0] as File
+    if (!file) return
+    try {
+      const updatedTask = await uploadBanner(props.taskId, file)
+      taskBannerImage.value = updatedTask.banner_image || ''
+      addToast({ type: 'success', title: 'Couverture modifiée', message: 'L\'image a été ajoutée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+    }
+  }
+}
+
+const removeBanner = async () => {
+  if (!props.taskId) return
+  if (confirm('Voulez-vous vraiment supprimer cette couverture ?')) {
+    try {
+      await updateTask(props.taskId, { banner_image: null })
+      taskBannerImage.value = ''
+      addToast({ type: 'success', title: 'Couverture supprimée', message: 'L\'image a été supprimée avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'image.' })
     }
   }
 }
@@ -129,17 +229,7 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
   moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-500', icon: 'ph:equals-bold' },
-  'élevé': { label: 'ÉLEVÉ', colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-500', icon: 'ph:caret-double-up-bold' }
-}
-
-const tagConfig: Record<string, { label: string; colorClass: string }> = {
-  bug: { label: 'BUG', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  feature: { label: 'FEATURE', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  improvement: { label: 'IMPROVEMENT', colorClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  documentation: { label: 'DOCUMENTATION', colorClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
-  design: { label: 'DESIGN', colorClass: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400' },
-  testing: { label: 'TESTING', colorClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
-  deployment: { label: 'DEPLOYMENT', colorClass: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' }
+  'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
 const updateStatus = async (newStatus: string) => {
@@ -166,11 +256,12 @@ const updatePriority = async (newPriority: string) => {
   }
 }
 
-const updateTag = async (newTag: string) => {
+const updateTag = async (newTagId: number | string | null) => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, { tag: newTag })
-    taskTag.value = newTag
+    await updateTask(props.taskId, { tag_id: newTagId })
+    taskTagId.value = newTagId
+    taskTag.value = tags.value.find(t => t.id === newTagId) || null
     isTagDropdownOpen.value = false
     addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
   } catch (err) {
@@ -183,8 +274,10 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
     const createdTask = await createTask(payload)
     taskSubtasks.value.push(createdTask)
     isCreateSubtaskModalOpen.value = false
+    addToast({ title: 'Sous-tâche créée', message: 'La sous-tâche a été ajoutée avec succès.', type: 'success' })
   } catch (err) {
     console.error('Failed to create subtask', err)
+    addToast({ title: 'Erreur', message: 'Impossible de créer la sous-tâche.', type: 'error' })
   }
 }
 
@@ -243,12 +336,56 @@ const saveEditComment = async () => {
   }
 }
 
-watch(() => props.taskId, async (newTaskId) => {
-  if (newTaskId) {
-    await setTask(newTaskId)
-    await getCommentaires(newTaskId)
+const resetState = () => {
+  isEditing.value = false
+  taskTitle.value = ''
+  taskDescription.value = 'Chargement...'
+  editTitle.value = ''
+  editDescription.value = ''
+  editDueDate.value = ''
+  projectEndDate.value = ''
+  taskStatus.value = ''
+  taskPriority.value = ''
+  taskReference.value = ''
+  taskTag.value = null
+  taskDueDate.value = ''
+  taskCreatedAt.value = ''
+  taskUpdatedAt.value = ''
+  taskProjetId.value = ''
+  taskProjetReference.value = ''
+  taskBannerImage.value = ''
+  taskSubtasks.value = []
+  commentText.value = ''
+  editingCommentId.value = null
+  editingCommentText.value = ''
+  isTagDropdownOpen.value = false
+  isStatusDropdownOpen.value = false
+  isPriorityDropdownOpen.value = false
+  isAssigneeDropdownOpen.value = false
+}
+
+watch(() => props.taskId, async (newVal) => {
+  if (newVal) {
+    resetState()
+    if (props.taskId) {
+      setTask(props.taskId)
+    }
+    getTags()
+    await getCommentaires(newVal)
+    if (props.startInEditMode) {
+      startEditing()
+    }
   }
 }, { immediate: true })
+
+watch(() => props.isOpen, (newIsOpen) => {
+  if (newIsOpen) {
+    if (props.startInEditMode) {
+      startEditing()
+    }
+    fetchOrgMembers()
+  }
+})
 </script>
 
 <template>
@@ -272,10 +409,10 @@ watch(() => props.taskId, async (newTaskId) => {
           <header class="flex items-center justify-between px-6 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
             <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <span class="hover:underline cursor-pointer" v-if="taskProjetId">PROJ-{{ taskProjetId }}</span>
+              <span class="hover:underline cursor-pointer" v-if="taskProjetId">{{ taskProjetReference }}</span>
               <span v-if="taskProjetId">/</span>
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <span class="hover:underline cursor-pointer">{{ taskReference }}</span>
+              <NuxtLink :to="`/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>
             </div>
             
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
@@ -288,10 +425,31 @@ watch(() => props.taskId, async (newTaskId) => {
             </div>
           </header>
 
+          <!-- Banner Image -->
+          <div v-if="taskBannerImage" class="w-full h-48 sm:h-72 shrink-0 bg-gray-100 dark:bg-[#1A1A1D] border-b border-black/5 dark:border-white/5 relative group">
+            <img :src="taskBannerImage" class="w-full h-full object-cover" alt="Task banner" />
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <button @click="triggerFileInput" class="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm">
+                <Icon name="heroicons:camera" class="w-5 h-5" /> Changer la couverture
+              </button>
+              <button @click="removeBanner" class="flex items-center gap-2 bg-red-500/80 hover:bg-red-500 backdrop-blur-sm text-white px-4 py-2 rounded-lg font-medium transition-all shadow-sm">
+                <Icon name="heroicons:trash" class="w-5 h-5" /> Supprimer
+              </button>
+            </div>
+          </div>
+          <div v-else class="w-full h-32 shrink-0 bg-[#F4F5F7] dark:bg-[#1A1A1D] border-b border-black/5 dark:border-white/5 flex items-center justify-center group cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" @click="triggerFileInput">
+            <div class="flex flex-col items-center gap-2 text-secondary dark:text-gray-500 group-hover:text-main dark:group-hover:text-gray-300 transition-colors">
+              <Icon name="heroicons:photo" class="w-8 h-8 opacity-50 group-hover:opacity-100 transition-opacity" />
+              <span class="text-sm font-medium">Ajouter une couverture</span>
+            </div>
+          </div>
+          <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleFileUpload" />
+
           <!-- Content Layout -->
           <div class="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden custom-scrollbar">
             <!-- Main Column (Left) -->
-            <div class="flex-1 md:overflow-y-auto px-4 sm:px-8 py-6 custom-scrollbar shrink-0">
+            <div class="flex-1 md:overflow-y-auto custom-scrollbar shrink-0 flex flex-col">
+              <div class="px-4 sm:px-8 py-6 flex-1">
               <h1 v-if="!isEditing" class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-6 leading-tight">
                 {{ taskTitle }}
               </h1>
@@ -388,6 +546,7 @@ watch(() => props.taskId, async (newTaskId) => {
                   Aucun commentaire pour le moment.
                 </div>
               </div>
+              </div>
             </div>
 
             <!-- Sidebar (Right) -->
@@ -424,28 +583,68 @@ watch(() => props.taskId, async (newTaskId) => {
                   <!-- Property -->
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Assigné à</div>
-                    <div class="col-span-2">
-                      <div class="flex items-center gap-2 mb-1">
-                        <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">SY</div>
-                        <span class="text-main dark:text-gray-300 font-medium">Sarah Yeung</span>
+                    <div class="col-span-2 relative">
+                      <div class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-1 -ml-1 rounded transition-colors group" @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen">
+                        <template v-if="taskAssignee">
+                          <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm" :class="taskAssignee.profile_picture ? '' : taskAssignee.color">
+                            <img v-if="taskAssignee.profile_picture" :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : `http://localhost:8000${taskAssignee.profile_picture}`" class="w-full h-full object-cover" />
+                            <span v-else>{{ taskAssignee.initials }}</span>
+                          </div>
+                          <span class="text-main dark:text-gray-300 font-medium">{{ taskAssignee.name }}</span>
+                        </template>
+                        <template v-else>
+                          <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                            <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                          </div>
+                          <span class="text-secondary dark:text-gray-500 font-medium italic">Non assigné</span>
+                        </template>
+                        <Icon name="heroicons:chevron-down" class="w-3 h-3 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                       </div>
-                      <button class="text-primary dark:text-blue-400 hover:underline text-xs">M'assigner</button>
+                      
+                      <!-- Assignee Dropdown Menu -->
+                      <div v-if="isAssigneeDropdownOpen" @click="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                      <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
+                        <div class="p-2 border-b border-form-border dark:border-gray-800">
+                          <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
+                        </div>
+                        <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
+                          <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = null; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                              <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                            </div> 
+                            <span class="text-secondary dark:text-gray-400">Non assigné</span>
+                          </li>
+                          <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = member; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
+                              <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                              <span v-else>{{ member.initials }}</span>
+                            </div> 
+                            {{ member.name }}
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs" @click.stop="taskAssignee = orgMembers.find(m => m.id === user?.id) || taskAssignee">M'assigner</button>
                     </div>
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Étiquettes</div>
                     <div class="col-span-2 relative">
-                      <button @click="isTagDropdownOpen = !isTagDropdownOpen" :class="['inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase', tagConfig[taskTag]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300']">
-                        {{ tagConfig[taskTag]?.label || taskTag || 'SANS ÉTIQUETTE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
+                      <button @click="isTagDropdownOpen = !isTagDropdownOpen" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase" :style="{ backgroundColor: taskTag ? (taskTag.color || '#9CA3AF') + '20' : '#F3F4F6', color: taskTag ? (taskTag.color || '#9CA3AF') : '#374151' }">
+                        {{ taskTag?.name || 'SANS ÉTIQUETTE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
                       </button>
 
                       <!-- Tag Dropdown Menu -->
                       <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
-                        <button @click="updateTag(key as string)" v-for="(config, key) in tagConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTag === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
-                          {{ config.label }}
-                          <Icon v-if="taskTag === key" name="heroicons:check" class="w-4 h-4" />
+                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto">
+                        <button @click="updateTag(null)" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === null ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', 'text-gray-600 dark:text-gray-400']">
+                          SANS ÉTIQUETTE
+                          <Icon v-if="taskTagId === null" name="heroicons:check" class="w-4 h-4" />
+                        </button>
+                        <button @click="updateTag(tag.id)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === tag.id ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
+                          {{ tag.name }}
+                          <Icon v-if="taskTagId === tag.id" name="heroicons:check" class="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -474,15 +673,21 @@ watch(() => props.taskId, async (newTaskId) => {
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
-                    <div class="text-secondary dark:text-gray-500 font-medium">Échéance</div>
-                    <div class="col-span-2 text-main dark:text-gray-300">{{ formatDisplayDate(taskDueDate) }}</div>
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Échéance</div>
+                    <div class="col-span-2 text-main dark:text-gray-300">
+                      <span v-if="!isEditing" class="pt-1 inline-block">{{ formatDisplayDate(taskDueDate) }}</span>
+                      <input v-else v-model="editDueDate" type="date" :max="projectEndDate" class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1.5 text-sm text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+                    </div>
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
-                    <div class="text-secondary dark:text-gray-500 font-medium">Rapporteur</div>
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Rapporteur</div>
                     <div class="col-span-2 flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">MS</div>
-                      <span class="text-main dark:text-gray-300 font-medium">Marc-Etienne SOSSOU</span>
+                      <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm">
+                        <img v-if="user?.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                        <span v-else>{{ user?.name ? user.name.charAt(0).toUpperCase() : 'M' }}</span>
+                      </div>
+                      <span class="text-main dark:text-gray-300 font-medium">{{ user?.name || 'Moi' }}</span>
                     </div>
                   </div>
                 </div>

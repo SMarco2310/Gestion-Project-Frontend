@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TaskStatus, TaskTag } from '~/utils/enums'
+import { TaskStatus } from '~/utils/enums'
 
 definePageMeta({
     layout: 'custom',
@@ -8,7 +8,7 @@ definePageMeta({
 
 import { useToast } from '~/composables/useToast'
 
-const { tasks, getTasks, deleteTask, updateTask } = useTasks()
+const { tasks, getTasks, deleteTask, updateTask, createTask } = useTasks()
 const { addToast } = useToast()
 
 const todoItems = ref<any[]>([])
@@ -17,14 +17,30 @@ const doneItems = ref<any[]>([])
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
+const taskModalEditMode = ref(false)
+
+const isCreateTaskModalOpen = ref(false)
+
+const handleCreateTaskSubmit = async (payload: any) => {
+  try {
+    await createTask(payload)
+    await getTasks()
+    isCreateTaskModalOpen.value = false
+    addToast({ type: 'success', title: 'Tâche créée', message: 'La tâche a été créée avec succès.' })
+  } catch (e) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer la tâche.' })
+  }
+}
 
 const handleTaskClick = (taskId: string) => {
   selectedTaskId.value = taskId
+  taskModalEditMode.value = false
   isTaskModalOpen.value = true
 }
 
 const handleEditTask = (taskId: string) => {
   selectedTaskId.value = taskId
+  taskModalEditMode.value = true
   isTaskModalOpen.value = true
 }
 
@@ -42,6 +58,7 @@ const handleDeleteTask = async (taskId: string) => {
 const handleCloseTaskModal = () => {
   isTaskModalOpen.value = false
   selectedTaskId.value = null
+  taskModalEditMode.value = false
 }
 
 const handleTaskMoved = async (taskId: string, newStatus: string) => {
@@ -60,47 +77,7 @@ const handleTaskMoved = async (taskId: string, newStatus: string) => {
   }
 }
 
-const getTagColorClass = (tag: string) => {
-  switch (tag) {
-    case TaskTag.TESTING:
-      return 'bg-amber-500 text-black'
-    case TaskTag.DEPLOYMENT:
-      return 'bg-sky-300 text-black'
-    case TaskTag.BUG:
-      return 'bg-red-500 text-white'
-    case TaskTag.FEATURE:
-      return 'bg-blue-500 text-white'
-    case TaskTag.IMPROVEMENT:
-      return 'bg-emerald-500 text-white'
-    case TaskTag.DOCUMENTATION:
-      return 'bg-purple-500 text-white'
-    case TaskTag.DESIGN:
-      return 'bg-pink-500 text-white'
-    default:
-      return 'bg-[#3A3A3D] text-gray-300'
-  }
-}
-
-const getTagIcon = (tag: string) => {
-  switch (tag) {
-    case TaskTag.TESTING:
-      return 'ph:pencil-simple-duotone'
-    case TaskTag.DEPLOYMENT:
-      return 'ph:rocket-launch-duotone'
-    case TaskTag.BUG:
-      return 'ph:bug-duotone'
-    case TaskTag.FEATURE:
-      return 'ph:star-duotone'
-    case TaskTag.IMPROVEMENT:
-      return 'ph:trend-up-duotone'
-    case TaskTag.DOCUMENTATION:
-      return 'ph:book-open-duotone'
-    case TaskTag.DESIGN:
-      return 'ph:palette-duotone'
-    default:
-      return 'ph:file-duotone'
-  }
-}
+// Tag colors are handled directly via the tag object now
 
 const mapTaskToBoardItem = (task: any) => ({
   id: String(task.id),
@@ -109,9 +86,9 @@ const mapTaskToBoardItem = (task: any) => ({
   status: task.status,
   priority: task.priority,
   tag: {
-    label: task.tag || TaskTag.DOCUMENTATION,
-    colorClass: getTagColorClass(task.tag || TaskTag.DOCUMENTATION),
-    icon: getTagIcon(task.tag || TaskTag.DOCUMENTATION),
+    label: task.tag?.name || 'SANS ÉTIQUETTE',
+    colorHex: task.tag?.color || '#9CA3AF',
+    icon: 'ph:tag-duotone',
   },
   reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',
@@ -119,32 +96,89 @@ const mapTaskToBoardItem = (task: any) => ({
   statusIcon: 'ph:check',
   statusColorClass: 'text-emerald-500',
   commentairesCount: task.commentaires_count || 0,
+  bannerImage: task.banner_image || undefined,
   assignee: {
     initials: 'U',
     colorClass: 'bg-gray-600',
   },
 })
 
+const { projets, getProjets } = useProjets()
+
+const projectOptions = computed(() => {
+  return projets.value.map((p: any) => ({
+    id: p.id,
+    label: p.name || p.reference_code
+  }))
+})
+
+const filterText = ref('')
+const selectedProjects = ref<(string | number)[]>([])
+const selectedPriorities = ref<(string | number)[]>([])
+const selectedTags = ref<(string | number)[]>([])
+const selectedDateSort = ref('recent')
+
+const handleFilterUpdate = (filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags?: (string | number)[], dateSort?: string }) => {
+  selectedProjects.value = filters.projects
+  selectedPriorities.value = filters.priorities
+  selectedTags.value = filters.tags || []
+  selectedDateSort.value = filters.dateSort || 'recent'
+}
+
+const filteredTasks = computed(() => {
+  let result = tasks.value
+
+  if (selectedProjects.value.length > 0) {
+    result = result.filter(t => t.projet_id != null && selectedProjects.value.includes(t.projet_id as string | number))
+  }
+
+  if (selectedPriorities.value.length > 0) {
+    result = result.filter(t => t.priority != null && selectedPriorities.value.includes(t.priority))
+  }
+
+  if (selectedTags.value.length > 0) {
+    result = result.filter(t => t.tag != null && selectedTags.value.includes(t.tag))
+  }
+
+  if (filterText.value) {
+    const searchTerm = filterText.value.toLowerCase()
+    result = result.filter(t => 
+      t.title.toLowerCase().includes(searchTerm) ||
+      (t.description && t.description.toLowerCase().includes(searchTerm)) ||
+      (t.reference_code && t.reference_code.toLowerCase().includes(searchTerm))
+    )
+  }
+
+  // Apply sorting
+  result = [...result].sort((a, b) => {
+    const dateA = new Date(a.created_at).getTime()
+    const dateB = new Date(b.created_at).getTime()
+    return selectedDateSort.value === 'recent' ? dateB - dateA : dateA - dateB
+  })
+
+  return result
+})
+
 const syncBoardItems = () => {
-  todoItems.value = tasks.value
-    .filter((task) => task.status === TaskStatus.TO_DO)
+  todoItems.value = filteredTasks.value
+    .filter((task) => task.status === TaskStatus.TO_DO || task.status === 'à faire')
     .map(mapTaskToBoardItem)
 
-  inProgressItems.value = tasks.value
-    .filter((task) => task.status === TaskStatus.IN_PROGRESS)
+  inProgressItems.value = filteredTasks.value
+    .filter((task) => task.status === TaskStatus.IN_PROGRESS || task.status === 'en cours')
     .map(mapTaskToBoardItem)
 
-  doneItems.value = tasks.value
-    .filter((task) => task.status === TaskStatus.DONE)
+  doneItems.value = filteredTasks.value
+    .filter((task) => task.status === TaskStatus.DONE || task.status === 'terminé')
     .map(mapTaskToBoardItem)
 }
 
-watch(tasks, () => {
+watch(filteredTasks, () => {
   const totalInBoard = todoItems.value.length + inProgressItems.value.length + doneItems.value.length
-  let needsFullSync = tasks.value.length !== totalInBoard
+  let needsFullSync = filteredTasks.value.length !== totalInBoard
 
   if (!needsFullSync) {
-    for (const t of tasks.value) {
+    for (const t of filteredTasks.value) {
       const mappedStatus = t.status === 'TO_DO' || t.status === 'à faire' ? TaskStatus.TO_DO : 
                            (t.status === 'IN_PROGRESS' || t.status === 'en cours' ? TaskStatus.IN_PROGRESS : 
                            (t.status === 'DONE' || t.status === 'terminé' ? TaskStatus.DONE : t.status))
@@ -162,7 +196,7 @@ watch(tasks, () => {
   if (needsFullSync) {
     syncBoardItems()
   } else {
-    tasks.value.forEach(t => {
+    filteredTasks.value.forEach(t => {
       const mapped = mapTaskToBoardItem(t)
       const updateItem = (list: any[]) => {
         const item = list.find(i => i.id === mapped.id)
@@ -176,7 +210,10 @@ watch(tasks, () => {
 }, { deep: true })
 
 onMounted(async () => {
-  await getTasks()
+  await Promise.all([
+    getTasks(),
+    getProjets()
+  ])
   syncBoardItems()
 })
 </script>
@@ -191,9 +228,20 @@ onMounted(async () => {
     <div id="search-bar" class="py-4 md:py-10 flex flex-row justify-between md:justify-end items-center gap-2 md:gap-4 w-full">
             <div class="relative flex items-center flex-1 md:flex-none">
                 <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-                <input type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
+                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
             </div>
-            <FilterDropdown :showProjects="true" :showStatus="false" class="shrink-0" />
+            <FilterDropdown 
+              :showProjects="true" 
+              :showStatus="false" 
+              :showTags="true"
+              :projectOptions="projectOptions"
+              @update:filters="handleFilterUpdate"
+              class="shrink-0" 
+            />
+            <button @click="isCreateTaskModalOpen = true" class="shrink-0 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+              <Icon name="heroicons:plus" class="w-5 h-5" />
+              <span class="px-2 font-medium hidden md:inline">Ajouter une tâche</span>
+            </button>
         </div>
   </header>
     <!-- Kanban Board Columns -->
@@ -206,7 +254,7 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.TO_DO)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.TO_DO)"
       />
       
       <!-- In Progress State Column -->
@@ -217,7 +265,7 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.IN_PROGRESS)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.IN_PROGRESS)"
       />
     
       <!-- Loaded State Column -->
@@ -228,14 +276,21 @@ onMounted(async () => {
         @taskClick="handleTaskClick"
         @editTask="handleEditTask"
         @deleteTask="handleDeleteTask"
-        @taskMoved="(id) => handleTaskMoved(id, TaskStatus.DONE)"
+        @taskMoved="handleTaskMoved($event, TaskStatus.DONE)"
       />
     </div>
     <!-- Task Modal -->
     <TaskModal 
       :isOpen="isTaskModalOpen" 
       :task-id="selectedTaskId" 
+      :startInEditMode="taskModalEditMode"
       @close="handleCloseTaskModal" 
+    />
+    <!-- Create Task Modal -->
+    <CreateTaskModal
+      :is-open="isCreateTaskModalOpen"
+      :create-task="handleCreateTaskSubmit"
+      @close="isCreateTaskModalOpen = false"
     />
   </div>
 </template>

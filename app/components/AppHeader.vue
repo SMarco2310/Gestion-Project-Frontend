@@ -84,10 +84,10 @@ const formatNotifTime = (dateStr: string) => {
                 <NuxtLink to="/dashboard" class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-md shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
                         <img v-if="activeOrganization" :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
-                        <img v-else src="/assets/logo_app.png" class="w-full h-full object-contain p-1" alt="Logo">
+                        <img v-else src="/assets/logo_app.svg" class="w-full h-full object-contain p-1" alt="Logo">
                     </div>
                     <h1 class="text-lg font-bold text-main dark:text-white tracking-tight leading-tight truncate max-w-[200px]">
-                        {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
+                        {{ activeOrganization ? activeOrganization.name : 'Gestion Pro' }}
                     </h1>
                 </NuxtLink>
             </div>
@@ -193,11 +193,11 @@ const formatNotifTime = (dateStr: string) => {
                             <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
                             <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
                         </template>
-                        <img v-else src="/assets/logo_app.png" class="w-8 h-8 object-contain" alt="Logo">
+                        <img v-else src="/assets/logo_app.svg" class="w-8 h-8 object-contain" alt="Logo">
                     </div>
                     <div class="flex flex-col flex-1 overflow-hidden" :class="isSidebarCollapsed ? 'md:hidden' : ''">
                         <h1 class="text-sm font-bold text-main dark:text-white tracking-tight leading-tight truncate">
-                            {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
+                            {{ activeOrganization ? activeOrganization.name : 'Gestion Pro' }}
                         </h1>
                         <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5">Organisation</span>
                     </div>
@@ -220,11 +220,11 @@ const formatNotifTime = (dateStr: string) => {
                                 <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
                                 <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
                             </template>
-                            <img v-else src="/assets/logo_app.png" class="w-8 h-8 object-contain" alt="Logo">
+                            <img v-else src="/assets/logo_app.svg" class="w-8 h-8 object-contain" alt="Logo">
                         </div>
                         <div class="flex flex-col flex-1 overflow-hidden">
                             <h1 class="text-sm font-bold text-main dark:text-white tracking-tight leading-tight truncate">
-                                {{ activeOrganization ? activeOrganization.name : 'Gestion de Projets' }}
+                                {{ activeOrganization ? activeOrganization.name : 'Gestion Pro' }}
                             </h1>
                             <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5">Organisation actuelle</span>
                         </div>

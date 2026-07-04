@@ -58,8 +58,8 @@ const handleAccept = async () => {
 
     <!-- Top Left Branding -->
     <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
-       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="hidden lg:block text-white font-bold text-2xl tracking-wide">Gestion de Projets</span>
+       <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
+       <span class="hidden lg:block text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
     </div>
 
     <!-- Main Content Container -->

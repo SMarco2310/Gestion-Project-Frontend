@@ -12,8 +12,8 @@ definePageMeta({
     <nav class="fixed top-0 left-0 right-0 z-50 bg-canvas/80 dark:bg-[#0B0F17]/80 backdrop-blur-md border-b border-form-border dark:border-white/10">
       <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <img src="/assets/logo_app.png" alt="Logo" class="w-8 h-8 object-contain">
-          <span class="landing-display text-xl font-bold tracking-tight">Gestion de Projets</span>
+          <img src="/assets/logo_app.svg" alt="Logo" class="w-8 h-8 object-contain">
+          <span class="landing-display text-xl font-bold tracking-tight">Gestion Pro</span>
         </div>
         <div class="flex items-center gap-4">
           <NuxtLink to="/auth/login" class="text-sm font-medium hover:text-primary transition-colors">Se connecter</NuxtLink>
@@ -154,8 +154,8 @@ definePageMeta({
       <div class="max-w-7xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
         <div class="col-span-2 md:col-span-1">
           <div class="flex items-center gap-2 mb-4">
-            <img src="/assets/logo_app.png" alt="Logo" class="w-6 h-6">
-            <span class="landing-display font-bold text-white">Gestion de Projets</span>
+            <img src="/assets/logo_app.svg" alt="Logo" class="w-6 h-6">
+            <span class="landing-display font-bold text-white">Gestion Pro</span>
           </div>
           <p class="text-sm leading-relaxed">La plateforme tout-en-un pour piloter vos équipes et vos projets.</p>
         </div>
@@ -185,7 +185,7 @@ definePageMeta({
       </div>
       <div class="border-t border-white/10">
         <div class="max-w-7xl mx-auto px-6 py-6 text-sm text-slate-500 text-center">
-          &copy; {{ new Date().getFullYear() }} Gestion de Projets. Tous droits réservés.
+          &copy; {{ new Date().getFullYear() }} Gestion Pro. Tous droits réservés.
         </div>
       </div>
     </footer>

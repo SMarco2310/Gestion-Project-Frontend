@@ -73,8 +73,8 @@ const handleCreateOrganization = async () => {
     
     <!-- Top Left Branding -->
     <div class="absolute top-8 left-8 z-20 flex items-center gap-3">
-       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
-       <span class="text-main dark:text-white font-bold text-xl tracking-wide">Gestion de Projets</span>
+       <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
+       <span class="text-main dark:text-white font-bold text-xl tracking-wide">Gestion Pro</span>
     </div>
 
     <!-- Top Right Actions -->

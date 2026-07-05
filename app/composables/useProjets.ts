@@ -6,6 +6,7 @@ interface Projet{
   description:string,
   reference_code:string,
   status:ProjectStatus,
+  color?: string,
   start_date: string|Date,
   end_date: string|Date,
   user_id:number|any|string,
@@ -58,7 +59,7 @@ export default function useProjets() {
 
     // create projet
 
-    const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date)=>{
+    const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date, color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
         try{
             const { $api } = useNuxtApp();
             const { activeOrganization } = useOrganizations();
@@ -68,9 +69,12 @@ export default function useProjets() {
                    name: name,
                    description:description,
                    status:status,
+                   color:color,
                    start_date:start_date,
                    end_date:end_date,
-                   organization_id: activeOrganization.value?.id
+                   organization_id: activeOrganization.value?.id,
+                   team_ids: team_ids,
+                   user_ids: user_ids
                 }
             });
 
@@ -87,7 +91,7 @@ export default function useProjets() {
 
     // update projet
 
-    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date,end_date:string|Date,status:string)=>{
+    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date,end_date:string|Date,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
         try{
             const { $api } = useNuxtApp();
             const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
@@ -96,8 +100,11 @@ export default function useProjets() {
                     name:name,
                     description:description,
                     status:status,
+                    color:color,
                     start_date:start_date,
                     end_date:end_date,
+                    team_ids: team_ids,
+                    user_ids: user_ids
                 }
             });
             const proj = data.projet ?? data

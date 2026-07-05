@@ -24,6 +24,7 @@ const form = ref({
   name: '',
   description: '',
   status: ProjectStatus.TO_DO,
+  color: 'blue',
   start_date: getTodayDate(),
   end_date: getTodayDate()
 })
@@ -41,6 +42,7 @@ watch(() => props.isOpen, (newVal) => {
       name: '',
       description: '',
       status: ProjectStatus.TO_DO,
+      color: 'blue',
       start_date: getTodayDate(),
       end_date: getTodayDate()
     }
@@ -161,6 +163,30 @@ const submit = async () => {
                       class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                     />
                   </div>
+                </div>
+              </div>
+
+              <!-- Color Selection -->
+              <div>
+                <label class="block text-sm font-bold text-main dark:text-gray-300 mb-2">Couleur du dossier</label>
+                <div class="flex items-center gap-3">
+                  <button 
+                    v-for="color in ['purple', 'blue', 'green', 'rose', 'amber', 'slate']" 
+                    :key="color"
+                    @click="form.color = color"
+                    class="w-8 h-8 rounded-full border-2 transition-transform"
+                    :class="[
+                      form.color === color ? 'border-primary dark:border-blue-500 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                      {
+                        'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
+                        'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
+                        'bg-emerald-100 dark:bg-emerald-900/40': color === 'green',
+                        'bg-rose-100 dark:bg-rose-900/40': color === 'rose',
+                        'bg-amber-100 dark:bg-amber-900/40': color === 'amber',
+                        'bg-slate-200 dark:bg-slate-700': color === 'slate'
+                      }
+                    ]"
+                  ></button>
                 </div>
               </div>
 

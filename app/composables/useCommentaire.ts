@@ -43,7 +43,7 @@ export default function useCommentaire() {
 
     try {
       const { $api } = useNuxtApp()
-      const data = await $api<{ commentaires: Commentaire[]; success: boolean } | any>(`/commentaires${query}`, {
+      const data = await $api<{ commentaires?: Commentaire[]; success?: boolean; data?: any } | any>(`/commentaires${query}`, {
         method: 'GET',
       })
 

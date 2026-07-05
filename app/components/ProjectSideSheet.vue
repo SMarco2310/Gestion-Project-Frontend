@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import useProjets from '~/composables/useProjets'
 import useTasks from '~/composables/useTasks'
+import useTeams from '~/composables/useTeams'
 import { useToast } from '~/composables/useToast'
 
 const { isOwner } = useAuth()
+const { getTeams } = useTeams()
+const { activeOrganization, getMembers } = useOrganizations()
 
 const props = defineProps<{
   isOpen: boolean
@@ -32,6 +35,7 @@ const projectDescription = ref('')
 const projectRef = ref('')
 const projectStartDate = ref('')
 const projectEndDate = ref('')
+const projectColor = ref('blue')
 const editTitle = ref('')
 const editDescription = ref('')
 const editEndDate = ref('')
@@ -94,6 +98,10 @@ const fetchProject = async (id: number | string | null) => {
       projectRef.value = projet.reference_code || `PRJ-${String(id).substring(0, 8)}`
       projectStartDate.value = (projet as any).start_date || ''
       projectEndDate.value = (projet as any).end_date || ''
+      projectColor.value = (projet as any).color || 'blue'
+      
+      assignedTeams.value = (projet as any).teams || []
+      assignedMembers.value = (projet as any).users || []
       
       // The API returns the status as defined in ProjectStatus (e.g. 'à faire', 'en cours', 'terminé')
       if ((projet as any).status) projectStatus.value = (projet as any).status
@@ -137,7 +145,10 @@ const saveEdit = async () => {
       editDescription.value,
       projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
       editEndDate.value ? String(editEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
-      projectStatus.value
+      projectStatus.value,
+      projectColor.value,
+      assignedTeams.value.map(t => t.id),
+      assignedMembers.value.map(m => m.id)
     )
     
     projectTitle.value = editTitle.value
@@ -171,7 +182,20 @@ const handleDelete = async () => {
 
 watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
+    if (activeOrganization.value?.id) {
+        try {
+            availableTeams.value = await getTeams(activeOrganization.value.id)
+            const membersData = await getMembers(activeOrganization.value.id)
+            availableMembers.value = Array.isArray(membersData) ? membersData : (membersData?.data || [])
+            availableMembers.value = availableMembers.value.map(m => m.user || m)
+        } catch(e) {}
+    }
+
     await fetchProject(props.projectId)
+
+    availableTeams.value = availableTeams.value.filter(t => !assignedTeams.value.find((at:any) => at.id === t.id))
+    availableMembers.value = availableMembers.value.filter(m => !assignedMembers.value.find((am:any) => am.id === m.id))
+
     if (props.startInEditMode) {
       startEditing()
     } else {
@@ -307,6 +331,43 @@ const updateStatus = async (status: string) => {
             <textarea v-else v-model="editDescription" class="w-full h-32 p-3 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
           </div>
 
+          <!-- Progress -->
+          <div class="mb-8 p-5 rounded-xl neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224]">
+            <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Progression globale</h3>
+            
+            <div class="flex flex-col gap-4">
+              <div>
+                <div class="flex justify-between text-sm mb-1.5 font-medium">
+                  <span class="text-secondary dark:text-gray-400">Tâches accomplies</span>
+                  <span class="text-main dark:text-gray-200">{{ tasksProgress }}%</span>
+                </div>
+                <div class="w-full h-2 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
+                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 rounded-r-lg transition-all duration-500" :style="{ width: `${tasksProgress}%` }"></div>
+                </div>
+              </div>
+              
+              <div>
+                <div class="flex justify-between text-sm mb-1.5 font-medium">
+                  <span class="text-secondary dark:text-gray-400">Tickets</span>
+                  <span class="text-main dark:text-gray-200">{{ totalTasks }} total</span>
+                </div>
+                <div class="flex h-2 w-full gap-1 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
+                  <template v-if="totalTasks > 0">
+                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-l-full transition-all duration-500" :style="{ width: `${(doneTasks / totalTasks) * 100}%` }" title="Terminés"></div>
+                    <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-500" :style="{ width: `${(inProgressTasks / totalTasks) * 100}%` }" title="En cours"></div>
+                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-r-full transition-all duration-500" :style="{ width: `${(todoTasks / totalTasks) * 100}%` }" title="À faire"></div>
+                  </template>
+                  <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-800 rounded-full"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-bold text-secondary dark:text-gray-500 pt-2 uppercase tracking-wider">
+                  <span class="text-emerald-600 dark:text-emerald-500">{{ doneTasks }} Terminés</span>
+                  <span class="text-blue-600 dark:text-blue-400">{{ inProgressTasks }} En cours</span>
+                  <span>{{ todoTasks }} À faire</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Équipe du projet -->
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
@@ -374,43 +435,6 @@ const updateStatus = async (status: string) => {
               
               <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic">
                 Aucun membre ou équipe assigné.
-              </div>
-            </div>
-          </div>
-
-          <!-- Progress -->
-          <div class="mb-8 p-5 rounded-xl neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224]">
-            <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Progression globale</h3>
-            
-            <div class="flex flex-col gap-4">
-              <div>
-                <div class="flex justify-between text-sm mb-1.5 font-medium">
-                  <span class="text-secondary dark:text-gray-400">Tâches accomplies</span>
-                  <span class="text-main dark:text-gray-200">{{ tasksProgress }}%</span>
-                </div>
-                <div class="w-full h-2 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 rounded-r-lg transition-all duration-500" :style="{ width: `${tasksProgress}%` }"></div>
-                </div>
-              </div>
-              
-              <div>
-                <div class="flex justify-between text-sm mb-1.5 font-medium">
-                  <span class="text-secondary dark:text-gray-400">Tickets</span>
-                  <span class="text-main dark:text-gray-200">{{ totalTasks }} total</span>
-                </div>
-                <div class="flex h-2 w-full gap-1 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
-                  <template v-if="totalTasks > 0">
-                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-l-full transition-all duration-500" :style="{ width: `${(doneTasks / totalTasks) * 100}%` }" title="Terminés"></div>
-                    <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-500" :style="{ width: `${(inProgressTasks / totalTasks) * 100}%` }" title="En cours"></div>
-                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-r-full transition-all duration-500" :style="{ width: `${(todoTasks / totalTasks) * 100}%` }" title="À faire"></div>
-                  </template>
-                  <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-                </div>
-                <div class="flex justify-between text-[11px] font-bold text-secondary dark:text-gray-500 pt-2 uppercase tracking-wider">
-                  <span class="text-emerald-600 dark:text-emerald-500">{{ doneTasks }} Terminés</span>
-                  <span class="text-blue-600 dark:text-blue-400">{{ inProgressTasks }} En cours</span>
-                  <span>{{ todoTasks }} À faire</span>
-                </div>
               </div>
             </div>
           </div>

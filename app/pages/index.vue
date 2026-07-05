@@ -6,186 +6,133 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="landing min-h-screen bg-canvas dark:bg-[#121212] text-main dark:text-gray-200 selection:bg-primary selection:text-white font-sans overflow-x-hidden">
+  <div class="landing min-h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-x-hidden selection:bg-primary selection:text-white">
 
     <!-- Navigation -->
-    <nav class="fixed top-0 left-0 right-0 z-50 bg-canvas/80 dark:bg-[#0B0F17]/80 backdrop-blur-md border-b border-form-border dark:border-white/10">
-      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+    <nav class="absolute top-0 left-0 right-0 z-50">
+      <div class="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img src="/assets/logo_app.svg" alt="Logo" class="w-8 h-8 object-contain">
-          <span class="landing-display text-xl font-bold tracking-tight">Gestion Pro</span>
+          <span class="landing-display text-xl font-bold tracking-tight text-slate-900">Gestion Pro</span>
         </div>
+        
+        <div class="hidden md:flex items-center gap-8">
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors border-b-2 border-primary pb-1">Product</a>
+          <a href="#features" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Features</a>
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Resources</a>
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Pricing</a>
+        </div>
+
         <div class="flex items-center gap-4">
-          <NuxtLink to="/auth/login" class="text-sm font-medium hover:text-primary transition-colors">Se connecter</NuxtLink>
-          <NuxtLink to="/auth/signup" class="text-sm font-bold bg-primary hover:bg-blue-600 text-white px-5 py-2.5 rounded-full transition-all shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5">Commencer</NuxtLink>
+          <NuxtLink to="/auth/login" class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors">Se connecter</NuxtLink>
+          <NuxtLink to="/auth/signup" class="text-sm font-semibold bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-primary/30 hover:-translate-y-0.5">Commencer</NuxtLink>
         </div>
       </div>
     </nav>
 
     <!-- Hero Section -->
-    <main class="landing-hero relative pt-20 overflow-hidden bg-[#0B0F17] text-white">
-      <!-- Photo background -->
-      <div class="absolute inset-0">
-        <img src="/assets/hero-building.jpg" alt="" class="w-full h-full object-cover object-[70%_30%] opacity-70">
-        <div class="absolute inset-0 bg-gradient-to-r from-[#0B0F17] via-[#0B0F17]/85 to-[#0B0F17]/20"></div>
-        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0F17] via-transparent to-[#0B0F17]/40"></div>
-        <div class="landing-dotgrid absolute inset-0 opacity-[0.12] pointer-events-none"></div>
-      </div>
+    <main class="relative pt-32 lg:pt-48 pb-20">
+      <div class="max-w-5xl mx-auto px-6 text-center">
+        <h1 class="landing-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-8 leading-tight">
+          Gérez vos projets avec <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-400">précision</span>
+        </h1>
 
-      <div class="relative z-10 max-w-7xl mx-auto px-6 pt-24 pb-28 lg:pt-36 lg:pb-40">
-        <div class="max-w-2xl">
-          <div class="landing-mono inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-[11px] font-medium uppercase tracking-[0.15em] mb-8 animate-fade-in-up">
-            <span class="relative flex h-1.5 w-1.5">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-400"></span>
-            </span>
-            Nouvelle version disponible
-          </div>
+        <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed">
+          La plateforme tout-en-un pour les équipes exigeantes. Synchronisez, planifiez et exécutez sans friction.
+        </p>
 
-          <h1 class="landing-display text-5xl lg:text-6xl font-bold tracking-tight mb-7 leading-[1.08] animate-fade-in-up" style="animation-delay: 100ms;">
-            Gérez vos projets et vos équipes
-            <span class="block text-transparent bg-clip-text bg-gradient-to-r from-white to-blue-300">avec fluidité.</span>
-          </h1>
-
-          <p class="text-lg text-slate-300 max-w-xl mb-10 leading-relaxed animate-fade-in-up" style="animation-delay: 200ms;">
-            Une plateforme tout-en-un conçue pour les organisations modernes. Centralisez vos tâches, collaborez en temps réel et atteignez vos objectifs plus rapidement.
-          </p>
-
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-fade-in-up" style="animation-delay: 300ms;">
-            <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-full font-bold text-base transition-all shadow-xl shadow-primary/30 hover:-translate-y-1 flex items-center justify-center gap-2">
-              Commencer gratuitement
-              <Icon name="heroicons:arrow-right" class="w-5 h-5" />
-            </NuxtLink>
-            <NuxtLink to="/auth/login" class="w-full sm:w-auto px-8 py-4 bg-white/5 border border-white/20 hover:bg-white/10 text-white rounded-full font-bold text-base transition-all flex items-center justify-center backdrop-blur-sm">
-              Se connecter
-            </NuxtLink>
-          </div>
-        </div>
-      </div>
-
-      <!-- Trust / stats strip -->
-      <div class="relative z-10 border-t border-white/10 bg-black/20 backdrop-blur-sm">
-        <div class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-3 gap-6">
-          <div class="text-center sm:text-left">
-            <div class="landing-mono text-2xl lg:text-3xl font-bold text-white">99.9<span class="text-amber-400">%</span></div>
-            <div class="text-xs uppercase tracking-wider text-slate-400 mt-1">Disponibilité</div>
-          </div>
-          <div class="text-center sm:text-left">
-            <div class="landing-mono text-2xl lg:text-3xl font-bold text-white">2 400<span class="text-amber-400">+</span></div>
-            <div class="text-xs uppercase tracking-wider text-slate-400 mt-1">Équipes actives</div>
-          </div>
-          <div class="text-center sm:text-left">
-            <div class="landing-mono text-2xl lg:text-3xl font-bold text-white">&lt;100<span class="text-amber-400">ms</span></div>
-            <div class="text-xs uppercase tracking-wider text-slate-400 mt-1">Sync temps réel</div>
-          </div>
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-blue-600 text-white rounded-full font-semibold text-base transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+            Démarrer gratuitement
+            <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+          </NuxtLink>
+          <button class="w-full sm:w-auto px-8 py-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-full font-semibold text-base transition-all flex items-center justify-center gap-2 shadow-sm">
+            <Icon name="heroicons:play-circle" class="w-5 h-5 text-slate-400" />
+            Voir la démo
+          </button>
         </div>
       </div>
     </main>
 
+    <!-- App Mockup Section -->
+    <section class="relative max-w-6xl mx-auto px-6 pb-32">
+      <div class="relative rounded-2xl md:rounded-[2rem] bg-white p-2 shadow-2xl shadow-slate-200/50 border border-slate-100 overflow-hidden transform-gpu hover:scale-[1.01] transition-transform duration-500">
+        <img src="/app_mockup.png" alt="App Interface" class="w-full rounded-xl md:rounded-[1.5rem] object-cover bg-slate-50 border border-slate-100">
+      </div>
+    </section>
+
     <!-- Features Section -->
-    <section class="py-24 lg:py-32 bg-card dark:bg-[#161618] border-t border-form-border dark:border-white/10">
-      <div class="max-w-7xl mx-auto px-6">
-        <div class="max-w-2xl mb-16">
-          <div class="landing-mono text-xs uppercase tracking-[0.15em] text-primary font-semibold mb-4">Fonctionnalités</div>
-          <h2 class="landing-display text-3xl md:text-4xl font-bold mb-4 tracking-tight">Tout ce dont vous avez besoin</h2>
-          <p class="text-secondary dark:text-gray-400 text-lg">Des outils puissants pensés pour la productivité et la collaboration à grande échelle.</p>
+    <section id="features" class="py-24 bg-white border-t border-slate-100">
+      <div class="max-w-6xl mx-auto px-6">
+        <div class="text-center max-w-2xl mx-auto mb-16">
+          <h2 class="landing-display text-3xl md:text-4xl font-bold mb-4 text-slate-900 tracking-tight">Construit pour l'efficacité</h2>
+          <p class="text-slate-500 text-lg">Outils professionnels conçus pour réduire le bruit et augmenter la concentration.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           <!-- Feature 1 -->
-          <div class="landing-card group relative p-8 rounded-2xl bg-canvas dark:bg-[#1D1D1D] border border-form-border dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-            <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Icon name="heroicons:rectangle-group" class="w-6 h-6 text-primary" />
+          <div class="p-8 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
+              <Icon name="heroicons:building-office-2" class="w-5 h-5" />
             </div>
-            <h3 class="landing-display text-lg font-bold mb-3">Multi-Organisations</h3>
-            <p class="text-secondary dark:text-gray-400 leading-relaxed text-sm">
-              Gérez plusieurs entités, équipes et projets depuis un seul compte. Basculez d'une organisation à l'autre en un clic.
+            <h3 class="text-lg font-bold text-slate-900 mb-3">Multi-Organisations</h3>
+            <p class="text-slate-500 leading-relaxed text-sm">
+              Gérez plusieurs espaces de travail, clients et équipes depuis une seule interface fluide. Plus de changement de contexte.
             </p>
           </div>
 
           <!-- Feature 2 -->
-          <div class="landing-card group relative p-8 rounded-2xl bg-canvas dark:bg-[#1D1D1D] border border-form-border dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-            <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="w-12 h-12 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Icon name="heroicons:view-columns" class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+          <div class="p-8 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
+              <Icon name="heroicons:view-columns" class="w-5 h-5" />
             </div>
-            <h3 class="landing-display text-lg font-bold mb-3">Vues Kanban Flexibles</h3>
-            <p class="text-secondary dark:text-gray-400 leading-relaxed text-sm">
-              Visualisez l'avancement de vos tâches grâce à des tableaux Kanban interactifs et personnalisables.
+            <h3 class="text-lg font-bold text-slate-900 mb-3">Vues Kanban</h3>
+            <p class="text-slate-500 leading-relaxed text-sm">
+              Visualisez le flux de travail avec clarté et précision. Suivez l'avancement en temps réel.
             </p>
           </div>
 
           <!-- Feature 3 -->
-          <div class="landing-card group relative p-8 rounded-2xl bg-canvas dark:bg-[#1D1D1D] border border-form-border dark:border-white/10 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-            <div class="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <div class="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <Icon name="heroicons:bell-alert" class="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div class="p-8 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-6">
+              <Icon name="heroicons:bolt" class="w-5 h-5" />
             </div>
-            <h3 class="landing-display text-lg font-bold mb-3">Temps Réel</h3>
-            <p class="text-secondary dark:text-gray-400 leading-relaxed text-sm">
-              Restez informé de chaque mise à jour grâce à un système de notifications en temps réel et des commentaires intégrés.
+            <h3 class="text-lg font-bold text-slate-900 mb-3">Synchronisation Temps Réel</h3>
+            <p class="text-slate-500 leading-relaxed text-sm">
+              Vos données sont mises à jour instantanément pour toute l'équipe. Fini les conflits de version.
             </p>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- CTA band -->
-    <section class="relative py-20 lg:py-28 bg-[#0B0F17] overflow-hidden">
-      <div class="landing-dotgrid absolute inset-0 opacity-[0.08] pointer-events-none"></div>
-      <div class="absolute inset-0 bg-gradient-to-b from-[#0B0F17] via-[#0B0F17]/95 to-[#0B0F17]"></div>
-      <div class="relative z-10 max-w-3xl mx-auto px-6 text-center">
-        <h2 class="landing-display text-3xl md:text-4xl font-bold text-white mb-5 tracking-tight">
-          Prêt à faire avancer vos projets ?
-        </h2>
-        <p class="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
-          Rejoignez les équipes qui pilotent déjà leurs projets avec plus de clarté et moins de friction.
-        </p>
-        <NuxtLink to="/auth/signup" class="inline-flex items-center gap-2 px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-full font-bold text-base transition-all shadow-xl shadow-primary/30 hover:-translate-y-1">
-          Commencer gratuitement
-          <Icon name="heroicons:arrow-right" class="w-5 h-5" />
-        </NuxtLink>
+          <!-- Feature 4 (Illustration placeholder) -->
+          <div class="p-8 rounded-2xl bg-[#F8FAFC] border border-slate-100 shadow-sm flex items-center justify-center min-h-[200px]">
+             <div class="flex items-center gap-4 text-slate-400">
+               <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 font-medium text-slate-600">A</div>
+               <div class="h-px w-16 bg-gradient-to-r from-transparent via-blue-400 to-transparent"></div>
+               <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 text-blue-500">
+                 <Icon name="heroicons:arrows-right-left" class="w-4 h-4" />
+               </div>
+             </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-[#080B11] border-t border-white/10 text-slate-400">
-      <div class="max-w-7xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
-        <div class="col-span-2 md:col-span-1">
-          <div class="flex items-center gap-2 mb-4">
-            <img src="/assets/logo_app.svg" alt="Logo" class="w-6 h-6">
-            <span class="landing-display font-bold text-white">Gestion Pro</span>
-          </div>
-          <p class="text-sm leading-relaxed">La plateforme tout-en-un pour piloter vos équipes et vos projets.</p>
+    <footer class="bg-[#F8FAFC] border-t border-slate-100">
+      <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-slate-900">Gestion Pro</span>
         </div>
-        <div>
-          <div class="landing-mono text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">Produit</div>
-          <ul class="space-y-3 text-sm">
-            <li><NuxtLink to="/auth/signup" class="hover:text-white transition-colors">Commencer</NuxtLink></li>
-            <li><NuxtLink to="/auth/login" class="hover:text-white transition-colors">Se connecter</NuxtLink></li>
-          </ul>
+        
+        <div class="flex items-center gap-6 text-sm text-slate-500">
+          <a href="#" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
+          <a href="#" class="hover:text-slate-900 transition-colors">Terms of Service</a>
+          <a href="#" class="hover:text-slate-900 transition-colors">Cookies</a>
+          <a href="#" class="hover:text-slate-900 transition-colors">Contact</a>
         </div>
-        <div>
-          <div class="landing-mono text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">Fonctionnalités</div>
-          <ul class="space-y-3 text-sm">
-            <li>Multi-organisations</li>
-            <li>Vues Kanban</li>
-            <li>Notifications temps réel</li>
-          </ul>
-        </div>
-        <div>
-          <div class="landing-mono text-xs uppercase tracking-wider text-slate-500 font-semibold mb-4">Entreprise</div>
-          <ul class="space-y-3 text-sm">
-            <li>À propos</li>
-            <li>Confidentialité</li>
-            <li>Conditions d'utilisation</li>
-          </ul>
-        </div>
-      </div>
-      <div class="border-t border-white/10">
-        <div class="max-w-7xl mx-auto px-6 py-6 text-sm text-slate-500 text-center">
-          &copy; {{ new Date().getFullYear() }} Gestion Pro. Tous droits réservés.
+
+        <div class="text-sm text-slate-400">
+          &copy; {{ new Date().getFullYear() }} Gestion Pro. All rights reserved.
         </div>
       </div>
     </footer>
@@ -194,45 +141,19 @@ definePageMeta({
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .landing {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
 .landing-display {
-  font-family: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
 }
 
-.landing-mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-}
-
-/* Dot-grid texture, echoes the brief's connective/network reference imagery */
-.landing-dotgrid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.9) 1px, transparent 1px);
-  background-size: 18px 18px;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-fade-in-up,
-  .animate-ping {
-    animation: none !important;
-  }
+/* Base styles for a clean light theme */
+html {
+  scroll-behavior: smooth;
 }
 </style>

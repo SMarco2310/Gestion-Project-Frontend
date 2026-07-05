@@ -84,17 +84,27 @@ export default defineNuxtPlugin(() => {
     return { success: true, message: 'Mocked request' } as any;
   };
 
+  const config = useRuntimeConfig()
+  let base = config.public.apiBase as string
+  if (!base.endsWith('/api')) base += '/api'
+  
   const api = (USE_MOCK_DATA ? mockApi : $fetch.create({
-    baseURL: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
+    baseURL: base,
     onRequest({ options }) {
+      options.headers = new Headers(options.headers || {})
+      options.headers.set('Accept', 'application/json')
       if (token.value) {
         options.headers.set('Authorization', `Bearer ${token.value}`)
       }
     },
     onResponseError({ response }) {
       if (response.status === 401) {
-        token.value = null
-        // navigateTo('/auth/login') // Uncomment when reverting mock
+        const { setAuth } = useAuth()
+        setAuth(null, null)
+        
+        if (process.client) {
+            window.location.href = '/auth/login'
+        }
       }
       if (response.status === 403) {
         const { addToast } = useToast()

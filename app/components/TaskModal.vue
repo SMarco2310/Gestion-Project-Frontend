@@ -210,8 +210,72 @@ const isStatusDropdownOpen = ref(false)
 const isPriorityDropdownOpen = ref(false)
 const isCreateSubtaskModalOpen = ref(false)
 const commentText = ref('')
+const commentTextarea = ref<HTMLTextAreaElement | null>(null)
 const editingCommentId = ref<number | string | null>(null)
 const editingCommentText = ref('')
+
+const showMentionDropdown = ref(false)
+const mentionSearchQuery = ref('')
+const activeMentions = ref<(number | string)[]>([])
+const mentionCursorPosition = ref(0)
+
+const filteredMentionUsers = computed(() => {
+  if (!mentionSearchQuery.value) return orgMembers.value
+  const q = mentionSearchQuery.value.toLowerCase()
+  return orgMembers.value.filter(u => u.name.toLowerCase().includes(q))
+})
+
+const handleCommentInput = () => {
+  if (!commentTextarea.value) return
+  const cursorPosition = commentTextarea.value.selectionStart
+  const textBeforeCursor = commentText.value.substring(0, cursorPosition)
+  
+  const match = textBeforeCursor.match(/@([a-zA-Z0-9_\-]* ?[a-zA-Z0-9_\-]*)$/)
+  
+  if (match && match[1].length < 25) {
+    showMentionDropdown.value = true
+    mentionSearchQuery.value = match[1]
+    mentionCursorPosition.value = match.index || 0
+  } else {
+    showMentionDropdown.value = false
+  }
+}
+
+const selectMention = (member: any) => {
+  const textBeforeMention = commentText.value.substring(0, mentionCursorPosition.value)
+  const textAfterCursor = commentText.value.substring(commentTextarea.value?.selectionStart || 0)
+  
+  commentText.value = `${textBeforeMention}@${member.name} ${textAfterCursor}`
+  
+  if (!activeMentions.value.includes(member.id)) {
+    activeMentions.value.push(member.id)
+  }
+  
+  showMentionDropdown.value = false
+  mentionSearchQuery.value = ''
+  
+  setTimeout(() => {
+    if (commentTextarea.value) {
+      commentTextarea.value.focus()
+      const newPos = mentionCursorPosition.value + member.name.length + 2
+      commentTextarea.value.setSelectionRange(newPos, newPos)
+    }
+  }, 0)
+}
+
+const renderCommentContent = (content: string) => {
+  if (!content) return ''
+  let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  
+  const sortedMembers = [...orgMembers.value].sort((a, b) => b.name.length - a.name.length)
+  
+  for (const member of sortedMembers) {
+    const regex = new RegExp(`@${member.name}\\b`, 'gi')
+    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.name}</span>`)
+  }
+  
+  return html
+}
 
 const formatDisplayDate = (dateStr: string) => {
   if (!dateStr) return 'Aucune'
@@ -287,13 +351,23 @@ const sendComment = async () => {
     return
   }
 
+  // Robustly extract mentions by checking if any @[MemberName] exists in the text
+  const extractedMentions = [...activeMentions.value]
+  orgMembers.value.forEach(member => {
+    if (commentText.value.includes(`@${member.name}`) && !extractedMentions.includes(member.id)) {
+      extractedMentions.push(member.id)
+    }
+  })
+
   try {
     await createCommentaire({
       content: commentText.value.trim(),
       tache_id: props.taskId,
+      mentions: extractedMentions,
     })
 
     commentText.value = ''
+    activeMentions.value = []
     await getCommentaires(props.taskId)
     
     // Update the task's comment count locally in the global state
@@ -356,6 +430,8 @@ const resetState = () => {
   taskBannerImage.value = ''
   taskSubtasks.value = []
   commentText.value = ''
+  activeMentions.value = []
+  showMentionDropdown.value = false
   editingCommentId.value = null
   editingCommentText.value = ''
   isTagDropdownOpen.value = false
@@ -503,8 +579,26 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">
                     {{ user?.name ? user.name.substring(0, 2).toUpperCase() : 'U' }}
                   </div>
-                  <div class="flex-1 rounded-lg overflow-hidden neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500">
-                    <textarea v-model="commentText" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                  <div class="flex-1 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500 relative">
+                    <div class="relative w-full">
+                      <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                      
+                      <!-- Mention Dropdown -->
+                      <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
+                        <ul class="p-1 overflow-y-auto custom-scrollbar">
+                          <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
+                            <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
+                              <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                              <span v-else>{{ user.initials }}</span>
+                            </div> 
+                            <span class="truncate">{{ user.name }}</span>
+                          </li>
+                          <li v-if="filteredMentionUsers.length === 0" class="px-2 py-1.5 text-xs text-secondary text-center italic">
+                            Aucun membre trouvé
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                     <div class="px-3 py-2 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-4 text-xs font-medium text-secondary dark:text-gray-400">
                       <button @click="sendComment" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/10 transition-all duration-200 text-sm font-semibold">
                         <Icon name="heroicons:arrow-up-right" class="w-4 h-4" />
@@ -538,7 +632,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                           <button @click="saveEditComment" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
                         </div>
                       </div>
-                      <p v-else class="text-sm text-secondary dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{{ comment.content }}</p>
+                      <p v-else class="text-sm text-secondary dark:text-gray-400 leading-relaxed whitespace-pre-wrap" v-html="renderCommentContent(comment.content)"></p>
                     </div>
                   </div>
                 </div>

@@ -54,9 +54,10 @@ const calendarEvents = computed(() => {
       start: projet.start_date,
       end: endDate.toISOString().split('T')[0],
       allDay: true,
-      backgroundColor: '#1c3d28',
-      borderColor: '#1c3d28',
-      textColor: '#ffffff',
+      display: 'background',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)', // Light blue background
+      borderColor: 'rgba(59, 130, 246, 0.2)',
+      textColor: '#3b82f6',
       extendedProps: {
         type: 'project',
         description: projet.description

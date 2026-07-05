@@ -28,6 +28,7 @@ export interface Task {
   commentairesCount?: number
   assignee: TaskAssignee
   bannerImage?: string
+  projetName?: string | null
 }
 
 const props = defineProps<{
@@ -201,10 +202,13 @@ onUnmounted(() => {
         <div class="flex items-center justify-between mt-1">
           <div class="flex items-center gap-2.5">
             <!-- Project Select -->
-            <select v-model="newTaskProject" class="text-xs font-medium text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer max-w-[100px] truncate">
-              <option value="" disabled selected>Projet</option>
-              <option v-for="proj in availableProjects" :key="proj.id" :value="proj.id">{{ proj.name }}</option>
-            </select>
+            <CustomSelect 
+              v-model="newTaskProject"
+              :options="availableProjects.map(p => ({ value: p.id, label: p.name }))"
+              placeholder="Projet"
+              buttonClass="text-[11px] font-medium text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer w-24 flex justify-between items-center"
+              dropdownClass="w-32 mt-1 bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-50 absolute left-0 top-full"
+            />
             
             <!-- Calendar Date Picker -->
             <div class="relative flex items-center">
@@ -222,23 +226,23 @@ onUnmounted(() => {
               </button>
               
               <!-- Assignee Dropdown Menu -->
-              <div v-if="isAssigneeDropdownOpen" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden">
-                 <div class="p-2 border-b border-form-border dark:border-gray-800">
-                    <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
+              <div v-if="isAssigneeDropdownOpen" class="absolute top-full right-0 mt-1.5 w-44 bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-50 overflow-hidden">
+                 <div class="px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20">
+                    <p class="text-[10px] uppercase tracking-wider text-secondary font-bold">Assigner à</p>
                  </div>
                  <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
-                    <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = null; isAssigneeDropdownOpen = false">
-                       <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
-                         <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                    <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-2.5 text-[13px] font-medium text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = null; isAssigneeDropdownOpen = false">
+                       <div class="w-5 h-5 rounded-full border border-dashed border-gray-400 dark:border-gray-600 flex items-center justify-center text-secondary shrink-0">
+                         <Icon name="ph:user-minus" class="w-3 h-3" />
                        </div> 
                        <span class="text-secondary dark:text-gray-400">Non assigné</span>
                     </li>
-                    <li v-for="user in orgMembers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = user; isAssigneeDropdownOpen = false">
-                       <div :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
+                    <li v-for="user in orgMembers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-2.5 text-[13px] font-medium text-main dark:text-white transition-colors" @click.stop="newTaskAssignee = user; isAssigneeDropdownOpen = false">
+                       <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden shrink-0 shadow-sm', user.profile_picture ? '' : user.color]">
                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
                          <span v-else>{{ user.initials }}</span>
                        </div> 
-                       {{ user.name }}
+                       <span class="truncate">{{ user.name }}</span>
                     </li>
                  </ul>
               </div>
@@ -313,9 +317,15 @@ onUnmounted(() => {
             <!-- Footer -->
             <div class="flex items-center justify-between mt-1">
                <!-- Reference -->
-               <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
-                  <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm', item.issueTypeColorClass || 'text-emerald-600']" />
-                  <span :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
+               <div class="flex flex-col gap-0.5 max-w-[55%]">
+                 <div v-if="item.projetName" class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider truncate flex items-center gap-1">
+                   <Icon name="heroicons:folder" class="w-3 h-3 shrink-0" />
+                   <span class="truncate">{{ item.projetName }}</span>
+                 </div>
+                 <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
+                    <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
+                    <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
+                 </div>
                </div>
 
                <!-- Assignee, Comments & Status -->

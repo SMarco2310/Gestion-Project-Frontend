@@ -154,12 +154,28 @@ const handleAddMember = (member: any) => {
   addToast({ type: 'success', title: 'Succès', message: 'Membre ajouté.' });
 }
 
-const handleInviteNew = () => {
-  if (!isEmailQuery.value) return
-  // Mock invite logic
-  addToast({ type: 'success', title: 'Succès', message: `Invitation envoyée à ${searchQuery.value}.` });
-  isAddMemberModalOpen.value = false
-  searchQuery.value = ''
+const handleInviteNew = async () => {
+  if (!isEmailQuery.value || !activeOrganization.value) return;
+  try {
+    const data = await $api<{success:boolean, message:string, invitation:any}>(`/invitations`, {
+      method: 'POST', 
+      body: {
+        email: searchQuery.value,
+        organization_id: activeOrganization.value.id,
+        team_id: teamId,
+        role: 'member'
+      }
+    });
+
+    if (data.success) {
+      addToast({ type: 'success', title: 'Succès', message: `Invitation envoyée à ${searchQuery.value}.` });
+      isAddMemberModalOpen.value = false;
+      searchQuery.value = '';
+    }
+  } catch (error: any) {
+    console.error(error);
+    addToast({ type: 'error', title: 'Erreur', message: error?.data?.message || 'Impossible d\'envoyer l\'invitation.' });
+  }
 }
 </script>
 
@@ -296,10 +312,15 @@ const handleInviteNew = () => {
           
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle dans l'équipe</label>
-            <select v-model="selectedRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="membre">Membre</option>
-              <option value="team_lead">Team Lead</option>
-            </select>
+            <CustomSelect 
+              v-model="selectedRole"
+              :options="[
+                { value: 'membre', label: 'Membre' },
+                { value: 'team_lead', label: 'Team Lead' }
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
 
           <div class="mt-4 border border-form-border dark:border-gray-800 rounded-xl overflow-hidden bg-canvas dark:bg-[#151515]">
@@ -350,10 +371,15 @@ const handleInviteNew = () => {
               Sélectionnez le nouveau rôle pour <span class="font-bold text-main dark:text-gray-200">{{ selectedMemberForRole?.name }}</span>.
             </p>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
-            <select v-model="selectedMemberForRole.role" class="w-full px-4 py-2.5 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="membre">Membre</option>
-              <option value="team_lead">Team Lead</option>
-            </select>
+            <CustomSelect 
+              v-model="selectedMemberForRole.role"
+              :options="[
+                { value: 'membre', label: 'Membre' },
+                { value: 'team_lead', label: 'Team Lead' }
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-2.5 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
         </div>
         <div class="p-5 border-t border-form-border dark:border-gray-800 flex justify-end gap-3 bg-gray-50 dark:bg-[#1A1A1D]">

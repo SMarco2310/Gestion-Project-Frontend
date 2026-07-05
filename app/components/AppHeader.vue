@@ -73,6 +73,24 @@ const formatNotifTime = (dateStr: string) => {
     return ''
   }
 }
+
+const orgMenuContainerRef = ref<HTMLElement | null>(null)
+
+const handleGlobalClick = (e: MouseEvent) => {
+  if (isOrgMenuExpanded.value && orgMenuContainerRef.value) {
+    if (!orgMenuContainerRef.value.contains(e.target as Node)) {
+      isOrgMenuExpanded.value = false
+    }
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleGlobalClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick)
+})
 </script>
 
 <template>
@@ -83,7 +101,10 @@ const formatNotifTime = (dateStr: string) => {
             <div class="flex md:hidden items-center gap-3">
                 <NuxtLink to="/dashboard" class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-md shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
-                        <img v-if="activeOrganization" :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
+                        <template v-if="activeOrganization">
+                            <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                            <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
+                        </template>
                         <img v-else src="/assets/logo_app.svg" class="w-full h-full object-contain p-1" alt="Logo">
                     </div>
                     <h1 class="text-lg font-bold text-main dark:text-white tracking-tight leading-tight truncate max-w-[200px]">
@@ -186,7 +207,7 @@ const formatNotifTime = (dateStr: string) => {
             ]"
         >
             <!-- Banner / Logo Area -->
-            <div class="relative h-20 md:h-28 flex items-center justify-between gap-2 px-4 shrink-0 border-b border-form-border dark:border-gray-800 md:border-b-0">
+            <div ref="orgMenuContainerRef" class="relative h-20 md:h-28 flex items-center justify-between gap-2 px-4 shrink-0 border-b border-form-border dark:border-gray-800 md:border-b-0">
                 <div @click="isOrgMenuExpanded = !isOrgMenuExpanded" class="flex items-center gap-3 overflow-hidden cursor-pointer hover:bg-canvas dark:hover:bg-gray-800/50 p-2 rounded-lg flex-1 transition-colors group">
                     <div class="w-10 h-10 rounded-lg shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
                         <template v-if="activeOrganization">
@@ -207,9 +228,6 @@ const formatNotifTime = (dateStr: string) => {
                 <button @click="isMobileMenuOpen = false" class="md:hidden p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white shrink-0">
                     <Icon name="heroicons:x-mark" class="w-6 h-6" />
                 </button>
-
-                <!-- Bubble Overlay Background -->
-                <div v-if="isOrgMenuExpanded" @click="isOrgMenuExpanded = false" class="fixed inset-0 z-40"></div>
 
                 <!-- Organization Bubble Menu -->
                 <div v-if="isOrgMenuExpanded" class="absolute top-4 left-2 right-2 md:left-4 md:right-auto md:w-[224px] bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-800 rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
@@ -251,7 +269,7 @@ const formatNotifTime = (dateStr: string) => {
                 </div>
             </div>
 
-            <nav class="flex flex-col gap-2 p-4 pt-6 overflow-y-auto custom-scrollbar">
+            <nav class="flex flex-col gap-2 p-4 pt-6 overflow-y-auto item custom-scrollbar">
                 <NuxtLink to="/dashboard" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/dashboard') 

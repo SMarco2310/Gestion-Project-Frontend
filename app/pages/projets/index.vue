@@ -27,6 +27,34 @@ const getProjectMetrics = (projectId: number | string) => {
   return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }
 }
 
+const getProjectUsers = (p: any) => {
+  const usersMap = new Map();
+  // Directly assigned users
+  if (p.users && Array.isArray(p.users)) {
+    p.users.forEach((u: any) => usersMap.set(u.id, u));
+  }
+  // Team members
+  if (p.teams && Array.isArray(p.teams)) {
+    p.teams.forEach((t: any) => {
+      if (t.members && Array.isArray(t.members)) {
+        t.members.forEach((u: any) => usersMap.set(u.id, u));
+      }
+    });
+  }
+  // Include project owner if available
+  if (p.user) {
+    usersMap.set(p.user.id, p.user);
+  }
+  
+  return Array.from(usersMap.values()).map((u: any) => {
+    let pic = u.profile_picture;
+    if (pic && !pic.startsWith('http')) {
+      pic = `http://localhost:8000${pic}`;
+    }
+    return { ...u, profile_picture: pic };
+  });
+}
+
 const isCreateModalOpen = ref(false)
 const isSideSheetOpen = ref(false)
 const selectedProjectId = ref<number | string | null>(null)
@@ -71,7 +99,8 @@ const handleCreateProjectSubmit = async (data: any) => {
       data.description,
       data.status,
       data.start_date,
-      data.end_date
+      data.end_date,
+      data.color
     )
     await getProjets()
     const { addToast } = useToast()
@@ -167,12 +196,15 @@ const filteredProjets = computed(() => {
         <ProjetCard
           v-for="p in filteredProjets" :key="p.id"
           :id="p.id"
+          :user_id="(p as any).user_id"
           :reference_code="p.reference_code"
           :name="p.name"
           :description="p.description"
           :status="(p as any).status || 'à faire'"
+          :color="p.color"
           :end_date="(p as any).end_date || ''"
           :metrics="getProjectMetrics(p.id)"
+          :users="getProjectUsers(p)"
           @cardClick="handleProjectClick"
           @delete="handleDeleteProject"
           @edit="handleEditProject"

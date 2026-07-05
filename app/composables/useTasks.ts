@@ -71,8 +71,17 @@ export default function useTasks() {
       })
 
       const rawTasks = Array.isArray(data) ? data : (data.taches ?? data.data?.data ?? data.data ?? data.tasks ?? [])
-      tasks.value = rawTasks.map(normalizeTask)
-      return tasks.value
+      const normalizedTasks = rawTasks.map(normalizeTask)
+
+      if (projectId) {
+        // Keep existing tasks from other projects and merge new ones
+        const otherTasks = tasks.value.filter(t => String(t.projet_id) !== String(projectId))
+        tasks.value = [...otherTasks, ...normalizedTasks]
+        return normalizedTasks
+      } else {
+        tasks.value = normalizedTasks
+        return tasks.value
+      }
     } catch (err) {
       console.error('Failed to fetch tasks:', err)
       if (!tasks.value.length) {

@@ -236,5 +236,6 @@ export default function useAuth() {
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    setAuth,
   }
 }

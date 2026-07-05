@@ -5,7 +5,7 @@ import useTasks from '~/composables/useTasks'
 import useTeams from '~/composables/useTeams'
 import { useToast } from '~/composables/useToast'
 
-const { isOwner } = useAuth()
+const { isOwner, user } = useAuth()
 const { getTeams } = useTeams()
 const { activeOrganization, getMembers } = useOrganizations()
 
@@ -39,6 +39,7 @@ const projectColor = ref('blue')
 const editTitle = ref('')
 const editDescription = ref('')
 const editEndDate = ref('')
+const editColor = ref('blue')
 
 const totalTasks = ref(0)
 const todoTasks = ref(0)
@@ -64,19 +65,63 @@ const filteredAssignees = computed(() => {
   }
 })
 
-const assignMember = (member: any) => {
+const assignMember = async (member: any) => {
   assignedMembers.value.push(member)
   availableMembers.value = availableMembers.value.filter(m => m.id !== member.id)
   isAddDropdownOpen.value = false
   assignSearchQuery.value = ''
+  if (!isEditing.value && props.projectId) {
+    await saveInstant()
+  }
 }
 
-const assignTeam = (team: any) => {
+const assignTeam = async (team: any) => {
   assignedTeams.value.push(team)
   availableTeams.value = availableTeams.value.filter(t => t.id !== team.id)
   isAddDropdownOpen.value = false
   assignSearchQuery.value = ''
+  if (!isEditing.value && props.projectId) {
+    await saveInstant()
+  }
 }
+
+const removeMember = async (member: any) => {
+  assignedMembers.value = assignedMembers.value.filter(m => m.id !== member.id)
+  availableMembers.value.push(member)
+  if (!isEditing.value && props.projectId) {
+    await saveInstant()
+  }
+}
+
+const removeTeam = async (team: any) => {
+  assignedTeams.value = assignedTeams.value.filter(t => t.id !== team.id)
+  availableTeams.value.push(team)
+  if (!isEditing.value && props.projectId) {
+    await saveInstant()
+  }
+}
+
+const saveInstant = async () => {
+    try {
+      await updateProjet(
+        props.projectId,
+        projectTitle.value,
+        projectDescription.value,
+        projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
+        projectEndDate.value ? String(projectEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
+        projectStatus.value,
+        projectColor.value,
+        assignedTeams.value.map(t => t.id),
+        assignedMembers.value.map(m => m.id)
+      )
+      addToast({ title: 'Équipe modifiée', message: 'L\'équipe du projet a été mise à jour.', type: 'success' })
+    } catch(e) {
+      addToast({ title: 'Erreur', message: 'Impossible de mettre à jour l\'équipe.', type: 'error' })
+    }
+}
+
+const projectCreatorId = ref<number | null>(null)
+const canEdit = computed(() => isOwner.value || (projectCreatorId.value && user.value && projectCreatorId.value === user.value.id))
 
 const formatDate = (dateString: string) => {
   if (!dateString) return 'Non définie'
@@ -96,12 +141,24 @@ const fetchProject = async (id: number | string | null) => {
       projectTitle.value = projet.name || 'Sans titre'
       projectDescription.value = projet.description || 'Ajouter une description...'
       projectRef.value = projet.reference_code || `PRJ-${String(id).substring(0, 8)}`
+      projectCreatorId.value = (projet as any).user_id || null
       projectStartDate.value = (projet as any).start_date || ''
       projectEndDate.value = (projet as any).end_date || ''
       projectColor.value = (projet as any).color || 'blue'
       
       assignedTeams.value = (projet as any).teams || []
-      assignedMembers.value = (projet as any).users || []
+      
+      let members = (projet as any).users || []
+      const creator = (projet as any).user
+      if (creator) {
+        const existingIndex = members.findIndex((m: any) => m.id === creator.id)
+        if (existingIndex === -1) {
+          members = [{ ...creator, role: 'Créateur du projet' }, ...members]
+        } else {
+          members[existingIndex] = { ...members[existingIndex], role: members[existingIndex].role || 'Créateur du projet' }
+        }
+      }
+      assignedMembers.value = members
       
       // The API returns the status as defined in ProjectStatus (e.g. 'à faire', 'en cours', 'terminé')
       if ((projet as any).status) projectStatus.value = (projet as any).status
@@ -112,9 +169,9 @@ const fetchProject = async (id: number | string | null) => {
     if (tasksData) {
       projectTasks.value = tasksData
       totalTasks.value = tasksData.length
-      todoTasks.value = tasksData.filter(t => t.status === 'à faire').length
-      inProgressTasks.value = tasksData.filter(t => t.status === 'en cours').length
-      doneTasks.value = tasksData.filter(t => t.status === 'terminé').length
+      todoTasks.value = tasksData.filter((t: any) => t.status === 'à faire').length
+      inProgressTasks.value = tasksData.filter((t: any) => t.status === 'en cours').length
+      doneTasks.value = tasksData.filter((t: any) => t.status === 'terminé').length
       
       if (totalTasks.value > 0) {
         tasksProgress.value = Math.round((doneTasks.value / totalTasks.value) * 100)
@@ -133,6 +190,7 @@ const startEditing = () => {
   editTitle.value = projectTitle.value
   editDescription.value = projectDescription.value
   editEndDate.value = projectEndDate.value ? (projectEndDate.value.split('T')[0] ?? '') : ''
+  editColor.value = projectColor.value
   isEditing.value = true
 }
 
@@ -146,7 +204,7 @@ const saveEdit = async () => {
       projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
       editEndDate.value ? String(editEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
       projectStatus.value,
-      projectColor.value,
+      editColor.value,
       assignedTeams.value.map(t => t.id),
       assignedMembers.value.map(m => m.id)
     )
@@ -154,6 +212,7 @@ const saveEdit = async () => {
     projectTitle.value = editTitle.value
     projectDescription.value = editDescription.value
     projectEndDate.value = editEndDate.value
+    projectColor.value = editColor.value
     isEditing.value = false
     addToast({ title: 'Projet modifié', message: 'Les modifications ont été enregistrées.', type: 'success' })
   } catch (error) {
@@ -222,6 +281,12 @@ const getTodayDate = () => {
 }
 
 const updateStatus = async (status: string) => {
+  if (status === 'terminé' && doneTasks.value === 0) {
+    addToast({ title: 'Action impossible', message: 'Impossible de terminer un projet qui n\'a aucune tâche terminée.', type: 'error' })
+    isStatusDropdownOpen.value = false
+    return
+  }
+
   projectStatus.value = status
   isStatusDropdownOpen.value = false
   
@@ -234,7 +299,10 @@ const updateStatus = async (status: string) => {
       projectDescription.value,
       projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
       projectEndDate.value ? String(projectEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
-      status
+      status,
+      projectColor.value,
+      assignedTeams.value.map(t => t.id),
+      assignedMembers.value.map(m => m.id)
     )
     addToast({ title: 'Statut modifié', message: 'Le statut du projet a été mis à jour.', type: 'success' })
   } catch (err) {
@@ -287,11 +355,11 @@ const updateStatus = async (status: string) => {
             </div>
           </div>
           
-          <div class="flex items-center gap-2 shrink-0">
-            <button v-if="!isEditing" @click="startEditing" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier">
-              <Icon name="heroicons:pencil" class="w-6 h-6" />
+          <div class="flex items-center gap-1 shrink-0">
+            <button v-if="!isEditing && canEdit" @click="startEditing" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier">
+              <Icon name="heroicons:pencil" class="w-5 h-5" />
             </button>
-            <button v-if="!isEditing" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
+            <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
               <Icon name="heroicons:trash" class="w-6 h-6" />
             </button>
             <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
@@ -309,8 +377,6 @@ const updateStatus = async (status: string) => {
             <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['px-3 py-1 rounded-md neo-metallic font-bold text-sm flex items-center gap-1.5 hover:brightness-105 transition-colors', statusConfig[projectStatus]?.colorClass || '']">
               {{ statusConfig[projectStatus]?.label || projectStatus }} <Icon name="heroicons:chevron-down" class="w-4 h-4" />
             </button>
-            <span v-if="!isEditing" class="text-sm text-secondary dark:text-gray-500 font-medium">Fin prévue: {{ formatDate(projectEndDate) }}</span>
-            <input v-else v-model="editEndDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
             
             <!-- Dropdown Menu -->
             <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-40"></div>
@@ -329,6 +395,30 @@ const updateStatus = async (status: string) => {
               {{ projectDescription }}
             </div>
             <textarea v-else v-model="editDescription" class="w-full h-32 p-3 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
+          </div>
+
+          <!-- Color Selection (Only in Edit Mode) -->
+          <div v-if="isEditing" class="mb-8">
+            <label class="block text-sm font-bold text-main dark:text-gray-300 mb-2">Couleur du dossier</label>
+            <div class="flex items-center gap-3">
+              <button 
+                v-for="color in ['purple', 'blue', 'green', 'rose', 'amber', 'slate']" 
+                :key="color"
+                @click="editColor = color"
+                class="w-8 h-8 rounded-full border-2 transition-transform"
+                :class="[
+                  editColor === color ? 'border-primary dark:border-blue-500 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                  {
+                    'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
+                    'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
+                    'bg-emerald-100 dark:bg-emerald-900/40': color === 'green',
+                    'bg-rose-100 dark:bg-rose-900/40': color === 'rose',
+                    'bg-amber-100 dark:bg-amber-900/40': color === 'amber',
+                    'bg-slate-200 dark:bg-slate-700': color === 'slate'
+                  }
+                ]"
+              ></button>
+            </div>
           </div>
 
           <!-- Progress -->
@@ -353,16 +443,16 @@ const updateStatus = async (status: string) => {
                 </div>
                 <div class="flex h-2 w-full gap-1 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
                   <template v-if="totalTasks > 0">
-                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-l-full transition-all duration-500" :style="{ width: `${(doneTasks / totalTasks) * 100}%` }" title="Terminés"></div>
+                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-l-full transition-all duration-500" :style="{ width: `${(todoTasks / totalTasks) * 100}%` }" title="À faire"></div>
                     <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-500" :style="{ width: `${(inProgressTasks / totalTasks) * 100}%` }" title="En cours"></div>
-                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-r-full transition-all duration-500" :style="{ width: `${(todoTasks / totalTasks) * 100}%` }" title="À faire"></div>
+                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-r-full transition-all duration-500" :style="{ width: `${(doneTasks / totalTasks) * 100}%` }" title="Terminés"></div>
                   </template>
                   <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-800 rounded-full"></div>
                 </div>
                 <div class="flex justify-between text-[11px] font-bold text-secondary dark:text-gray-500 pt-2 uppercase tracking-wider">
-                  <span class="text-emerald-600 dark:text-emerald-500">{{ doneTasks }} Terminés</span>
-                  <span class="text-blue-600 dark:text-blue-400">{{ inProgressTasks }} En cours</span>
                   <span>{{ todoTasks }} À faire</span>
+                  <span class="text-blue-600 dark:text-blue-400">{{ inProgressTasks }} En cours</span>
+                  <span class="text-emerald-600 dark:text-emerald-500">{{ doneTasks }} Terminés</span>
                 </div>
               </div>
             </div>
@@ -372,7 +462,7 @@ const updateStatus = async (status: string) => {
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
-              <div class="relative" v-if="isOwner">
+              <div class="relative">
                 <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-primary dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
                   <Icon name="heroicons:plus" class="w-4 h-4" />
                   Ajouter
@@ -412,28 +502,36 @@ const updateStatus = async (status: string) => {
               </div>
             </div>
             
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-col gap-3">
               <!-- Assigned Teams -->
-              <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm font-medium">
-                <Icon name="heroicons:user-group" class="w-4 h-4" />
-                {{ team.name }}
-                <button v-if="isOwner" @click="assignedTeams = assignedTeams.filter(t => t.id !== team.id); availableTeams.push(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-1">
-                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
-                </button>
+              <div v-if="assignedTeams.length > 0" class="flex flex-wrap gap-2 mb-2">
+                  <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm font-medium">
+                    <Icon name="heroicons:user-group" class="w-4 h-4" />
+                    {{ team.name }}
+                    <button @click="removeTeam(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-1">
+                      <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                    </button>
+                  </div>
               </div>
               
               <!-- Assigned Members -->
-              <div v-for="member in assignedMembers" :key="'m-'+member.id" @click="navigateTo(`/profile/${member.id}`)" class="flex items-center gap-2 px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-main dark:text-gray-300 border border-form-border dark:border-gray-800 rounded-lg text-sm font-medium cursor-pointer hover:border-primary dark:hover:border-blue-500/50 transition-colors group">
-                <div class="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-[8px] font-bold shrink-0">
-                  {{ member.name.charAt(0) }}
+              <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
+                <div class="flex items-center gap-3 cursor-pointer" @click="navigateTo(`/profile/${member.id}`)">
+                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
+                      <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                      <span v-else>{{ member.name.substring(0, 2).toUpperCase() }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-main dark:text-gray-200 group-hover:text-primary transition-colors">{{ member.name }}</span>
+                        <span class="text-xs text-secondary dark:text-gray-500">{{ member.role || 'Membre' }}</span>
+                    </div>
                 </div>
-                <span class="group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">{{ member.name }}</span>
-                <button v-if="isOwner" @click.stop="assignedMembers = assignedMembers.filter(m => m.id !== member.id); availableMembers.push(member)" class="hover:text-red-500 dark:hover:text-red-400 ml-1 text-secondary dark:text-gray-500 transition-colors">
-                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                <button @click.stop="removeMember(member)" class="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                  <Icon name="heroicons:x-mark" class="w-5 h-5" />
                 </button>
               </div>
               
-              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic">
+              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic mt-2">
                 Aucun membre ou équipe assigné.
               </div>
             </div>
@@ -482,6 +580,15 @@ const updateStatus = async (status: string) => {
             </div>
             <div v-else class="text-sm text-secondary dark:text-gray-500 p-4 border border-dashed border-form-border dark:border-gray-800 rounded-lg text-center bg-canvas dark:bg-transparent">
               Aucune tâche dans ce projet.
+            </div>
+          </div>
+          
+          <!-- Footer Details -->
+          <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex justify-between items-center pb-4">
+            <div class="flex flex-col gap-1">
+               <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de fin prévue</span>
+               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectEndDate) }}</span>
+               <input v-else v-model="editEndDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>
           

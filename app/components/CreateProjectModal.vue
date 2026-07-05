@@ -128,14 +128,16 @@ const submit = async () => {
               <div class="flex gap-4">
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Statut</label>
-                  <select 
+                  <CustomSelect 
                     v-model="form.status"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer"
-                  >
-                    <option :value="ProjectStatus.TO_DO">À faire</option>
-                    <option :value="ProjectStatus.IN_PROGRESS">En cours</option>
-                    <option :value="ProjectStatus.DONE">Terminé</option>
-                  </select>
+                    :options="[
+                      { value: ProjectStatus.TO_DO, label: 'À faire' },
+                      { value: ProjectStatus.IN_PROGRESS, label: 'En cours' },
+                      { value: ProjectStatus.DONE, label: 'Terminé' }
+                    ]"
+                    placeholder="Statut"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer flex justify-between items-center text-sm"
+                  />
                 </div>
               </div>
 

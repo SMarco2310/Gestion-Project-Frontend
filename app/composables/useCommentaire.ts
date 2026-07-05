@@ -11,6 +11,7 @@ interface Commentaire {
 interface CommentairePayload {
   content: string
   tache_id: number | string | null
+  mentions?: (number | string)[]
 }
 
 export default function useCommentaire() {

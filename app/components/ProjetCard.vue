@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { PropType } from 'vue'
 
-const { isOwner } = useAuth()
+const { isOwner, user } = useAuth()
 const isDropdownOpen = ref(false)
 const emit = defineEmits(['edit', 'delete', 'cardClick'])
 const isEditModalOpen = ref(false)
@@ -10,6 +11,10 @@ const props = defineProps({
     id: {
         type: Number,
         required: true
+    },
+    user_id: {
+        type: Number,
+        required: false
     },
     reference_code: {
         type: String,
@@ -38,7 +43,15 @@ const props = defineProps({
     metrics: {
         type: Object,
         default: () => ({ totalTasks: 0, doneTasks: 0, inProgressTasks: 0, todoTasks: 0, tasksProgress: 0 })
+    },
+    users: {
+        type: Array as PropType<Array<{id: number, name: string, profile_picture?: string|null}>>,
+        default: () => []
     }
+})
+
+const canEdit = computed(() => {
+  return isOwner.value || (props.user_id && user.value && props.user_id === user.value.id)
 })
 
 
@@ -68,15 +81,29 @@ const handleEdit = () => {
   emit('edit', props.id)
 }
 
-const themeClasses = computed(() => {
+const tabThemeClasses = computed(() => {
+    const base = 'shadow-[inset_0_2px_3px_rgba(255,255,255,0.3),_0_-2px_4px_rgba(0,0,0,0.02)] border-t border-l border-r border-white/20 backdrop-blur-md'
     switch(props.color) {
-        case 'blue': return 'bg-blue-50 dark:bg-[#1E293B]'
-        case 'green': return 'bg-emerald-50 dark:bg-[#1C2C28]'
-        case 'rose': return 'bg-rose-50 dark:bg-[#342025]'
-        case 'amber': return 'bg-amber-50 dark:bg-[#33291A]'
-        case 'slate': return 'bg-slate-50 dark:bg-[#1E293B]'
+        case 'blue': return `${base} bg-gradient-to-b from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600`
+        case 'green': return `${base} bg-gradient-to-b from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600`
+        case 'rose': return `${base} bg-gradient-to-b from-rose-400 to-rose-500 dark:from-rose-500 dark:to-rose-600`
+        case 'amber': return `${base} bg-gradient-to-b from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-500`
+        case 'slate': return `${base} bg-gradient-to-b from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-600`
         case 'purple':
-        default: return 'bg-[#F2F0F9] dark:bg-[#2A2938]'
+        default: return `${base} bg-gradient-to-b from-indigo-400 to-purple-500 dark:from-indigo-500 dark:to-purple-600`
+    }
+})
+
+const bodyThemeClasses = computed(() => {
+    const base = 'shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),_0_8px_20px_-4px_rgba(0,0,0,0.15)] border-t border-white/20 text-white backdrop-blur-xl'
+    switch(props.color) {
+        case 'blue': return `${base} bg-gradient-to-br from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-700 ring-1 ring-white/10`
+        case 'green': return `${base} bg-gradient-to-br from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-700 ring-1 ring-white/10`
+        case 'rose': return `${base} bg-gradient-to-br from-rose-400 to-rose-500 dark:from-rose-500 dark:to-rose-700 ring-1 ring-white/10`
+        case 'amber': return `${base} bg-gradient-to-br from-amber-400 to-orange-400 dark:from-amber-500 dark:to-orange-600 ring-1 ring-white/10`
+        case 'slate': return `${base} bg-gradient-to-br from-slate-400 to-slate-500 dark:from-slate-500 dark:to-slate-700 ring-1 ring-white/10`
+        case 'purple':
+        default: return `${base} bg-gradient-to-br from-indigo-400 to-purple-500 dark:from-indigo-500 dark:to-purple-700 ring-1 ring-white/10`
     }
 })
 
@@ -90,28 +117,28 @@ const themeClasses = computed(() => {
         <div class="relative w-full pt-[18px] cursor-pointer">
             
             <!-- Folder Tab (z-0) -->
-            <div class="absolute top-0 left-0 h-6 w-[40%] rounded-t-2xl transition-colors duration-300 z-0" :class="themeClasses"></div>
+            <div class="absolute top-0 left-0 h-6 w-[55%] rounded-tl-2xl rounded-tr-[24px] transition-colors duration-300 z-0" :class="tabThemeClasses"></div>
             
             <!-- Paper inside (z-10) -->
-            <div v-if="props.metrics.totalTasks > 0" class="absolute top-1 left-4 right-4 h-6 bg-white dark:bg-[#222226] rounded-t-xl shadow-sm border border-black/5 dark:border-white/5 z-10 transition-transform duration-300 group-hover:-translate-y-2.5">
+            <div v-if="props.metrics.totalTasks > 0" class="absolute top-1 left-4 right-4 h-6 bg-white dark:bg-[#222226] rounded-t-xl shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1)] border border-black/5 dark:border-white/5 z-10 transition-transform duration-300 group-hover:-translate-y-2.5">
                 <div class="w-16 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-1.5 ml-3"></div>
             </div>
 
             <!-- Folder Body (z-20) -->
-            <div class="relative z-20 w-full rounded-3xl rounded-tl-none p-5 shadow-sm transition-colors duration-300 flex flex-col gap-4" :class="themeClasses">
+            <div class="relative z-20 w-full rounded-3xl rounded-tl-none p-5 transition-colors duration-300 flex flex-col gap-4" :class="bodyThemeClasses">
                 
                 <!-- Top Right Options Menu -->
-                <div class="absolute top-5 right-4 z-20" v-if="isOwner">
-                    <div @click.stop="isDropdownOpen = !isDropdownOpen" class="cursor-pointer w-8 h-8 flex items-center justify-center bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 rounded-full transition-colors">
-                        <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5 text-secondary dark:text-gray-400" />
+                <div class="absolute top-5 right-4 z-20" v-if="canEdit">
+                    <div @click.stop="isDropdownOpen = !isDropdownOpen" class="cursor-pointer w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm">
+                        <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5 text-white/90" />
                     </div>
                     
                     <!-- Overlay for closing -->
                     <div v-if="isDropdownOpen" @click.stop="isDropdownOpen = false" class="fixed inset-0 z-40"></div>
                     
                     <!-- Dropdown Menu -->
-                    <div v-if="isDropdownOpen" class="absolute right-0 mt-2 w-40 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden">
-                        <button @click.stop="isDropdownOpen = false; emit('edit', props.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
+                    <div v-if="isDropdownOpen" class="absolute right-0 mt-2 w-40 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden text-main dark:text-gray-300">
+                        <button @click.stop="isDropdownOpen = false; emit('edit', props.id)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                             <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
                         </button>
                         <button @click.stop="handleDelete" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
@@ -122,60 +149,77 @@ const themeClasses = computed(() => {
 
                 <!-- Tags ON the folder card -->
                 <div class="flex justify-between items-center w-full">
-                    <span class="text-secondary dark:text-gray-400 font-bold text-sm tracking-wide flex items-center gap-1.5">
-                        <Icon name="heroicons:folder" class="w-4 h-4" />
+                    <span class="text-white/90 font-bold text-sm tracking-wide flex items-center gap-1.5 drop-shadow-sm">
+                        <Icon name="heroicons:folder" class="w-4 h-4 text-white/80" />
                         {{ props.reference_code }}
                     </span>
                     <span :class="{ 
-                        'px-2.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-400 font-bold text-[10px] uppercase tracking-wider' : props.status === 'à faire' , 
-                        'px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 font-bold text-[10px] uppercase tracking-wider' : props.status === 'en cours' , 
-                        'px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 font-bold text-[10px] uppercase tracking-wider' : props.status === 'terminé'
+                        'px-2.5 py-0.5 rounded-full bg-orange-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'à faire' , 
+                        'px-2.5 py-0.5 rounded-full bg-blue-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'en cours' , 
+                        'px-2.5 py-0.5 rounded-full bg-emerald-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'terminé'
                     }">{{ props.status }}</span>
                 </div>
 
                 <!-- Title -->
-                <h1 class="text-xl font-bold text-main dark:text-white tracking-wide pr-10 mt-1 truncate">{{ props.name }}</h1>
+                <h1 class="text-xl font-bold text-white tracking-wide pr-10 mt-1 truncate drop-shadow-md">{{ props.name }}</h1>
 
                 <!-- Progress Bars -->
                 <div class="flex flex-col gap-5 pt-2">
                     <!-- Tasks Progress -->
                     <div class="flex flex-col gap-1.5">
                         <div class="flex justify-between items-center">
-                            <span class="text-secondary dark:text-gray-400 text-xs font-mono tracking-tight">Progression des tâches</span>
-                            <span class="text-secondary dark:text-gray-400 text-xs font-mono tracking-tight font-bold">{{ props.metrics.tasksProgress }}%</span>
+                            <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Progression des tâches</span>
+                            <span class="text-white/90 text-xs font-mono tracking-tight font-bold drop-shadow-sm">{{ props.metrics.tasksProgress }}%</span>
                         </div>
-                        <div class="w-full h-1.5 bg-black/5 dark:bg-white/5 rounded-full overflow-hidden">
-                            <div class="h-full bg-primary dark:bg-blue-500 transition-all duration-500 rounded-full" :style="{ width: `${props.metrics.tasksProgress}%` }"></div>
+                        <div class="w-full h-1.5 bg-black/20 rounded-full overflow-hidden shadow-inner backdrop-blur-sm">
+                            <div class="h-full bg-white transition-all duration-500 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" :style="{ width: `${props.metrics.tasksProgress}%` }"></div>
                         </div>
                     </div>
                     
                     <!-- Tickets Progress -->
                     <div class="flex flex-col gap-1.5">
-                        <span class="text-secondary dark:text-gray-400 text-xs font-mono tracking-tight">Progression des tickets</span>
-                        <div class="flex h-1.5 w-full gap-1">
+                        <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Progression des tickets</span>
+                        <div class="flex h-1.5 w-full rounded-full overflow-hidden bg-black/20 shadow-inner">
                             <template v-if="props.metrics.totalTasks > 0">
-                                <div class="bg-[#9BA9CE] dark:bg-[#7A8BB5] h-full rounded-l-full transition-all duration-500" :style="{ width: `${(props.metrics.doneTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.doneTasks > 0"></div>
-                                <div class="bg-[#B3CFFF] dark:bg-[#4C75D3] h-full transition-all duration-500" :style="{ width: `${(props.metrics.inProgressTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.inProgressTasks > 0"></div>
-                                <div class="bg-[#454A59] dark:bg-[#2A2E38] h-full rounded-r-full transition-all duration-500" :style="{ width: `${(props.metrics.todoTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.todoTasks > 0"></div>
+                                <div class="bg-transparent h-full transition-all duration-500" :style="{ width: `${(props.metrics.todoTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.todoTasks > 0"></div>
+                                <div class="bg-white/50 h-full transition-all duration-500 border-l border-black/10" :style="{ width: `${(props.metrics.inProgressTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.inProgressTasks > 0"></div>
+                                <div class="bg-white/90 h-full transition-all duration-500 shadow-[0_0_4px_rgba(255,255,255,0.5)] border-l border-black/10" :style="{ width: `${(props.metrics.doneTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.doneTasks > 0"></div>
                             </template>
-                            <div v-else class="w-full h-full bg-black/5 dark:bg-white/5 rounded-full"></div>
                         </div>
                         
-                        <div class="flex justify-between text-[10px] font-semibold text-main dark:text-gray-400 pt-1 font-mono tracking-tight">
-                            <span>{{ props.metrics.doneTasks }} Terminés</span>
-                            <span>{{ props.metrics.inProgressTasks }} En cours</span>
+                        <div class="flex justify-between text-[10px] font-semibold text-white/80 pt-1 font-mono tracking-tight drop-shadow-sm">
                             <span>{{ props.metrics.todoTasks }} À faire</span>
+                            <span>{{ props.metrics.inProgressTasks }} En cours</span>
+                            <span>{{ props.metrics.doneTasks }} Terminés</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Divider & Footer -->
-                <div class="flex items-center justify-between pt-4 mt-2 border-t border-black/5 dark:border-white/5">
-                    <div class="w-7 h-7 rounded-full overflow-hidden bg-white dark:bg-black/20 flex items-center justify-center shadow-sm border border-black/5 dark:border-white/5">
-                        <Icon name="heroicons:user" class="w-3.5 h-3.5 text-secondary dark:text-gray-400" />
+                <div class="flex items-center justify-between pt-4 mt-2 border-t border-white/20">
+                    <div class="flex items-center -space-x-2">
+                        <template v-if="props.users && props.users.length > 0">
+                            <div v-for="(u, index) in props.users.slice(0, 3)" :key="u.id" 
+                                 class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm relative"
+                                 :style="{ zIndex: 10 - index }"
+                                 :title="u.name">
+                                <img v-if="u.profile_picture" :src="u.profile_picture" class="w-full h-full object-cover" />
+                                <span v-else class="text-[10px] font-bold">{{ u.name.charAt(0).toUpperCase() }}</span>
+                            </div>
+                            <div v-if="props.users.length > 3" 
+                                 class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm text-[10px] font-bold relative z-0"
+                                 :title="`+${props.users.length - 3} autres`">
+                                +{{ props.users.length - 3 }}
+                            </div>
+                        </template>
+                        <template v-else>
+                            <div class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm relative z-0">
+                                <Icon name="heroicons:user" class="w-3.5 h-3.5" />
+                            </div>
+                        </template>
                     </div>
-                    <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-full">
-                        <Icon name="heroicons:calendar" class="w-3.5 h-3.5" />
+                    <div class="flex items-center gap-1.5 text-white/90 text-xs font-medium bg-black/20 px-3 py-1.5 rounded-full shadow-inner backdrop-blur-sm">
+                        <Icon name="heroicons:calendar" class="w-3.5 h-3.5 text-white/80" />
                         <span>{{ formatDate(props.end_date) }}</span>
                     </div>
                 </div>

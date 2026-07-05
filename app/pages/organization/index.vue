@@ -245,10 +245,15 @@ const removeMember = async (memberId: number) => {
           </div>
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
-            <select v-model="inviteRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="member">Membre</option>
-              <option value="admin">Administrateur</option>
-            </select>
+            <CustomSelect 
+              v-model="inviteRole"
+              :options="[
+                { value: 'member', label: 'Membre' },
+                { value: 'admin', label: 'Administrateur' }
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
@@ -277,11 +282,16 @@ const removeMember = async (memberId: number) => {
               Modifier le rôle de <strong>{{ editingMember?.name }}</strong>.
             </p>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
-            <select v-model="editingRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="membre">Membre</option>
-              <option value="admin">Administrateur</option>
-              <option v-if="currentUserRole.toLowerCase() === 'propriétaire' || currentUserRole.toLowerCase() === 'proprietaire'" value="proprietaire">Propriétaire</option>
-            </select>
+            <CustomSelect 
+              v-model="editingRole"
+              :options="[
+                { value: 'membre', label: 'Membre' },
+                { value: 'admin', label: 'Administrateur' },
+                ...(currentUserRole.toLowerCase() === 'propriétaire' || currentUserRole.toLowerCase() === 'proprietaire' ? [{ value: 'proprietaire', label: 'Propriétaire' }] : [])
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">

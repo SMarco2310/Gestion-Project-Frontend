@@ -161,6 +161,34 @@ const epics = computed(() => {
   }).slice(0, 3)
 })
 
+const upcomingTasks = computed(() => {
+  const now = new Date().getTime()
+  const sevenDays = 7 * 24 * 60 * 60 * 1000
+  
+  return tasks.value
+    .filter(t => t.status !== TaskStatus.DONE && t.due_date)
+    .filter(t => {
+      const dueDate = new Date(t.due_date as string).getTime()
+      return dueDate >= now - (24 * 60 * 60 * 1000) && dueDate <= now + sevenDays
+    })
+    .sort((a, b) => new Date(a.due_date as string).getTime() - new Date(b.due_date as string).getTime())
+    .slice(0, 4)
+})
+
+const recentCommentsData = computed(() => {
+  return commentaires.value
+    .filter(c => c.created_at)
+    .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime())
+    .slice(0, 4)
+    .map(c => ({
+      id: c.id,
+      content: c.content,
+      author: c.user?.name || 'Un membre',
+      time: new Date(c.created_at as string).toLocaleDateString('fr-FR'),
+      taskId: c.tache_id
+    }))
+})
+
 onMounted(async () => {
   await Promise.all([
     getProfile().catch(() => null),
@@ -196,6 +224,8 @@ onMounted(async () => {
           :statusMetrics="statusMetrics"
           :priorities="priorities"
           :epics="epics"
+          :upcomingTasks="upcomingTasks"
+          :recentComments="recentCommentsData"
         />
     </section>
     

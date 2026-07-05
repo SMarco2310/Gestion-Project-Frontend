@@ -85,11 +85,15 @@ const handleNotificationClick = (notif: any) => {
         </div>
         
         <!-- Filter Status -->
-        <select v-model="filterStatus" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 px-4 py-2.5 rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-auto cursor-pointer">
-          <option value="all">Toutes</option>
-          <option value="unread">Non lues</option>
-          <option value="read">Lues</option>
-        </select>
+        <CustomSelect
+          v-model="filterStatus"
+          :options="[
+            { value: 'all', label: 'Toutes', icon: 'ph:list' },
+            { value: 'unread', label: 'Non lues', icon: 'ph:envelope-simple' },
+            { value: 'read', label: 'Lues', icon: 'ph:envelope-open' }
+          ]"
+          buttonClass="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 px-4 py-2.5 rounded-md focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-40 cursor-pointer flex justify-between items-center"
+        />
 
         <button @click="markAllAsRead" class="shrink-0 bg-card dark:bg-[#1D1D1D] text-main dark:text-white border border-form-border dark:border-gray-800 transition-all cursor-pointer flex items-center justify-center px-4 py-2.5 rounded-md whitespace-nowrap hover:bg-canvas dark:hover:bg-gray-800 w-full md:w-auto">
           <Icon name="heroicons:check-circle" class="w-5 h-5 mr-2" />

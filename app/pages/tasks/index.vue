@@ -101,6 +101,7 @@ const mapTaskToBoardItem = (task: any) => ({
     initials: 'U',
     colorClass: 'bg-gray-600',
   },
+  projetName: task.projet?.name || task.projet?.reference_code || null,
 })
 
 const { projets, getProjets } = useProjets()

@@ -143,16 +143,12 @@ const submit = async () => {
                 <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">
                   Projet <span class="text-red-500">*</span>
                 </label>
-                <select 
+                <CustomSelect 
                   v-model="form.projet_id"
-                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all appearance-none cursor-pointer text-sm"
-                  :class="errors.projet_id ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
-                >
-                  <option value="" disabled>Sélectionner un projet</option>
-                  <option v-for="projet in projets" :key="projet.id" :value="projet.id">
-                    {{ projet.name }}
-                  </option>
-                </select>
+                  :options="projets.map(p => ({ value: p.id, label: p.name }))"
+                  placeholder="Sélectionner un projet"
+                  buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all cursor-pointer text-sm flex justify-between items-center"
+                />
                 <p v-if="errors.projet_id" class="text-red-500 text-xs mt-1 font-medium">Veuillez sélectionner un projet.</p>
               </div>
 
@@ -160,25 +156,25 @@ const submit = async () => {
               <div class="flex gap-4">
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Étiquette</label>
-                  <select 
+                  <CustomSelect 
                     v-model="form.tag_id"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer text-xs font-bold"
-                  >
-                    <option v-for="tag in tags" :key="tag.id" :value="tag.id">
-                      {{ tag.name }}
-                    </option>
-                  </select>
+                    :options="tags.map(t => ({ value: t.id, label: t.name }))"
+                    placeholder="Sélectionner"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer text-xs font-bold flex justify-between items-center"
+                  />
                 </div>
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Priorité</label>
-                  <select 
+                  <CustomSelect 
                     v-model="form.priority"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer uppercase text-xs font-bold"
-                  >
-                    <option value="faible">FAIBLE</option>
-                    <option value="moyen">MOYEN</option>
-                    <option value="élevé">ÉLEVÉ</option>
-                  </select>
+                    :options="[
+                      { value: 'faible', label: 'FAIBLE' },
+                      { value: 'moyen', label: 'MOYEN' },
+                      { value: 'élevé', label: 'ÉLEVÉ' }
+                    ]"
+                    placeholder="Priorité"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer uppercase text-xs font-bold flex justify-between items-center"
+                  />
                 </div>
               </div>
 

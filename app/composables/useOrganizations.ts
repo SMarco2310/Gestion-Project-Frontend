@@ -115,6 +115,19 @@ export default function useOrganizations() {
     }
   };
 
+  const getMembers = async (orgId: number | string) => {
+    try {
+      const { $api } = useNuxtApp();
+      const data = await $api<{ data: any[] } | any>(`/organizations/${orgId}/members`, {
+        method: 'GET'
+      });
+      return data.data ?? data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
   return {
     organizations,
     activeOrganization,
@@ -124,6 +137,7 @@ export default function useOrganizations() {
     updateOrganization,
     deleteOrganization,
     setActiveOrganization,
-    uploadLogo
+    uploadLogo,
+    getMembers
   };
 }

@@ -151,7 +151,7 @@ const epics = computed(() => {
     const progress = total ? Math.round((done / total) * 100) : 0
 
     return {
-      id: String(project.id),
+      reference_code: project.reference_code || String(project.id),
       title: project.name,
       progress,
       badgeBg: progress > 65 ? 'bg-blue-500/10' : 'bg-orange-500/10',

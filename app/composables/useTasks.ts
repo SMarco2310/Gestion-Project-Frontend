@@ -38,6 +38,8 @@ export default function useTasks() {
   const error = ref<string | null>(null)
 
   const { $api } = useNuxtApp()
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBase
 
   const normalizeTask = (task: any): Tache => ({
     id: task.id ?? task._id ?? '',
@@ -64,11 +66,11 @@ export default function useTasks() {
 
     try {
       const query = projectId ? `?projet_id=${projectId}` : ''
-      const data = await $api<Tache[] | any>(`/api/taches${query}`, {
+      const data = await $api<Tache[] | any>(`/taches${query}`, {
         method: 'GET',
       })
 
-      const rawTasks = Array.isArray(data) ? data : (data.data?.data ?? data.data ?? data.tasks ?? [])
+      const rawTasks = Array.isArray(data) ? data : (data.taches ?? data.data?.data ?? data.data ?? data.tasks ?? [])
       tasks.value = rawTasks.map(normalizeTask)
       return tasks.value
     } catch (err) {
@@ -85,7 +87,7 @@ export default function useTasks() {
 
   const getTask = async (id: number | string) => {
     try {
-      const data = await $api<Tache | any>(`/api/taches/${id}`, {
+      const data = await $api<Tache | any>(`/taches/${id}`, {
         method: 'GET',
       })
 
@@ -107,7 +109,7 @@ export default function useTasks() {
 
   const createTask = async (payload: TaskPayload) => {
     try {
-      const data = await $api<Tache | any>('/api/taches', {
+      const data = await $api<Tache | any>('/taches', {
         method: 'POST',
         body: payload,
       })
@@ -124,7 +126,7 @@ export default function useTasks() {
 
   const updateTask = async (id: number | string, payload: Partial<TaskPayload>) => {
     try {
-      const data = await $api<any>(`/api/taches/${id}`, {
+      const data = await $api<any>(`/taches/${id}`, {
         method: 'PUT',
         body: payload,
       })
@@ -148,7 +150,7 @@ export default function useTasks() {
       const formData = new FormData()
       formData.append('banner_image', file)
 
-      const data = await $api<any>(`/api/taches/${id}/banner`, {
+      const data = await $api<any>(`/taches/${id}/banner`, {
         method: 'POST',
         body: formData,
       })
@@ -169,7 +171,7 @@ export default function useTasks() {
 
   const deleteTask = async (id: number | string) => {
     try {
-      await $api<{ message: string }>(`/api/taches/${id}`, {
+      await $api<{ message: string }>(`/taches/${id}`, {
         method: 'DELETE',
       })
 

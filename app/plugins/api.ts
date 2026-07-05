@@ -85,7 +85,7 @@ export default defineNuxtPlugin(() => {
   };
 
   const api = (USE_MOCK_DATA ? mockApi : $fetch.create({
-    baseURL: 'http://localhost:8000/',
+    baseURL: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
     onRequest({ options }) {
       if (token.value) {
         options.headers.set('Authorization', `Bearer ${token.value}`)

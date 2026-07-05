@@ -16,7 +16,7 @@ const invitations = ref<any[]>([])
 
 const fetchOrgsAndInvites = async () => {
   try {
-    const orgsData = await $api<any>('/api/organizations')
+    const orgsData = await $api<any>('/organizations')
     organizations.value = orgsData.data?.data || orgsData.data || []
   } catch (err) {
     console.error(err)
@@ -34,7 +34,7 @@ const selectOrganization = (org: any) => {
 }
 
 const acceptInvitation = (inviteId: number, orgId: number) => {
-  // In a real app, call $api(`/api/invitations/${inviteId}/accept`, { method: 'POST' })
+  // In a real app, call $api(`/invitations/${inviteId}/accept`, { method: 'POST' })
   navigateTo('/dashboard');
 }
 

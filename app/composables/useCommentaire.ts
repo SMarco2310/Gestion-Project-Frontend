@@ -43,11 +43,11 @@ export default function useCommentaire() {
 
     try {
       const { $api } = useNuxtApp()
-      const data = await $api<{ commentaires: Commentaire[]; success: boolean }>(`/api/commentaires${query}`, {
+      const data = await $api<{ commentaires: Commentaire[]; success: boolean } | any>(`/commentaires${query}`, {
         method: 'GET',
       })
 
-      commentaires.value = (data.commentaires ?? data ?? []).map(normalizeCommentaire)
+      commentaires.value = (data.commentaires ?? data.data ?? data ?? []).map(normalizeCommentaire)
       return commentaires.value
     } catch (err) {
       console.error('Failed to fetch commentaires:', err)
@@ -66,7 +66,7 @@ export default function useCommentaire() {
 
     try {
       const { $api } = useNuxtApp()
-      const data = await $api<{ commentaire: Commentaire; success: boolean }>('/api/commentaires', {
+      const data = await $api<{ commentaire: Commentaire; success: boolean }>('/commentaires', {
         method: 'POST',
         body: payload,
       })
@@ -87,7 +87,7 @@ export default function useCommentaire() {
 
     try {
       const { $api } = useNuxtApp()
-      const data = await $api<{ commentaire: Commentaire; success: boolean }>(`/api/commentaires/${id}`, {
+      const data = await $api<{ commentaire: Commentaire; success: boolean }>(`/commentaires/${id}`, {
         method: 'PUT',
         body: { content },
       })

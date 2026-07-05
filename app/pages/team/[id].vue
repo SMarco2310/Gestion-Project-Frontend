@@ -25,12 +25,12 @@ const fetchTeamData = async () => {
   isLoading.value = true;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/api/organizations/${orgId}/teams/${teamId}`, { method: 'GET' });
+    const res = await $api<any>(`/organizations/${orgId}/teams/${teamId}`, { method: 'GET' });
     team.value = res.team;
     teamMembers.value = res.team.members || [];
     
     // Fetch org members for invitation
-    const membersRes = await $api<any>(`/api/organizations/${orgId}/members`, { method: 'GET' });
+    const membersRes = await $api<any>(`/organizations/${orgId}/members`, { method: 'GET' });
     allOrgMembers.value = membersRes.data?.data || membersRes.data || [];
   } catch (err) {
     console.error('Error fetching team data', err);
@@ -57,7 +57,7 @@ const updateMemberRole = async () => {
   if (!selectedMemberForRole.value || !activeOrganization.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    await $api(`/api/organizations/${orgId}/teams/${teamId}/members/${selectedMemberForRole.value.id}`, {
+    await $api(`/organizations/${orgId}/teams/${teamId}/members/${selectedMemberForRole.value.id}`, {
       method: 'PUT',
       body: { role: selectedMemberForRole.value.role }
     });
@@ -80,7 +80,7 @@ const removeTeamMember = async (memberId: number) => {
   if (!activeOrganization.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    await $api(`/api/organizations/${orgId}/teams/${teamId}/members/${memberId}`, { method: 'DELETE' });
+    await $api(`/organizations/${orgId}/teams/${teamId}/members/${memberId}`, { method: 'DELETE' });
     teamMembers.value = teamMembers.value.filter((m: any) => m.id !== memberId);
     addToast({ type: 'success', title: 'Succès', message: 'Membre retiré de l\'équipe.' });
   } catch (err) {
@@ -104,7 +104,7 @@ const handleEditTeam = async () => {
   if (!activeOrganization.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/api/organizations/${orgId}/teams/${teamId}`, {
+    const res = await $api<any>(`/organizations/${orgId}/teams/${teamId}`, {
       method: 'PUT',
       body: editTeamForm.value
     });

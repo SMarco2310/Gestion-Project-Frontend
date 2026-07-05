@@ -23,7 +23,7 @@ export default function useInvite() {
     isLoading.value = true
     error.value = null
     try {
-      const data = await $api<{ success: boolean; message: string; invitation: Invitation }>(`/api/invitations/${token}`, {
+      const data = await $api<{ success: boolean; message: string; invitation: Invitation }>(`/invitations/${token}`, {
         method: 'GET',
       })
       return data.invitation
@@ -40,7 +40,7 @@ export default function useInvite() {
     isLoading.value = true
     error.value = null
     try {
-      const data = await $api<{ success: boolean; message: string }>(`/api/invitations/${token}/accept`, {
+      const data = await $api<{ success: boolean; message: string }>(`/invitations/${token}/accept`, {
         method: 'POST',
       })
       return data

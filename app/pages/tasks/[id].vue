@@ -7,6 +7,7 @@ import { useToast } from '~/composables/useToast'
 import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
 import useTags from '~/composables/useTags'
+import useOrganizations from '~/composables/useOrganizations'
 
 definePageMeta({
   layout: 'custom'
@@ -20,14 +21,38 @@ const close = () => {
   window.location.href = '/tasks'
 }
 
-const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
+const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
 const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
 const { getProjet } = useProjets()
 const { tags, getTags } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
 
 const activeTab = ref('comments')
+
+const isAssigneeDropdownOpen = ref(false)
+const taskAssignee = ref<any>(null)
+const orgMembers = ref<any[]>([])
+const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+
+const fetchOrgMembers = async () => {
+  if (!activeOrganization.value) return
+  try {
+    const res = await $api<any>(`/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const members = res.data?.data ?? res.data ?? []
+    orgMembers.value = members.map((m: any, i: number) => ({
+      id: m.id,
+      name: m.name,
+      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      color: avatarColors[i % avatarColors.length],
+      profile_picture: m.profile_picture || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch org members for assignee dropdown:', err)
+  }
+}
 
 const isEditing = ref(false)
 const taskTitle = ref('')
@@ -185,8 +210,72 @@ const isStatusDropdownOpen = ref(false)
 const isPriorityDropdownOpen = ref(false)
 const isCreateSubtaskModalOpen = ref(false)
 const commentText = ref('')
+const commentTextarea = ref<HTMLTextAreaElement | null>(null)
 const editingCommentId = ref<number | string | null>(null)
 const editingCommentText = ref('')
+
+const showMentionDropdown = ref(false)
+const mentionSearchQuery = ref('')
+const activeMentions = ref<(number | string)[]>([])
+const mentionCursorPosition = ref(0)
+
+const filteredMentionUsers = computed(() => {
+  if (!mentionSearchQuery.value) return orgMembers.value
+  const q = mentionSearchQuery.value.toLowerCase()
+  return orgMembers.value.filter(u => u.name.toLowerCase().includes(q))
+})
+
+const handleCommentInput = () => {
+  if (!commentTextarea.value) return
+  const cursorPosition = commentTextarea.value.selectionStart
+  const textBeforeCursor = commentText.value.substring(0, cursorPosition)
+  
+  const match = textBeforeCursor.match(/@([a-zA-Z0-9_\-]* ?[a-zA-Z0-9_\-]*)$/)
+  
+  if (match && match[1] !== undefined && match[1].length > 0 && match[1].length < 25) {
+    showMentionDropdown.value = true
+    mentionSearchQuery.value = match[1]
+    mentionCursorPosition.value = match.index || 0
+  } else {
+    showMentionDropdown.value = false
+  }
+}
+
+const selectMention = (member: any) => {
+  const textBeforeMention = commentText.value.substring(0, mentionCursorPosition.value)
+  const textAfterCursor = commentText.value.substring(commentTextarea.value?.selectionStart || 0)
+  
+  commentText.value = `${textBeforeMention}@${member.name} ${textAfterCursor}`
+  
+  if (!activeMentions.value.includes(member.id)) {
+    activeMentions.value.push(member.id)
+  }
+  
+  showMentionDropdown.value = false
+  mentionSearchQuery.value = ''
+  
+  setTimeout(() => {
+    if (commentTextarea.value) {
+      commentTextarea.value.focus()
+      const newPos = mentionCursorPosition.value + member.name.length + 2
+      commentTextarea.value.setSelectionRange(newPos, newPos)
+    }
+  }, 0)
+}
+
+const renderCommentContent = (content: string) => {
+  if (!content) return ''
+  let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  
+  const sortedMembers = [...orgMembers.value].sort((a, b) => b.name.length - a.name.length)
+  
+  for (const member of sortedMembers) {
+    const regex = new RegExp(`@${member.name}\\b`, 'gi')
+    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.name}</span>`)
+  }
+  
+  return html
+}
 
 const formatDisplayDate = (dateStr: string) => {
   if (!dateStr) return 'Aucune'
@@ -204,7 +293,7 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
   moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-500', icon: 'ph:equals-bold' },
-  'élevé': { label: 'ÉLEVÉ', colorClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-500', icon: 'ph:caret-double-up-bold' }
+  'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
 const updateStatus = async (newStatus: string) => {
@@ -260,13 +349,23 @@ const sendComment = async () => {
     return
   }
 
+  // Robustly extract mentions by checking if any @[MemberName] exists in the text
+  const extractedMentions = [...activeMentions.value]
+  orgMembers.value.forEach(member => {
+    if (commentText.value.includes(`@${member.name}`) && !extractedMentions.includes(member.id)) {
+      extractedMentions.push(member.id)
+    }
+  })
+
   try {
     await createCommentaire({
       content: commentText.value.trim(),
       tache_id: (route.params.id as string),
+      mentions: extractedMentions,
     })
 
     commentText.value = ''
+    activeMentions.value = []
     await getCommentaires((route.params.id as string))
     
     // Update the task's comment count locally in the global state
@@ -309,6 +408,27 @@ const saveEditComment = async () => {
   }
 }
 
+const handleDeleteComment = async (commentId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer ce commentaire ?')) {
+    try {
+      await deleteCommentaire(commentId)
+      const { tasks } = useTasks()
+      const route = useRoute()
+      const taskIndex = tasks.value.findIndex(t => String(t.id) === String((route.params.id as string)))
+      if (taskIndex !== -1) {
+        const taskObj = tasks.value[taskIndex]
+        if (taskObj) {
+          taskObj.commentaires_count = Math.max(0, (taskObj.commentaires_count || 0) - 1)
+        }
+      }
+      addToast({ title: 'Commentaire supprimé', message: 'Votre commentaire a été supprimé.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer le commentaire.', type: 'error' })
+      console.error(err)
+    }
+  }
+}
+
 const resetState = () => {
   isEditing.value = false
   taskTitle.value = ''
@@ -329,17 +449,21 @@ const resetState = () => {
   taskBannerImage.value = ''
   taskSubtasks.value = []
   commentText.value = ''
+  activeMentions.value = []
+  showMentionDropdown.value = false
   editingCommentId.value = null
   editingCommentText.value = ''
   isTagDropdownOpen.value = false
   isStatusDropdownOpen.value = false
   isPriorityDropdownOpen.value = false
+  isAssigneeDropdownOpen.value = false
 }
 
 watch(() => (route.params.id as string), async (newTaskId) => {
   if (newTaskId) {
     resetState()
     await setTask(newTaskId)
+    fetchOrgMembers()
     await getCommentaires(newTaskId)
     if (false) {
       startEditing()
@@ -350,6 +474,7 @@ watch(() => (route.params.id as string), async (newTaskId) => {
 watch(() => true, (newIsOpen) => {
   if (newIsOpen && false) {
     startEditing()
+    fetchOrgMembers()
   }
 })
 </script>
@@ -454,8 +579,26 @@ watch(() => true, (newIsOpen) => {
                   <div class="w-8 h-8 rounded-full bg-red-600 shrink-0 flex items-center justify-center text-xs font-bold text-white mt-1">
                     {{ user?.name ? user.name.substring(0, 2).toUpperCase() : 'U' }}
                   </div>
-                  <div class="flex-1 rounded-lg overflow-hidden neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500">
-                    <textarea v-model="commentText" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                  <div class="flex-1 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] transition-colors focus-within:ring-1 focus-within:ring-primary dark:focus-within:ring-blue-500 relative">
+                    <div class="relative w-full">
+                      <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-transparent p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none" rows="2" placeholder="Ajouter un commentaire..."></textarea>
+                      
+                      <!-- Mention Dropdown -->
+                      <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
+                        <ul class="p-1 overflow-y-auto custom-scrollbar">
+                          <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
+                            <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
+                              <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                              <span v-else>{{ user.initials }}</span>
+                            </div> 
+                            <span class="truncate">{{ user.name }}</span>
+                          </li>
+                          <li v-if="filteredMentionUsers.length === 0" class="px-2 py-1.5 text-xs text-secondary text-center italic">
+                            Aucun membre trouvé
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
                     <div class="px-3 py-2 border-t border-black/5 dark:border-white/5 flex items-center justify-end gap-4 text-xs font-medium text-secondary dark:text-gray-400">
                       <button @click="sendComment" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/10 transition-all duration-200 text-sm font-semibold">
                         <Icon name="heroicons:arrow-up-right" class="w-4 h-4" />
@@ -477,9 +620,14 @@ watch(() => true, (newIsOpen) => {
                           <span class="text-sm font-semibold text-main dark:text-gray-200">{{ (comment as any).user?.name || 'Utilisateur' }}</span>
                           <span class="text-xs text-secondary dark:text-gray-500">{{ comment.created_at ? formatDisplayDate(comment.created_at) : '' }}</span>
                         </div>
-                        <button v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" @click="startEditComment(comment)" class="p-1 text-secondary hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Modifier le commentaire">
-                          <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
-                        </button>
+                        <div v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" class="flex items-center gap-1">
+                          <button @click="startEditComment(comment)" class="p-1 text-secondary hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Modifier le commentaire">
+                            <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
+                          </button>
+                          <button @click="handleDeleteComment(comment.id)" class="p-1 text-secondary hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Supprimer le commentaire">
+                            <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div v-if="editingCommentId === comment.id" class="mt-2">
@@ -489,7 +637,7 @@ watch(() => true, (newIsOpen) => {
                           <button @click="saveEditComment" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
                         </div>
                       </div>
-                      <p v-else class="text-sm text-secondary dark:text-gray-400 leading-relaxed whitespace-pre-wrap">{{ comment.content }}</p>
+                      <p v-else class="text-sm text-secondary dark:text-gray-400 leading-relaxed whitespace-pre-wrap" v-html="renderCommentContent(comment.content)"></p>
                     </div>
                   </div>
                 </div>
@@ -534,12 +682,48 @@ watch(() => true, (newIsOpen) => {
                   <!-- Property -->
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Assigné à</div>
-                    <div class="col-span-2">
-                      <div class="flex items-center gap-2 mb-1">
-                        <div class="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white">SY</div>
-                        <span class="text-main dark:text-gray-300 font-medium">Sarah Yeung</span>
+                    <div class="col-span-2 relative">
+                      <div class="flex items-center gap-2 mb-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-1 -ml-1 rounded transition-colors group" @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen">
+                        <template v-if="taskAssignee">
+                          <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm" :class="taskAssignee.profile_picture ? '' : taskAssignee.color">
+                            <img v-if="taskAssignee.profile_picture" :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : `http://localhost:8000${taskAssignee.profile_picture}`" class="w-full h-full object-cover" />
+                            <span v-else>{{ taskAssignee.initials }}</span>
+                          </div>
+                          <span class="text-main dark:text-gray-300 font-medium">{{ taskAssignee.name }}</span>
+                        </template>
+                        <template v-else>
+                          <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                            <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                          </div>
+                          <span class="text-secondary dark:text-gray-500 font-medium italic">Non assigné</span>
+                        </template>
+                        <Icon name="heroicons:chevron-down" class="w-3 h-3 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
                       </div>
-                      <button class="text-primary dark:text-blue-400 hover:underline text-xs">M'assigner</button>
+                      
+                      <!-- Assignee Dropdown Menu -->
+                      <div v-if="isAssigneeDropdownOpen" @click="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                      <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
+                        <div class="p-2 border-b border-form-border dark:border-gray-800">
+                          <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
+                        </div>
+                        <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
+                          <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = null; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                              <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
+                            </div> 
+                            <span class="text-secondary dark:text-gray-400">Non assigné</span>
+                          </li>
+                          <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = member; isAssigneeDropdownOpen = false">
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
+                              <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                              <span v-else>{{ member.initials }}</span>
+                            </div> 
+                            {{ member.name }}
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs" @click.stop="taskAssignee = orgMembers.find(m => m.id === user?.id) || taskAssignee">M'assigner</button>
                     </div>
                   </div>
                   
@@ -596,25 +780,18 @@ watch(() => true, (newIsOpen) => {
                   </div>
                   
                   <div class="grid grid-cols-3 gap-2">
-                    <div class="text-secondary dark:text-gray-500 font-medium">Rapporteur</div>
+                    <div class="text-secondary dark:text-gray-500 font-medium pt-1">Rapporteur</div>
                     <div class="col-span-2 flex items-center gap-2">
-                      <div class="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-[10px] font-bold text-white">MS</div>
-                      <span class="text-main dark:text-gray-300 font-medium">Marc-Etienne SOSSOU</span>
+                      <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm">
+                        <img v-if="user?.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
+                        <span v-else>{{ user?.name ? user.name.charAt(0).toUpperCase() : 'M' }}</span>
+                      </div>
+                      <span class="text-main dark:text-gray-300 font-medium">{{ user?.name || 'Moi' }}</span>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <!-- Divider -->
-              <div class="w-full h-px bg-black/5 dark:bg-white/5 my-4"></div>
-              
-              <!-- Development -->
-              <div class="mb-4">
-                <button class="flex items-center gap-2 font-bold text-main dark:text-gray-200">
-                  <Icon name="heroicons:chevron-right" class="w-4 h-4 text-secondary dark:text-gray-500" /> Développement
-                </button>
-              </div>
-
               <!-- Divider -->
               <div class="w-full h-px bg-black/5 dark:bg-white/5 my-4"></div>
 

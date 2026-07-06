@@ -97,9 +97,12 @@ const mapTaskToBoardItem = (task: any) => ({
   statusColorClass: 'text-emerald-500',
   commentairesCount: task.commentaires_count || 0,
   bannerImage: task.banner_image || undefined,
-  assignee: {
-    initials: 'U',
-    colorClass: 'bg-gray-600',
+  assignee: task.assignee ? {
+    initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
+    colorClass: 'bg-blue-500',
+    profilePicture: task.assignee.profile_picture ? (task.assignee.profile_picture.startsWith('http') ? task.assignee.profile_picture : `http://localhost:8000${task.assignee.profile_picture}`) : null
+  } : {
+    icon: 'ph:user',
   },
   projetName: task.projet?.name || task.projet?.reference_code || null,
 })
@@ -115,11 +118,26 @@ const projectOptions = computed(() => {
 
 const tagOptions = computed(() => {
   const uniqueTags = new Map()
+  
+  // 1. Add standard/default tags first so they always appear at the top
+  const defaultTags = [
+    { id: 'bug', label: 'BUG' },
+    { id: 'feature', label: 'FEATURE' },
+    { id: 'improvement', label: 'IMPROVEMENT' },
+    { id: 'documentation', label: 'DOCUMENTATION' },
+    { id: 'design', label: 'DESIGN' },
+    { id: 'testing', label: 'TESTING' },
+    { id: 'deployment', label: 'DEPLOYMENT' }
+  ]
+  defaultTags.forEach(t => uniqueTags.set(t.id, t))
+
+  // 2. Add any additional user-created tags found in current tasks
   tasks.value.forEach((t: any) => {
     if (t.tag) {
       const tagName = t.tag.name || t.tag
-      if (!uniqueTags.has(tagName)) {
-        uniqueTags.set(tagName, { id: tagName, label: tagName })
+      const tagId = tagName.toLowerCase()
+      if (!uniqueTags.has(tagId)) {
+        uniqueTags.set(tagId, { id: tagId, label: tagName.toUpperCase() })
       }
     }
   })
@@ -165,8 +183,8 @@ const filteredTasks = computed(() => {
 
   // Apply sorting
   result = [...result].sort((a, b) => {
-    const dateA = new Date(a.created_at).getTime()
-    const dateB = new Date(b.created_at).getTime()
+    const dateA = new Date(a.created_at || 0).getTime()
+    const dateB = new Date(b.created_at || 0).getTime()
     return selectedDateSort.value === 'recent' ? dateB - dateA : dateA - dateB
   })
 

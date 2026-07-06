@@ -364,7 +364,29 @@ const calendarOptions = computed(() => ({
           </template>
 
           <template v-slot:eventContent="arg">
-            <div 
+            <!-- Background Project Event -->
+            <div v-if="arg.event.display === 'background'" class="w-full h-full opacity-50">
+              <!-- Empty to prevent overlapping text with tasks on the same day -->
+            </div>
+
+            <!-- Month View Task Event -->
+            <div v-else-if="arg.view.type === 'dayGridMonth'"
+                 class="flex items-center gap-1.5 w-full px-1.5 py-1 rounded-md overflow-hidden shadow-sm border border-black/5 dark:border-white/5"
+                 :class="{
+                   'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300': arg.event.backgroundColor === '#3b82f6',
+                   'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300': arg.event.backgroundColor === '#ef4444',
+                   'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300': arg.event.backgroundColor === '#10b981',
+                   'bg-gray-100 dark:bg-gray-800/40 text-gray-900 dark:text-gray-100': arg.event.backgroundColor === 'rgba(59, 130, 246, 0.1)'
+                 }"
+            >
+              <div v-if="arg.event.extendedProps.status === 'terminé'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
+              <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+              <div v-else class="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0 border border-gray-500"></div>
+              <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
+            </div>
+
+            <!-- TimeGrid Event (Week/Day) -->
+            <div v-else
               class="flex flex-col w-full h-full p-2.5 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-black/5 dark:border-white/5 transition-all overflow-hidden"
               :class="{
                 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100': arg.event.backgroundColor === '#3b82f6',

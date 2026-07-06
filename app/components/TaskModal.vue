@@ -21,7 +21,7 @@ const close = () => {
 
 
 
-const { commentaires, getCommentaires, createCommentaire, updateCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
+const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
 const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
 const { getProjet } = useProjets()
 const { tags, getTags } = useTags()
@@ -31,6 +31,7 @@ const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 
 const activeTab = ref('comments')
+const isDetailsOpen = ref(true)
 
 const isEditing = ref(false)
 const taskTitle = ref('')
@@ -89,9 +90,19 @@ const setTask = async (id: string | number | null) => {
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
-      taskUpdatedAt.value = task.updated_at || ''
       taskProjetId.value = task.projet_id || ''
       taskBannerImage.value = task.banner_image || ''
+      if (task.assignee) {
+        taskAssignee.value = {
+          id: task.assignee.id,
+          name: task.assignee.name,
+          initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
+          color: avatarColors[0],
+          profile_picture: task.assignee.profile_picture || null
+        }
+      } else {
+        taskAssignee.value = null
+      }
       if (task.projet_id) {
         try {
           const projet = await getProjet(task.projet_id)
@@ -232,7 +243,7 @@ const handleCommentInput = () => {
   
   const match = textBeforeCursor.match(/@([a-zA-Z0-9_\-]* ?[a-zA-Z0-9_\-]*)$/)
   
-  if (match && match[1].length < 25) {
+  if (match && match[1] !== undefined && match[1].length < 25) {
     showMentionDropdown.value = true
     mentionSearchQuery.value = match[1]
     mentionCursorPosition.value = match.index || 0
@@ -317,6 +328,19 @@ const updatePriority = async (newPriority: string) => {
     addToast({ title: 'Priorité modifiée', message: 'La priorité de la tâche a été mise à jour.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier la priorité.', type: 'error' })
+  }
+}
+
+const updateAssignee = async (member: any | null) => {
+  if (!props.taskId) return
+  try {
+    const assigneeId = member ? member.id : null
+    await updateTask(props.taskId, { assignee_id: assigneeId })
+    taskAssignee.value = member
+    isAssigneeDropdownOpen.value = false
+    addToast({ title: 'Assigné modifié', message: 'L\'assignation de la tâche a été mise à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'assignation.', type: 'error' })
   }
 }
 
@@ -407,6 +431,26 @@ const saveEditComment = async () => {
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier le commentaire.', type: 'error' })
     console.error(err)
+  }
+}
+
+const handleDeleteComment = async (commentId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer ce commentaire ?')) {
+    try {
+      await deleteCommentaire(commentId)
+      const { tasks } = useTasks()
+      const taskIndex = tasks.value.findIndex(t => String(t.id) === String(props.taskId))
+      if (taskIndex !== -1) {
+        const task = tasks.value[taskIndex]
+        if (task) {
+          task.commentaires_count = Math.max(0, (task.commentaires_count || 0) - 1)
+        }
+      }
+      addToast({ title: 'Commentaire supprimé', message: 'Votre commentaire a été supprimé.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer le commentaire.', type: 'error' })
+      console.error(err)
+    }
   }
 }
 
@@ -620,9 +664,14 @@ watch(() => props.isOpen, (newIsOpen) => {
                           <span class="text-sm font-semibold text-main dark:text-gray-200">{{ (comment as any).user?.name || 'Utilisateur' }}</span>
                           <span class="text-xs text-secondary dark:text-gray-500">{{ comment.created_at ? formatDisplayDate(comment.created_at) : '' }}</span>
                         </div>
-                        <button v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" @click="startEditComment(comment)" class="p-1 text-secondary hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Modifier le commentaire">
-                          <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
-                        </button>
+                        <div v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" class="flex items-center gap-1">
+                          <button @click="startEditComment(comment)" class="p-1 text-secondary hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Modifier le commentaire">
+                            <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
+                          </button>
+                          <button @click="handleDeleteComment(comment.id)" class="p-1 text-secondary hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 transition-colors rounded hover:bg-canvas dark:hover:bg-gray-800" title="Supprimer le commentaire">
+                            <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div v-if="editingCommentId === comment.id" class="mt-2">
@@ -668,12 +717,12 @@ watch(() => props.isOpen, (newIsOpen) => {
 
               <!-- Details Accordion -->
               <div class="mb-6">
-                <button class="flex items-center justify-between w-full font-bold text-main dark:text-gray-200 mb-4 group">
-                  <span class="flex items-center gap-2"><Icon name="heroicons:chevron-down" class="w-4 h-4 text-secondary dark:text-gray-500" /> Détails</span>
+                <button @click="isDetailsOpen = !isDetailsOpen" class="flex items-center justify-between w-full font-bold text-main dark:text-gray-200 mb-4 group">
+                  <span class="flex items-center gap-2"><Icon :name="isDetailsOpen ? 'heroicons:chevron-down' : 'heroicons:chevron-right'" class="w-4 h-4 text-secondary dark:text-gray-500" /> Détails</span>
                   <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
                 
-                <div class="flex flex-col gap-4 text-sm">
+                <div v-show="isDetailsOpen" class="flex flex-col gap-4 text-sm">
                   <!-- Property -->
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Assigné à</div>
@@ -702,13 +751,13 @@ watch(() => props.isOpen, (newIsOpen) => {
                           <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
                         </div>
                         <ul class="p-1 max-h-40 overflow-y-auto custom-scrollbar">
-                          <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = null; isAssigneeDropdownOpen = false">
+                          <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(null)">
                             <div class="w-6 h-6 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
                               <Icon name="ph:user-minus" class="w-3.5 h-3.5" />
                             </div> 
                             <span class="text-secondary dark:text-gray-400">Non assigné</span>
                           </li>
-                          <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="taskAssignee = member; isAssigneeDropdownOpen = false">
+                          <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(member)">
                             <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
                               <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                               <span v-else>{{ member.initials }}</span>
@@ -718,7 +767,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                         </ul>
                       </div>
                       
-                      <button class="text-primary dark:text-blue-400 hover:underline text-xs" @click.stop="taskAssignee = orgMembers.find(m => m.id === user?.id) || taskAssignee">M'assigner</button>
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
                     </div>
                   </div>
                   
@@ -787,18 +836,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
               </div>
               
-              <!-- Divider -->
-              <div class="w-full h-px bg-black/5 dark:bg-white/5 my-4"></div>
-              
-              <!-- Development -->
-              <div class="mb-4">
-                <button class="flex items-center gap-2 font-bold text-main dark:text-gray-200">
-                  <Icon name="heroicons:chevron-right" class="w-4 h-4 text-secondary dark:text-gray-500" /> Développement
-                </button>
-              </div>
 
-              <!-- Divider -->
-              <div class="w-full h-px bg-black/5 dark:bg-white/5 my-4"></div>
 
               <!-- Timestamps -->
               <div class="text-xs text-secondary dark:text-gray-500 flex flex-col gap-1 mt-6">

@@ -59,7 +59,7 @@ export default function useProjets() {
 
     // create projet
 
-    const createProjet = async (name:string,description:string,status:string,start_date:string|Date,end_date:string|Date, color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
+    const createProjet = async (name:string,description:string,status:string,start_date:string|Date|null,end_date:string|Date|null, color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
         try{
             const { $api } = useNuxtApp();
             const { activeOrganization } = useOrganizations();
@@ -70,8 +70,8 @@ export default function useProjets() {
                    description:description,
                    status:status,
                    color:color,
-                   start_date:start_date,
-                   end_date:end_date,
+                   start_date: start_date === '' ? null : start_date,
+                   end_date: end_date === '' ? null : end_date,
                    organization_id: activeOrganization.value?.id,
                    team_ids: team_ids,
                    user_ids: user_ids
@@ -91,28 +91,32 @@ export default function useProjets() {
 
     // update projet
 
-    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date,end_date:string|Date,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
+    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date|null,end_date:string|Date|null,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
         try{
             const { $api } = useNuxtApp();
+            const body = {
+                name:name,
+                description:description,
+                status:status,
+                color:color,
+                start_date: start_date === '' ? null : start_date,
+                end_date: end_date === '' ? null : end_date,
+                team_ids: team_ids,
+                user_ids: user_ids
+            };
+            // console.log('Sending payload:', body);
             const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
                 method:'PUT',
-                body:{
-                    name:name,
-                    description:description,
-                    status:status,
-                    color:color,
-                    start_date:start_date,
-                    end_date:end_date,
-                    team_ids: team_ids,
-                    user_ids: user_ids
-                }
+                body: body
             });
             const proj = data.projet ?? data
             const index = projets.value.findIndex(p => String(p.id) === String(id))
-             if (index !== -1) projets.value[index] = proj
+            if (index !== -1) {
+                projets.value.splice(index, 1, proj)
+            }
             return proj
-        }catch(error){
-            console.error(error)
+        }catch(error: any){
+            console.error('Update Projet Error:', error.response?._data || error.data || error)
                 throw error
         }
         

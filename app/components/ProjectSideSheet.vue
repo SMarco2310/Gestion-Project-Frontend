@@ -38,6 +38,7 @@ const projectEndDate = ref('')
 const projectColor = ref('blue')
 const editTitle = ref('')
 const editDescription = ref('')
+const editStartDate = ref('')
 const editEndDate = ref('')
 const editColor = ref('blue')
 
@@ -108,7 +109,7 @@ const saveInstant = async () => {
         projectTitle.value,
         projectDescription.value,
         projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
-        projectEndDate.value ? String(projectEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
+        projectEndDate.value ? String(projectEndDate.value).split('T')[0] || '' : '',
         projectStatus.value,
         projectColor.value,
         assignedTeams.value.map(t => t.id),
@@ -189,6 +190,7 @@ const fetchProject = async (id: number | string | null) => {
 const startEditing = () => {
   editTitle.value = projectTitle.value
   editDescription.value = projectDescription.value
+  editStartDate.value = projectStartDate.value ? (projectStartDate.value.split('T')[0] ?? '') : ''
   editEndDate.value = projectEndDate.value ? (projectEndDate.value.split('T')[0] ?? '') : ''
   editColor.value = projectColor.value
   isEditing.value = true
@@ -201,8 +203,8 @@ const saveEdit = async () => {
       props.projectId,
       editTitle.value,
       editDescription.value,
-      projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
-      editEndDate.value ? String(editEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
+      editStartDate.value ? String(editStartDate.value).split('T')[0] || '' : '',
+      editEndDate.value ? String(editEndDate.value).split('T')[0] || '' : '',
       projectStatus.value,
       editColor.value,
       assignedTeams.value.map(t => t.id),
@@ -211,6 +213,7 @@ const saveEdit = async () => {
     
     projectTitle.value = editTitle.value
     projectDescription.value = editDescription.value
+    projectStartDate.value = editStartDate.value
     projectEndDate.value = editEndDate.value
     projectColor.value = editColor.value
     isEditing.value = false
@@ -298,7 +301,7 @@ const updateStatus = async (status: string) => {
       projectTitle.value,
       projectDescription.value,
       projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
-      projectEndDate.value ? String(projectEndDate.value).split('T')[0] || getTodayDate() : getTodayDate(),
+      projectEndDate.value ? String(projectEndDate.value).split('T')[0] || '' : '',
       status,
       projectColor.value,
       assignedTeams.value.map(t => t.id),
@@ -583,11 +586,15 @@ const updateStatus = async (status: string) => {
             </div>
           </div>
           
-          <!-- Footer Details -->
-          <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex justify-between items-center pb-4">
+          <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex justify-start items-center gap-8 pb-4">
+            <div class="flex flex-col gap-1">
+               <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de début</span>
+               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectStartDate) || 'Non définie' }}</span>
+               <input v-else v-model="editStartDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+            </div>
             <div class="flex flex-col gap-1">
                <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de fin prévue</span>
-               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectEndDate) }}</span>
+               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectEndDate) || 'Non définie' }}</span>
                <input v-else v-model="editEndDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>

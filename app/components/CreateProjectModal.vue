@@ -55,10 +55,13 @@ const close = () => {
 }
 
 const submit = async () => {
-  // Simple validation
+  const start = form.value.start_date ? new Date(form.value.start_date) : null
+  const end = form.value.end_date ? new Date(form.value.end_date) : null
+  const today = new Date(minDate.value)
+  
   errors.value.title = !form.value.name.trim()
   errors.value.description = !form.value.description.trim()
-  errors.value.dates = !form.value.start_date || !form.value.end_date
+  errors.value.dates = !start || !end || (start < today) || (end < start)
 
   if (errors.value.title || errors.value.description || errors.value.dates) {
     return // Stop submission if validation fails
@@ -150,6 +153,7 @@ const submit = async () => {
                     <input 
                       v-model="form.start_date" 
                       type="date" 
+                      :min="minDate"
                       class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                     />
                   </div>
@@ -164,6 +168,7 @@ const submit = async () => {
                       :min="form.start_date || minDate"
                       class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                     />
+                    <p v-if="errors.dates" class="text-red-500 text-xs mt-1 absolute -bottom-5 left-0 w-full font-medium">Dates invalides.</p>
                   </div>
                 </div>
               </div>

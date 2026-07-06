@@ -17,6 +17,8 @@ interface Tache {
   created_at?: string
   updated_at?: string
   banner_image?: string
+  assignee_id?: string | number | null
+  assignee?: any | null
 }
 
 interface TaskPayload {
@@ -29,6 +31,7 @@ interface TaskPayload {
   parent_task_id?: number | string | null
   due_date?: string
   banner_image?: string | null
+  assignee_id?: string | number | null
 }
 
 
@@ -58,6 +61,8 @@ export default function useTasks() {
     created_at: task.created_at ?? '',
     updated_at: task.updated_at ?? '',
     banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
+    assignee_id: task.assignee_id ?? null,
+    assignee: task.assignee ?? null,
   })
 
   const getTasks = async (projectId?: number | string) => {

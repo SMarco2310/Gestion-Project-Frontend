@@ -3,6 +3,7 @@ import { ref, watch, onMounted } from 'vue'
 import { TaskStatus, TaskPriority } from '~/utils/enums'
 import useProjets from '~/composables/useProjets'
 import useTags from '~/composables/useTags'
+import useOrganizations from '~/composables/useOrganizations'
 
 const props = defineProps<{
   isOpen: boolean
@@ -20,7 +21,8 @@ const form = ref({
   priority: TaskPriority.MEDIUM,
   tag_id: '' as string | number,
   due_date: '',
-  projet_id: props.projetId || ''
+  projet_id: props.projetId || '',
+  assignee_id: null as string | number | null
 })
 
 const errors = ref({
@@ -30,12 +32,36 @@ const errors = ref({
 
 const { projets, getProjets } = useProjets()
 const { tags, getTags } = useTags()
+const { activeOrganization } = useOrganizations()
+const { $api } = useNuxtApp()
+
+const isAssigneeDropdownOpen = ref(false)
+const orgMembers = ref<any[]>([])
+const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+
+const fetchOrgMembers = async () => {
+  if (!activeOrganization.value) return
+  try {
+    const res = await $api<any>(`/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const members = res.data?.data ?? res.data ?? []
+    orgMembers.value = members.map((m: any, i: number) => ({
+      id: m.id,
+      name: m.name,
+      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      color: avatarColors[i % avatarColors.length],
+      profile_picture: m.profile_picture || null
+    }))
+  } catch (err) {
+    console.error('Failed to fetch org members for assignee dropdown:', err)
+  }
+}
 
 onMounted(async () => {
   if (!props.projetId) {
     await getProjets()
   }
   await getTags()
+  fetchOrgMembers()
 })
 
 const getTodayDate = () => {
@@ -57,7 +83,8 @@ watch(() => props.isOpen, (newVal) => {
       priority: TaskPriority.MEDIUM,
       tag_id: tags.value[0]?.id ?? '',
       due_date: getTodayDate(),
-      projet_id: props.projetId || ''
+      projet_id: props.projetId || '',
+      assignee_id: null
     }
     errors.value = { title: false, projet_id: false }
   }
@@ -178,17 +205,60 @@ const submit = async () => {
                 </div>
               </div>
 
-              <!-- End Date -->
-              <div>
-                <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Échéance</label>
-                <div class="relative">
-                  <Icon name="heroicons:calendar" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
-                  <input 
-                    v-model="form.due_date" 
-                    type="date" 
-                    :min="minDate"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
-                  />
+              <!-- End Date and Assignee Row -->
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Échéance</label>
+                  <div class="relative">
+                    <Icon name="heroicons:calendar" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
+                    <input 
+                      v-model="form.due_date" 
+                      type="date" 
+                      :min="minDate"
+                      class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex-1 relative">
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Assigner à</label>
+                  <div class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 cursor-pointer flex justify-between items-center transition-all" @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen">
+                    <div class="flex items-center gap-2 truncate">
+                      <template v-if="form.assignee_id">
+                        <div class="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden shadow-sm" :class="orgMembers.find(m => m.id === form.assignee_id)?.profile_picture ? '' : orgMembers.find(m => m.id === form.assignee_id)?.color">
+                          <img v-if="orgMembers.find(m => m.id === form.assignee_id)?.profile_picture" :src="orgMembers.find(m => m.id === form.assignee_id)?.profile_picture.startsWith('http') ? orgMembers.find(m => m.id === form.assignee_id)?.profile_picture : `http://localhost:8000${orgMembers.find(m => m.id === form.assignee_id)?.profile_picture}`" class="w-full h-full object-cover" />
+                          <span v-else>{{ orgMembers.find(m => m.id === form.assignee_id)?.initials }}</span>
+                        </div>
+                        <span class="text-sm font-medium truncate">{{ orgMembers.find(m => m.id === form.assignee_id)?.name }}</span>
+                      </template>
+                      <template v-else>
+                        <div class="w-5 h-5 flex-shrink-0 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                          <Icon name="ph:user-minus" class="w-3 h-3" />
+                        </div>
+                        <span class="text-secondary dark:text-gray-400 text-sm truncate">Non assigné</span>
+                      </template>
+                    </div>
+                    <Icon name="ph:caret-down" class="w-4 h-4 flex-shrink-0 text-secondary dark:text-gray-400 transition-transform duration-200" :class="isAssigneeDropdownOpen ? 'rotate-180' : ''" />
+                  </div>
+                  
+                  <!-- Dropdown -->
+                  <div v-if="isAssigneeDropdownOpen" class="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-[120] overflow-hidden">
+                    <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1">
+                      <li class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-2 text-sm text-main dark:text-white transition-colors" @click="form.assignee_id = null; isAssigneeDropdownOpen = false">
+                        <div class="w-5 h-5 flex-shrink-0 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
+                          <Icon name="ph:user-minus" class="w-3 h-3" />
+                        </div> 
+                        <span class="text-secondary dark:text-gray-400 truncate">Non assigné</span>
+                      </li>
+                      <li v-for="member in orgMembers" :key="member.id" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-2 text-sm text-main dark:text-white transition-colors" @click="form.assignee_id = member.id; isAssigneeDropdownOpen = false">
+                        <div class="w-5 h-5 flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
+                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                          <span v-else>{{ member.initials }}</span>
+                        </div> 
+                        <span class="truncate">{{ member.name }}</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
 

@@ -105,6 +105,20 @@ export default function useCommentaire() {
     }
   }
 
+  const deleteCommentaire = async (id: number | string) => {
+    try {
+      const { $api } = useNuxtApp()
+      await $api(`/commentaires/${id}`, {
+        method: 'DELETE',
+      })
+      commentaires.value = commentaires.value.filter(c => String(c.id) !== String(id))
+      return true
+    } catch (err) {
+      console.error('Failed to delete commentaire:', err)
+      throw err
+    }
+  }
+
   return {
     commentaires,
     isLoading,
@@ -112,5 +126,6 @@ export default function useCommentaire() {
     getCommentaires,
     createCommentaire,
     updateCommentaire,
+    deleteCommentaire,
   }
 }

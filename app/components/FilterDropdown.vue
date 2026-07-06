@@ -7,6 +7,8 @@ const dropdownRef = ref<HTMLElement | null>(null)
 export interface FilterOption {
   id: string | number;
   label: string;
+  icon?: string;
+  colorClass?: string;
 }
 
 const props = defineProps({
@@ -15,9 +17,9 @@ const props = defineProps({
   showProjects: { type: Boolean, default: false },
   showStatus: { type: Boolean, default: false },
   priorityOptions: { type: Array as PropType<FilterOption[]>, default: () => [
-    { id: 'basse', label: 'Basse' },
-    { id: 'moyenne', label: 'Moyenne' },
-    { id: 'haute', label: 'Haute' }
+    { id: 'faible', label: 'FAIBLE', icon: 'ph:caret-down-bold', colorClass: 'text-gray-700 dark:text-gray-400' },
+    { id: 'moyen', label: 'MOYEN', icon: 'ph:equals-bold', colorClass: 'text-blue-700 dark:text-blue-500' },
+    { id: 'élevé', label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'text-red-700 dark:text-red-400' }
   ]},
   projectOptions: { type: Array as PropType<FilterOption[]>, default: () => [] },
   statusOptions: { type: Array as PropType<FilterOption[]>, default: () => [
@@ -158,10 +160,11 @@ onUnmounted(() => {
           <h3 class="text-xs font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Priorité</h3>
           <div class="flex flex-col gap-2">
             <label v-for="priority in priorityOptions" :key="priority.id" class="flex items-center gap-2 cursor-pointer group" @click.prevent="togglePriority(priority.id)">
-              <div class="relative flex items-center justify-center w-4 h-4 border rounded bg-canvas dark:bg-[#2A2A2D] group-hover:border-primary transition-colors" :class="selectedPriorities.includes(priority.id) ? 'border-primary dark:border-blue-500 bg-primary dark:bg-blue-500 text-white' : 'border-form-border dark:border-gray-600 text-transparent'">
+              <div class="relative flex items-center justify-center w-4 h-4 border rounded bg-canvas dark:bg-[#2A2A2D] group-hover:border-primary transition-colors shrink-0" :class="selectedPriorities.includes(priority.id) ? 'border-primary dark:border-blue-500 bg-primary dark:bg-blue-500 text-white' : 'border-form-border dark:border-gray-600 text-transparent'">
                  <Icon name="heroicons:check" class="w-3 h-3" />
               </div>
-              <span class="text-sm font-medium text-main dark:text-gray-300">{{ priority.label }}</span>
+              <Icon v-if="priority.icon" :name="priority.icon" class="w-4 h-4 shrink-0" :class="priority.colorClass" />
+              <span class="text-sm font-medium uppercase" :class="priority.colorClass || 'text-main dark:text-gray-300'">{{ priority.label }}</span>
             </label>
             <div v-if="priorityOptions.length === 0" class="text-sm text-gray-400">Aucune option</div>
           </div>

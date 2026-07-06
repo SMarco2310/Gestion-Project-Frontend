@@ -343,12 +343,18 @@ onUnmounted(() => {
                   
                   <!-- Assignee Avatar -->
                   <div 
-                    v-if="item.assignee.initials"
-                    :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white', item.assignee.colorClass]"
+                    v-if="item.assignee?.profilePicture"
+                    class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm"
+                  >
+                    <img :src="item.assignee.profilePicture" class="w-full h-full object-cover" />
+                  </div>
+                  <div 
+                    v-else-if="item.assignee?.initials"
+                    :class="['w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm', item.assignee.colorClass]"
                   >
                     {{ item.assignee.initials }}
                   </div>
-                  <div v-else-if="item.assignee.icon" class="w-6 h-6 rounded-full bg-form-border dark:bg-[#3A3A3D] flex items-center justify-center text-secondary dark:text-gray-400">
+                  <div v-else-if="item.assignee?.icon" class="w-6 h-6 rounded-full bg-form-border dark:bg-[#3A3A3D] flex items-center justify-center text-secondary dark:text-gray-400 shrink-0">
                     <Icon :name="item.assignee.icon" class="text-xs" />
                   </div>
                </div>

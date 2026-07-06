@@ -175,7 +175,7 @@ export default function useNotification() {
     stopPolling()
     pollInterval = setInterval(() => {
       if (!USE_MOCK_DATA) {
-        fetchUnreadCount().catch(() => {})
+        fetchUnreadCount().catch(() => { })
       }
     }, intervalMs)
   }

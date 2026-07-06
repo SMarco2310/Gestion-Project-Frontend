@@ -57,9 +57,9 @@ const handleDelete = async () => {
 const handleActionClick = () => {
   if (notification.value) {
     if (notification.value.data.task_id) {
-      navigateTo('/tasks')
+      navigateTo(`/tasks/${notification.value.data.task_id}`)
     } else if (notification.value.data.projet_id) {
-      navigateTo('/projets')
+      navigateTo(`/projets/${notification.value.data.projet_id}`)
     }
   }
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -16,7 +16,65 @@ const { projets, getProjets } = useProjets()
 
 const isSidebarOpen = ref(false)
 const externalEventsRef = ref<HTMLElement | null>(null)
+const calendarRef = ref<any>(null)
 let draggableInstance: any = null
+
+const currentTitle = ref('')
+const activeFilter = ref('All')
+
+// Navigation methods
+const goPrev = () => calendarRef.value?.getApi().prev()
+const goNext = () => calendarRef.value?.getApi().next()
+const goToday = () => calendarRef.value?.getApi().today()
+
+const activeView = ref('timeGridWeek')
+const isViewDropdownOpen = ref(false)
+
+const viewOptions = [
+  { value: 'dayGridMonth', label: 'Ce mois' },
+  { value: 'timeGridWeek', label: 'Cette semaine' },
+  { value: 'timeGridDay', label: 'Aujourd\'hui' }
+]
+
+const changeView = (viewValue: string) => {
+  activeView.value = viewValue
+  calendarRef.value?.getApi().changeView(viewValue)
+  isViewDropdownOpen.value = false
+}
+
+const currentViewLabel = computed(() => {
+  const view = viewOptions.find(v => v.value === activeView.value)
+  return view ? view.label : 'Cette semaine'
+})
+
+// Close dropdown when clicking outside
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.view-dropdown')) {
+      isViewDropdownOpen.value = false
+    }
+  })
+})
+
+const activeFilters = ref({
+  priorities: [] as (string | number)[],
+  projects: [] as (string | number)[],
+  statuses: [] as (string | number)[],
+  tags: [] as (string | number)[],
+  dateSort: 'recent'
+})
+
+const activeFilterCount = computed(() => {
+  return activeFilters.value.priorities.length + 
+         activeFilters.value.projects.length + 
+         activeFilters.value.statuses.length + 
+         activeFilters.value.tags.length
+})
+
+const handleFiltersUpdate = (newFilters: any) => {
+  activeFilters.value = newFilters
+}
 
 const unscheduledTasks = computed(() => {
   return tasks.value.filter((task: any) => !task.due_date)
@@ -24,7 +82,15 @@ const unscheduledTasks = computed(() => {
 
 const calendarEvents = computed(() => {
   const taskEvents = tasks.value
-    .filter((task: any) => task.due_date) // Only show scheduled tasks
+    .filter((task: any) => {
+      if (!task.due_date) return false
+      if (activeFilters.value.priorities.length > 0 && !activeFilters.value.priorities.includes(task.priority)) return false
+      const statusMap: Record<string, string> = { 'TO_DO': 'à faire', 'IN_PROGRESS': 'en cours', 'DONE': 'terminé' }
+      const normalizedStatus = statusMap[task.status] || task.status
+      if (activeFilters.value.statuses.length > 0 && !activeFilters.value.statuses.includes(normalizedStatus)) return false
+      if (activeFilters.value.projects.length > 0 && !activeFilters.value.projects.includes(task.projet_id)) return false
+      return true
+    })
     .map((task: any) => {
       let color = '#3b82f6'
       if (task.priority === 'haute') color = '#ef4444'
@@ -44,7 +110,12 @@ const calendarEvents = computed(() => {
       }
     })
 
-  const projectEvents = projets.value.map((projet: any) => {
+  const projectEvents = projets.value
+    .filter((projet: any) => {
+      if (activeFilters.value.projects.length > 0 && !activeFilters.value.projects.includes(projet.id)) return false
+      return true
+    })
+    .map((projet: any) => {
     const endDate = new Date(projet.end_date)
     endDate.setDate(endDate.getDate() + 1)
 
@@ -64,6 +135,12 @@ const calendarEvents = computed(() => {
       }
     }
   })
+
+  if (activeFilter.value === 'Projects') {
+    return projectEvents
+  } else if (activeFilter.value === 'Tasks') {
+    return taskEvents
+  }
 
   return [...projectEvents, ...taskEvents]
 })
@@ -93,14 +170,11 @@ onUnmounted(() => {
   }
 })
 
-const calendarOptions = ref({
+const calendarOptions = computed(() => ({
   plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-  initialView: 'timeGridWeek',
-  headerToolbar: {
-    left: 'prev,next today',
-    center: 'title',
-    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-  },
+  initialView: activeView.value,
+  headerToolbar: false as any, // using custom toolbar
+  events: calendarEvents.value,
   editable: true,
   droppable: true,
   selectable: true,
@@ -111,6 +185,26 @@ const calendarOptions = ref({
   slotMaxTime: "24:00:00",
   allDaySlot: true,
   height: '100%',
+  datesSet: (arg: any) => {
+    // Attempt to format like '01-07 January 2025' or fallback to default title
+    if (arg.view.type === 'timeGridWeek') {
+      const start = arg.start
+      const end = new Date(arg.end)
+      end.setDate(end.getDate() - 1) // end is exclusive in FC
+      
+      const formatMonth = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
+      const startMonth = formatMonth.format(start)
+      const endMonth = formatMonth.format(end)
+      
+      if (startMonth === endMonth) {
+         currentTitle.value = `${String(start.getDate()).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')} ${startMonth}`
+      } else {
+         currentTitle.value = arg.view.title
+      }
+    } else {
+      currentTitle.value = arg.view.title
+    }
+  },
   eventClick: (clickInfo: any) => {
     // In a real app, open the task side sheet
     console.log('Event clicked:', clickInfo.event)
@@ -129,30 +223,179 @@ const calendarOptions = ref({
       // No refetch needed, local UI handles the drop successfully
     }
   }
-})
+}))
 
 </script>
 
 <template>
   <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4">
-    <header class="pb-5 flex justify-between items-start">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300 tracking-tight">Planning</h1>
-        <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer votre emploi du temps et vos tâches.</p>
+    <header class="pb-4 flex justify-between items-center">
+      <div class="flex items-center gap-2 text-sm font-semibold text-secondary dark:text-gray-400">
+        <span class="hover:text-main dark:hover:text-gray-200 cursor-pointer transition-colors">Projets</span>
+        <Icon name="heroicons:chevron-right" class="w-4 h-4" />
+        <span class="text-main dark:text-gray-200 font-bold">Planning</span>
       </div>
       <button 
         @click="isSidebarOpen = !isSidebarOpen" 
-        class="px-3.5 py-2.5 bg-white dark:bg-[#1D1D1D] border border-form-border dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-main dark:text-gray-300 shadow-sm flex items-center gap-2 font-medium active:neo-inset"
+        class="px-4 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-3 relative group font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] hover:scale-[1.02] active:scale-95"
         :class="{'ring-2 ring-primary dark:ring-blue-500': isSidebarOpen}"
       >
-        <Icon name="heroicons:calendar-days" class="w-5 h-5" />
-        <span class="hidden sm:inline">Backlog</span>
+        <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
+        <span class="relative z-10 tracking-wide hidden sm:inline">Backlog</span>
       </button>
     </header>
 
     <div class="flex-1 flex gap-4 overflow-hidden h-full">
-      <div class="flex-1 bg-white dark:bg-[#1D1D1D] rounded-xl border border-form-border dark:border-gray-800 p-4 neo-shadow overflow-hidden flex flex-col calendar-wrapper">
-        <FullCalendar class="flex-1 h-full" :options="calendarOptions" :events="calendarEvents" />
+      <div class="flex-1 bg-white dark:bg-[#1D1D1D] rounded-3xl border border-form-border dark:border-gray-800 p-6 shadow-sm overflow-hidden flex flex-col calendar-wrapper gap-4">
+        
+        <!-- Custom Toolbar -->
+        <div class="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+          <div class="flex items-center gap-6 flex-wrap">
+            <h2 class="text-2xl font-bold text-main dark:text-gray-200 tracking-tight">{{ currentTitle }}</h2>
+            
+            <div class="relative flex items-center bg-gray-50 dark:bg-black/20 p-1 rounded-full border border-gray-100 dark:border-gray-800 w-max isolate">
+              <!-- Bouncy Slider Background -->
+              <div 
+                class="absolute top-1 bottom-1 rounded-full bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                :class="{
+                  'left-1 w-[64px]': activeFilter === 'All',
+                  'left-[68px] w-[96px]': activeFilter === 'Projects',
+                  'left-[164px] w-[80px]': activeFilter === 'Tasks'
+                }"
+              ></div>
+              
+              <button 
+                @click="activeFilter = 'All'"
+                :class="activeFilter === 'All' ? 'text-white drop-shadow-md' : 'text-gray-500 hover:text-main dark:hover:text-gray-300'"
+                class="py-1.5 rounded-full text-sm font-bold transition-colors duration-300 w-[64px]"
+              >All</button>
+              <button 
+                @click="activeFilter = 'Projects'"
+                :class="activeFilter === 'Projects' ? 'text-white drop-shadow-md' : 'text-gray-500 hover:text-main dark:hover:text-gray-300'"
+                class="py-1.5 rounded-full text-sm font-bold transition-colors duration-300 w-[96px]"
+              >Projects</button>
+              <button 
+                @click="activeFilter = 'Tasks'"
+                :class="activeFilter === 'Tasks' ? 'text-white drop-shadow-md' : 'text-gray-500 hover:text-main dark:hover:text-gray-300'"
+                class="py-1.5 rounded-full text-sm font-bold transition-colors duration-300 w-[80px]"
+              >Tasks</button>
+            </div>
+          </div>
+          
+          <div class="flex items-center gap-4">
+            <div class="relative view-dropdown z-20">
+              <div 
+                @click="isViewDropdownOpen = !isViewDropdownOpen"
+                class="flex items-center gap-2 text-sm font-bold text-secondary dark:text-gray-400 cursor-pointer hover:text-main dark:hover:text-gray-300 transition-colors bg-white dark:bg-[#1D1D1D] px-3 py-1.5 rounded-lg border border-form-border dark:border-gray-800 shadow-sm"
+              >
+                <span>{{ currentViewLabel }}</span>
+                <Icon name="heroicons:chevron-down" class="w-4 h-4 transition-transform duration-200" :class="{'rotate-180': isViewDropdownOpen}" />
+              </div>
+              
+              <transition name="fade">
+                <div v-if="isViewDropdownOpen" class="absolute top-full mt-2 right-0 w-40 bg-white dark:bg-[#252525] border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden py-1">
+                  <div 
+                    v-for="view in viewOptions" 
+                    :key="view.value"
+                    @click="changeView(view.value)"
+                    class="px-4 py-2.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1D1D1D] transition-colors flex items-center justify-between"
+                    :class="{'font-bold text-primary dark:text-blue-400': activeView === view.value, 'text-main dark:text-gray-300': activeView !== view.value}"
+                  >
+                    {{ view.label }}
+                    <Icon v-if="activeView === view.value" name="heroicons:check" class="w-4 h-4" />
+                  </div>
+                </div>
+              </transition>
+            </div>
+            
+            <div class="flex items-center gap-1">
+              <button @click="goPrev" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><Icon name="heroicons:chevron-left" class="w-4 h-4" /></button>
+              <button @click="goToday" class="px-2 py-1 text-xs font-bold hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors uppercase">Auj.</button>
+              <button @click="goNext" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><Icon name="heroicons:chevron-right" class="w-4 h-4" /></button>
+            </div>
+            
+            <FilterDropdown 
+              :showDateSort="false" 
+              :showPriority="true" 
+              :showStatus="true"
+              :showProjects="true"
+              :projectOptions="projets.map(p => ({ id: p.id, label: p.name }))"
+              @update:filters="handleFiltersUpdate"
+              class="z-50"
+            >
+              <template #trigger>
+                <button class="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-bold text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors pointer-events-none">
+                  <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4" />
+                  Filter
+                  <span v-if="activeFilterCount > 0" class="w-5 h-5 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
+                </button>
+              </template>
+            </FilterDropdown>
+            
+            <button class="flex items-center gap-2 px-5 py-2 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all">
+              <Icon name="heroicons:plus" class="w-4 h-4 drop-shadow-md" />
+              <span class="tracking-wide drop-shadow-sm">Add Event</span>
+            </button>
+          </div>
+        </div>
+
+        <FullCalendar ref="calendarRef" class="flex-1 h-full" :options="calendarOptions">
+          <template v-slot:dayHeaderContent="arg">
+            <div class="flex items-center justify-center py-2">
+              <div 
+                v-if="arg.isToday"
+                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white px-5 py-1.5 rounded-full text-sm font-bold tracking-wide"
+              >
+                {{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}
+              </div>
+              <div 
+                v-else
+                class="text-sm font-bold text-secondary dark:text-gray-400 tracking-wide"
+              >
+                {{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}
+              </div>
+            </div>
+          </template>
+
+          <template v-slot:slotLabelContent="arg">
+            <div class="text-[11px] font-bold text-secondary dark:text-gray-500 py-1 pr-3 w-full text-right">
+              {{ String(arg.date.getHours()).padStart(2, '0') }}:{{ String(arg.date.getMinutes()).padStart(2, '0') }}
+            </div>
+          </template>
+
+          <template v-slot:eventContent="arg">
+            <div 
+              class="flex flex-col w-full h-full p-2.5 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-black/5 dark:border-white/5 transition-all overflow-hidden"
+              :class="{
+                'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100': arg.event.backgroundColor === '#3b82f6',
+                'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100': arg.event.backgroundColor === '#ef4444',
+                'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100': arg.event.backgroundColor === '#10b981',
+                'bg-gray-100 dark:bg-gray-800/40 text-gray-900 dark:text-gray-100': arg.event.backgroundColor === 'rgba(59, 130, 246, 0.1)'
+              }"
+            >
+              <div class="flex justify-between items-start gap-1">
+                <span class="text-xs font-bold leading-tight truncate">{{ arg.event.title }}</span>
+                <button class="p-0.5 rounded-full hover:bg-black/10 transition-colors shrink-0">
+                  <Icon name="heroicons:ellipsis-horizontal" class="w-4 h-4 opacity-70" />
+                </button>
+              </div>
+              
+              <div class="text-[10px] opacity-70 mt-1 font-medium truncate" v-if="!arg.event.allDay">
+                {{ String(arg.event.start?.getHours()).padStart(2, '0') }}:{{ String(arg.event.start?.getMinutes()).padStart(2, '0') }}am - 
+                {{ arg.event.end ? String(arg.event.end.getHours()).padStart(2, '0') + ':' + String(arg.event.end.getMinutes()).padStart(2, '0') + 'am' : '' }}
+              </div>
+              
+              <div class="mt-auto pt-2" v-if="arg.event.extendedProps.status">
+                <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-black/30 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                  <Icon name="heroicons:check-circle" class="w-3 h-3 text-emerald-500" v-if="arg.event.extendedProps.status === 'terminé'" />
+                  <Icon name="heroicons:clock" class="w-3 h-3 text-blue-500" v-else-if="arg.event.extendedProps.status === 'en cours'" />
+                  <Icon name="heroicons:minus-circle" class="w-3 h-3 text-gray-400" v-else />
+                  {{ arg.event.extendedProps.status }}
+                </div>
+              </div>
+            </div>
+          </template>
+        </FullCalendar>
       </div>
 
       <!-- Unscheduled Tasks Sidebar -->
@@ -201,148 +444,85 @@ const calendarOptions = ref({
 
 <style>
 /* 
-  FullCalendar Neo-Brutalist / Dark Mode Theme Overrides 
-  Matches the sleek screenshot and general app theme.
+  FullCalendar Custom Premium Theme Overrides 
 */
 .calendar-wrapper {
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: transparent;
-  --fc-list-event-hover-bg-color: rgba(255, 255, 255, 0.05);
-  --fc-theme-standard-border-color: #e5e7eb;
-  --fc-border-color: #e5e7eb;
-  
-  --fc-button-bg-color: #f3f4f6;
-  --fc-button-border-color: #d1d5db;
-  --fc-button-text-color: #374151;
-  
-  --fc-button-hover-bg-color: #e5e7eb;
-  --fc-button-hover-border-color: #d1d5db;
-  
-  --fc-button-active-bg-color: #3b82f6;
-  --fc-button-active-border-color: #2563eb;
-  --fc-button-active-text-color: #ffffff;
-  
-  --fc-event-bg-color: #3b82f6;
-  --fc-event-border-color: #2563eb;
-  
-  --fc-today-bg-color: rgba(59, 130, 246, 0.05);
+  --fc-list-event-hover-bg-color: rgba(0, 0, 0, 0.02);
+  --fc-theme-standard-border-color: #f3f4f6;
+  --fc-border-color: #f3f4f6;
+  --fc-today-bg-color: transparent;
+  --fc-now-indicator-color: #1f2937;
 }
 
 .dark .calendar-wrapper {
   --fc-border-color: #27272a;
   --fc-theme-standard-border-color: #27272a;
-
-  --fc-button-bg-color: #252525;
-  --fc-button-border-color: #3f3f46;
-  --fc-button-text-color: #a1a1aa;
-  
-  --fc-button-hover-bg-color: #3f3f46;
-  --fc-button-hover-border-color: #52525b;
+  --fc-now-indicator-color: #f3f4f6;
 }
 
-/* Container styling */
+/* Remove default grid styling */
 .fc-theme-standard .fc-scrollgrid {
-  border-radius: 0.5rem;
-  border-color: var(--fc-border-color);
+  border: none !important;
 }
 
-/* Header toolbar styling */
-.fc .fc-toolbar {
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: center !important;
+.fc-scrollgrid-section-header > th {
+  border: none !important;
 }
 
-@media (min-width: 768px) {
-  .fc .fc-toolbar {
-    justify-content: space-between !important;
-  }
+.fc-col-header-cell {
+  border: none !important;
+  border-bottom: 1px solid var(--fc-border-color) !important;
 }
 
-.fc .fc-toolbar-chunk {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+.fc-timegrid-slot-minor {
+  border-top-style: dashed !important;
 }
 
-.fc .fc-toolbar-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1f2937;
-  white-space: nowrap;
+.fc-timegrid-slot {
+  border-bottom: 1px solid var(--fc-border-color);
 }
 
-.dark .fc .fc-toolbar-title {
-  color: #f3f4f6;
-}
-
-/* Buttons */
-.fc .fc-button-primary {
-  text-transform: capitalize;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
+/* Remove default event styling to rely on our custom content */
+.fc-event {
+  background: transparent !important;
+  border: none !important;
   box-shadow: none !important;
 }
-
-.fc .fc-button-primary:not(:disabled):active, 
-.fc .fc-button-primary:not(:disabled).fc-button-active {
-  background-color: var(--fc-button-active-bg-color);
-  border-color: var(--fc-button-active-border-color);
+.fc-v-event .fc-event-main-frame {
+  display: block;
+  height: 100%;
+}
+.fc-timegrid-event-harness {
+  padding: 1px 4px !important;
+}
+.fc-timegrid-event {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.fc-event-main {
+  height: 100%;
+  padding: 0 !important;
 }
 
-/* Text colors */
-.fc-col-header-cell-cushion,
-.fc-daygrid-day-number {
-  color: #4b5563;
-  padding: 8px !important;
-  font-weight: 600;
+/* Remove time axis background and borders */
+.fc .fc-timegrid-axis {
+  border: none !important;
+}
+.fc .fc-timegrid-slot-label {
+  border: none !important;
 }
 
-.dark .fc-col-header-cell-cushion,
-.dark .fc-daygrid-day-number {
-  color: #9ca3af;
-}
-
-.fc-timegrid-slot-label-cushion {
-  color: #6b7280;
-  font-size: 0.75rem;
-}
-
-/* Expand time axis column */
-.fc .fc-timegrid-axis,
-.fc .fc-timegrid-slot-label,
 .fc-timegrid-slot-label-frame {
-  width: 90px !important;
-  min-width: 90px !important;
+  justify-content: flex-end;
 }
 
-/* Fix all-day text wrap in axis */
 .fc-timegrid-axis-cushion {
-  white-space: nowrap !important;
-  padding: 0 16px !important;
-  text-transform: capitalize;
-  overflow: visible !important;
+  display: none !important;
 }
 
-.dark .fc-timegrid-slot-label-cushion {
-  color: #6b7280;
-}
-
-/* Events */
-.fc-timegrid-event .fc-event-main {
-  padding: 2px 6px;
-}
-
-.fc-v-event {
-  border-radius: 6px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-width: 1px;
-}
-
-/* Remove default blue outline on focus */
+/* Fix FullCalendar focus outlines */
 .fc-event:focus::after, 
 .fc-event:focus {
   outline: none !important;
@@ -351,14 +531,24 @@ const calendarOptions = ref({
 
 /* Current time indicator */
 .fc-timegrid-now-indicator-line {
-  border-color: #ef4444;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--fc-now-indicator-color);
 }
 .fc-timegrid-now-indicator-arrow {
-  border-color: #ef4444;
+  display: none; /* We use a custom pill in nowIndicatorContent */
+}
+
+/* Expand time axis column to make room for our custom time labels */
+.fc .fc-timegrid-axis,
+.fc .fc-timegrid-slot-label,
+.fc-timegrid-slot-label-frame {
+  width: 70px !important;
+  min-width: 70px !important;
 }
 
 /* FullCalendar height constraints */
 .fc-view-harness {
-  min-height: 500px;
+  min-height: 600px;
 }
 </style>

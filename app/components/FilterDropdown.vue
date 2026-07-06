@@ -15,9 +15,9 @@ const props = defineProps({
   showProjects: { type: Boolean, default: false },
   showStatus: { type: Boolean, default: false },
   priorityOptions: { type: Array as PropType<FilterOption[]>, default: () => [
-    { id: 'faible', label: 'Faible' },
-    { id: 'moyen', label: 'Moyen' },
-    { id: 'élevé', label: 'Élevé' }
+    { id: 'basse', label: 'Basse' },
+    { id: 'moyenne', label: 'Moyenne' },
+    { id: 'haute', label: 'Haute' }
   ]},
   projectOptions: { type: Array as PropType<FilterOption[]>, default: () => [] },
   statusOptions: { type: Array as PropType<FilterOption[]>, default: () => [
@@ -111,14 +111,17 @@ onUnmounted(() => {
 
 <template>
   <div class="relative" ref="dropdownRef">
-    <button 
-      @click="toggleDropdown" 
-      class="bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] text-main dark:text-gray-300 transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-105"
-      :class="{ 'ring-2 ring-primary dark:ring-blue-500': isOpen }"
-    >
-      <Icon name="heroicons:adjustments-horizontal" class="w-5 h-5 text-secondary dark:text-gray-400" /> 
-      <span class="px-2 hidden md:inline font-medium tracking-wide">Filtrer</span>
-    </button>
+    <div @click="toggleDropdown">
+      <slot name="trigger">
+        <button 
+          class="bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] text-main dark:text-gray-300 transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-105"
+          :class="{ 'ring-2 ring-primary dark:ring-blue-500': isOpen }"
+        >
+          <Icon name="heroicons:adjustments-horizontal" class="w-5 h-5 text-secondary dark:text-gray-400" /> 
+          <span class="px-2 hidden md:inline font-medium tracking-wide">Filtrer</span>
+        </button>
+      </slot>
+    </div>
 
     <!-- Dropdown Menu -->
     <Transition

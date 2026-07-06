@@ -79,7 +79,7 @@ const handleCreateOrganization = async () => {
 
     <!-- Top Right Actions -->
     <div class="absolute top-8 right-8 z-20">
-       <NuxtLink to="/profile" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white font-medium transition-colors">
+       <NuxtLink to="/profile?source=org" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white font-medium transition-colors">
          Profil
        </NuxtLink>
     </div>

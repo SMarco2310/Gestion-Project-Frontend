@@ -29,6 +29,20 @@ onUnmounted(() => {
 
 const isActive = (path: string) => route.path.startsWith(path)
 
+const activeNavIndex = computed(() => {
+  const routes = [
+    '/dashboard',
+    '/projets',
+    '/tasks',
+    '/calendar',
+    '/team',
+    '/notifications'
+  ]
+  if (isOwner.value) {
+    routes.push('/settings')
+  }
+  return routes.findIndex(path => isActive(path))
+})
 const handleLogout= async () =>{
     await logout();
     navigateTo('/auth/login');
@@ -269,70 +283,76 @@ onUnmounted(() => {
                 </div>
             </div>
 
-            <nav class="flex flex-col gap-2 p-4 pt-6 overflow-y-auto item custom-scrollbar">
+            <nav class="relative flex flex-col gap-2 p-4 pt-6 overflow-y-auto item custom-scrollbar isolate">
+                <!-- Bouncy Sliding Background -->
+                <div 
+                    class="absolute left-4 right-4 h-[44px] rounded-xl bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                    :style="activeNavIndex >= 0 ? { transform: `translateY(${activeNavIndex * 52}px)`, opacity: 1 } : { opacity: 0 }"
+                ></div>
+
                 <NuxtLink to="/dashboard" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/dashboard') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:home" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tableau de bord</span>
+                    <Icon name="heroicons:home" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/dashboard') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tableau de bord</span>
                 </NuxtLink>
                 <NuxtLink to="/projets" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/projets') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Projets</span>
+                    <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/projets') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Projets</span>
                 </NuxtLink>
                 <NuxtLink to="/tasks" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/tasks') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tâches</span>
+                    <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/tasks') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tâches</span>
                 </NuxtLink>
                 <NuxtLink to="/calendar" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/calendar') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Planning</span>
+                    <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/calendar') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Planning</span>
                 </NuxtLink>
                 <NuxtLink to="/team" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/team') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Équipe</span>
+                    <Icon name="heroicons:user-group" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/team') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Équipe</span>
                 </NuxtLink>
                 <NuxtLink to="/notifications" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/notifications') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Notifications</span>
+                    <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/notifications') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Notifications</span>
                     <span v-if="unreadCount > 0" class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full" :class="isSidebarCollapsed ? 'absolute top-2 right-2 md:top-1 md:right-1' : 'ml-auto'">{{ unreadCount }}</span>
                 </NuxtLink>
                 <NuxtLink v-if="isOwner" to="/settings" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/settings') 
-                        ? 'font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] scale-[1.02] z-10' 
+                        ? 'font-bold text-white scale-[1.02]' 
                         : 'text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white hover:bg-canvas dark:hover:bg-gray-800'
                 ]">
-                    <Icon name="heroicons:cog-6-tooth" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-                    <span class="relative z-10 tracking-wide" :class="isSidebarCollapsed ? 'md:hidden' : ''">Paramètres</span>
+                    <Icon name="heroicons:cog-6-tooth" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/settings') }" />
+                    <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Paramètres</span>
                 </NuxtLink>
             </nav>
             

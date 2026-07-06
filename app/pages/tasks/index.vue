@@ -113,6 +113,19 @@ const projectOptions = computed(() => {
   }))
 })
 
+const tagOptions = computed(() => {
+  const uniqueTags = new Map()
+  tasks.value.forEach((t: any) => {
+    if (t.tag) {
+      const tagName = t.tag.name || t.tag
+      if (!uniqueTags.has(tagName)) {
+        uniqueTags.set(tagName, { id: tagName, label: tagName })
+      }
+    }
+  })
+  return Array.from(uniqueTags.values())
+})
+
 const filterText = ref('')
 const selectedProjects = ref<(string | number)[]>([])
 const selectedPriorities = ref<(string | number)[]>([])
@@ -138,7 +151,7 @@ const filteredTasks = computed(() => {
   }
 
   if (selectedTags.value.length > 0) {
-    result = result.filter(t => t.tag != null && selectedTags.value.includes(t.tag))
+    result = result.filter(t => t.tag != null && (selectedTags.value.includes(t.tag.name || t.tag)))
   }
 
   if (filterText.value) {
@@ -236,6 +249,7 @@ onMounted(async () => {
               :showStatus="false" 
               :showTags="true"
               :projectOptions="projectOptions"
+              :tagOptions="tagOptions"
               @update:filters="handleFilterUpdate"
               class="shrink-0" 
             />

@@ -148,14 +148,14 @@ const bodyThemeClasses = computed(() => {
                 </div>
 
                 <!-- Tags ON the folder card -->
-                <div class="flex justify-between items-center w-full">
+                <div class="flex justify-between items-center w-full pr-10">
                     <span class="text-white/90 font-bold text-sm tracking-wide flex items-center gap-1.5 drop-shadow-sm">
                         <Icon name="heroicons:folder" class="w-4 h-4 text-white/80" />
                         {{ props.reference_code }}
                     </span>
                     <span :class="{ 
                         'px-2.5 py-0.5 rounded-full bg-orange-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'à faire' , 
-                        'px-2.5 py-0.5 rounded-full bg-blue-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'en cours' , 
+                        'px-2.5 py-0.5 rounded-full bg-white/25 border border-white/30 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-md shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'en cours' , 
                         'px-2.5 py-0.5 rounded-full bg-emerald-400/90 text-white font-bold text-[10px] uppercase tracking-wider backdrop-blur-sm shadow-[0_2px_4px_rgba(0,0,0,0.1)]' : props.status === 'terminé'
                     }">{{ props.status }}</span>
                 </div>
@@ -181,9 +181,9 @@ const bodyThemeClasses = computed(() => {
                         <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Progression des tickets</span>
                         <div class="flex h-1.5 w-full rounded-full overflow-hidden bg-black/20 shadow-inner">
                             <template v-if="props.metrics.totalTasks > 0">
-                                <div class="bg-transparent h-full transition-all duration-500" :style="{ width: `${(props.metrics.todoTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.todoTasks > 0"></div>
-                                <div class="bg-white/50 h-full transition-all duration-500 border-l border-black/10" :style="{ width: `${(props.metrics.inProgressTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.inProgressTasks > 0"></div>
-                                <div class="bg-white/90 h-full transition-all duration-500 shadow-[0_0_4px_rgba(255,255,255,0.5)] border-l border-black/10" :style="{ width: `${(props.metrics.doneTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.doneTasks > 0"></div>
+                                <div class="bg-white/30 h-full transition-all duration-500" :style="{ width: `${(props.metrics.todoTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.todoTasks > 0"></div>
+                                <div class="bg-white/60 h-full transition-all duration-500" :class="{'border-l border-black/10': props.metrics.todoTasks > 0}" :style="{ width: `${(props.metrics.inProgressTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.inProgressTasks > 0"></div>
+                                <div class="bg-white h-full transition-all duration-500 shadow-[0_0_4px_rgba(255,255,255,0.5)]" :class="{'border-l border-black/10': props.metrics.todoTasks > 0 || props.metrics.inProgressTasks > 0}" :style="{ width: `${(props.metrics.doneTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.doneTasks > 0"></div>
                             </template>
                         </div>
                         

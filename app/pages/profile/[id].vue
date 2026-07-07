@@ -12,6 +12,15 @@ import { useToast } from '~/composables/useToast'
 
 const userProfile = ref<any>(null);
 const isLoading = ref(true);
+const { activeOrganization } = useOrganizations();
+
+const goBack = () => {
+    if (activeOrganization.value?.id) {
+        navigateTo(`/organization/${activeOrganization.value.id}`);
+    } else {
+        navigateTo('/organizations');
+    }
+}
 
 const handleVerifyEmail = () => {
     const { addToast } = useToast()
@@ -55,7 +64,7 @@ const formatDate = (dateString?: string) => {
                 <p class="text-secondary dark:text-gray-400 mt-1">Consultez les informations de ce membre.</p>
             </div>
             <div class="flex gap-4 w-full md:w-auto justify-end">
-                <button @click="$router.back()" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Retour</button>
+                <button @click="goBack()" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Retour</button>
             </div>
         </header>
 

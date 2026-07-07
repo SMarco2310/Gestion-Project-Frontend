@@ -12,7 +12,7 @@ const isOpen = ref(true)
 
 const handleClose = () => {
   isOpen.value = false
-  navigateTo('/projets')
+  navigateTo(`/organization/${route.params.org_id}/projects`)
 }
 
 const { isOwner } = useAuth()

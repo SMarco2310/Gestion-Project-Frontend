@@ -529,10 +529,10 @@ watch(() => props.isOpen, (newIsOpen) => {
           <header class="flex items-center justify-between px-6 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
             <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <span class="hover:underline cursor-pointer" v-if="taskProjetId">{{ taskProjetReference }}</span>
+              <NuxtLink v-if="taskProjetId" :to="`/organization/${$route.params.org_id}/projects/${taskProjetId}`" @click="close" class="hover:underline cursor-pointer">{{ taskProjetReference }}</NuxtLink>
               <span v-if="taskProjetId">/</span>
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <NuxtLink :to="`/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>
+              <NuxtLink :to="`/organization/${$route.params.org_id}/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>
             </div>
             
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">

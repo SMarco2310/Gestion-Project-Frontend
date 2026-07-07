@@ -76,7 +76,7 @@ const handleCreateTeam = async () => {
     <!-- Teams Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       
-      <div v-for="team in teams" :key="team.id" @click="navigateTo('/team/' + team.id)" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer">
+      <div v-for="team in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer">
         <div class="flex justify-between items-start mb-4">
           <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 flex items-center justify-center">
             <Icon name="heroicons:user-group" class="w-6 h-6" />

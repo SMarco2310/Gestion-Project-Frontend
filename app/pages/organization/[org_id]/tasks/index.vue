@@ -96,6 +96,8 @@ const mapTaskToBoardItem = (task: any) => ({
   statusIcon: 'ph:check',
   statusColorClass: 'text-emerald-500',
   commentairesCount: task.commentaires_count || 0,
+  subtasksTotal: task.sub_tasks ? task.sub_tasks.length : 0,
+  subtasksCompleted: task.sub_tasks ? task.sub_tasks.filter((st: any) => st.status === 'terminé').length : 0,
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
     initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',

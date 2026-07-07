@@ -15,6 +15,8 @@ const props = defineProps<{
   startInEditMode?: boolean
 }>()
 
+const route = useRoute()
+
 const emit = defineEmits(['close'])
 
 const close = () => {
@@ -546,7 +548,7 @@ const updateStatus = async (status: string) => {
             <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
               <NuxtLink
                 v-for="task in projectTasks" :key="task.id"
-                :to="`/tasks/${task.id}`"
+                :to="`/organization/${route.params.org_id || activeOrganization?.id}/tasks/${task.id}`"
                 @click="close"
                 class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer"
               >
@@ -565,6 +567,10 @@ const updateStatus = async (status: string) => {
                   >{{ task.title }}</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
+                  <div v-if="task.sub_tasks && task.sub_tasks.length > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400 mr-2">
+                    <Icon name="ph:check-square-offset" class="text-[14px]" />
+                    <span class="text-xs font-medium">{{ task.sub_tasks.filter((s: any) => s.status === 'terminé').length }}/{{ task.sub_tasks.length }}</span>
+                  </div>
                   <div v-if="task.commentaires_count && task.commentaires_count > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400 mr-2">
                     <Icon name="ph:chat-teardrop-text" class="text-[14px]" />
                     <span class="text-xs font-medium">{{ task.commentaires_count }}</span>

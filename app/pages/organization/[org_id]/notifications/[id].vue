@@ -50,16 +50,16 @@ const handleMarkAsRead = async () => {
 const handleDelete = async () => {
   if (notification.value) {
     await deleteNotification(notification.value.id)
-    router.push('/notifications')
+    router.push(`/organization/${route.params.org_id}/notifications`)
   }
 }
 
 const handleActionClick = () => {
   if (notification.value) {
     if (notification.value.data.task_id) {
-      navigateTo(`/tasks/${notification.value.data.task_id}`)
+      navigateTo(`/organization/${route.params.org_id}/tasks/${notification.value.data.task_id}`)
     } else if (notification.value.data.projet_id) {
-      navigateTo(`/projets/${notification.value.data.projet_id}`)
+      navigateTo(`/organization/${route.params.org_id}/projects/${notification.value.data.projet_id}`)
     }
   }
 }
@@ -69,7 +69,7 @@ const handleActionClick = () => {
   <div class="flex flex-col h-full w-full max-h-full">
     <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
       <div class="py-2 flex items-center gap-4">
-        <button @click="router.push('/notifications')" class="p-2 bg-card dark:bg-[#1D1D1D] rounded-lg border border-form-border dark:border-gray-800 hover:bg-canvas dark:hover:bg-gray-800 transition-colors text-secondary dark:text-gray-400">
+        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="p-2 bg-card dark:bg-[#1D1D1D] rounded-lg border border-form-border dark:border-gray-800 hover:bg-canvas dark:hover:bg-gray-800 transition-colors text-secondary dark:text-gray-400">
           <Icon name="heroicons:arrow-left" class="w-6 h-6" />
         </button>
         <div>
@@ -87,7 +87,7 @@ const handleActionClick = () => {
         <Icon name="heroicons:exclamation-triangle" class="w-16 h-16 mb-4 opacity-50 text-yellow-500" />
         <p class="text-lg font-medium">Notification introuvable</p>
         <p class="text-sm mt-1 opacity-75">Elle a peut-être été supprimée.</p>
-        <button @click="router.push('/notifications')" class="mt-6 text-primary hover:underline">
+        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="mt-6 text-primary hover:underline">
           Retour aux notifications
         </button>
       </div>

@@ -141,12 +141,12 @@ const removeMember = async (memberId: number) => {
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Organisation</h1>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les détails et les membres de votre organisation.</p>
       </div>
-      <div class="flex items-center gap-3">
+      <!-- <div class="flex items-center gap-3">
         <NuxtLink v-if="canManageMembers" to="/organization/settings" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
           <Icon name="heroicons:cog-6-tooth" class="w-5 h-5" />
           Paramètres
         </NuxtLink>
-      </div>
+      </div> -->
     </section>
 
     <!-- Organization Info Card -->

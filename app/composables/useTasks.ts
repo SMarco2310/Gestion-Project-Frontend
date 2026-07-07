@@ -70,7 +70,17 @@ export default function useTasks() {
     error.value = null
 
     try {
-      const query = projectId ? `?projet_id=${projectId}` : ''
+      const { activeOrganization } = useOrganizations()
+      const orgId = activeOrganization.value?.id
+      
+      let query = ''
+      if (projectId) {
+        query = `?projet_id=${projectId}`
+        if (orgId) query += `&organization_id=${orgId}`
+      } else if (orgId) {
+        query = `?organization_id=${orgId}`
+      }
+
       const data = await $api<Tache[] | any>(`/taches${query}`, {
         method: 'GET',
       })

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const route = useRoute()
+const orgId = computed(() => route.params.org_id)
+
 const props = defineProps<{
   totalIssues: number
   statusMetrics: Array<{ label: string; percentage: string; colorClass: string; colorCode: string; rawPercent: number }>
@@ -139,7 +142,7 @@ const donutStyle = computed(() => {
             v-for="task in upcomingTasks" 
             :key="task.id"
             class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer hover:border-orange-400/50 transition-colors"
-            @click="navigateTo(`/tasks/${task.id}`)"
+            @click="navigateTo(`/organization/${orgId}/tasks/${task.id}`)"
           >
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
@@ -175,7 +178,7 @@ const donutStyle = computed(() => {
             v-for="comment in recentComments" 
             :key="comment.id"
             class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 border border-black/5 dark:border-white/5 flex gap-3 cursor-pointer hover:border-blue-400/50 transition-colors"
-            @click="navigateTo(`/tasks/${comment.taskId}`)"
+            @click="navigateTo(`/organization/${orgId}/tasks/${comment.taskId}`)"
           >
             <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
               {{ comment.author.charAt(0).toUpperCase() }}

@@ -185,7 +185,7 @@ const handleInviteNew = async () => {
     <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-3">
-          <NuxtLink to="/team" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+          <NuxtLink :to="`/organization/${$route.params.org_id}/team`" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             <Icon name="heroicons:arrow-left" class="w-6 h-6" />
           </NuxtLink>
           <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">{{ team.name }}</h1>

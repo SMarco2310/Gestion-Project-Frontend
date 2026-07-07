@@ -30,12 +30,12 @@ onMounted(() => {
 const selectOrganization = (org: any) => {
   const { setActiveOrganization } = useOrganizations()
   setActiveOrganization(org)
-  navigateTo('/dashboard');
+  navigateTo(`/organization/${org.id}`);
 }
 
 const acceptInvitation = (inviteId: number, orgId: number) => {
   // In a real app, call $api(`/invitations/${inviteId}/accept`, { method: 'POST' })
-  navigateTo('/dashboard');
+  navigateTo(`/organization/${orgId}`);
 }
 
 const { createOrganization: apiCreateOrganization, setActiveOrganization } = useOrganizations()
@@ -59,7 +59,7 @@ const handleCreateOrganization = async () => {
   try {
     const newOrg = await apiCreateOrganization(newOrgForm.value.name, newOrgForm.value.description)
     setActiveOrganization(newOrg)
-    navigateTo('/dashboard')
+    navigateTo(`/organization/${newOrg.id}`)
   } catch (err: any) {
     createError.value = err.data?.message || 'Erreur lors de la création'
   } finally {

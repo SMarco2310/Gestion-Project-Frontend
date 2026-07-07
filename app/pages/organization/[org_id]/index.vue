@@ -12,6 +12,7 @@ definePageMeta({
 //   middleware: 'auth',
 })
 
+const route = useRoute()
 const { user, getProfile } = useAuth()
 const { tasks, getTasks } = useTasks()
 const { projets, getProjets } = useProjets()
@@ -31,7 +32,7 @@ const handleCreateProjectSubmit = async (payload: any) => {
     )
     await getProjets()
     isCreateProjectModalOpen.value = false
-    navigateTo('/projets')
+    navigateTo(`/organization/${route.params.org_id}/projects`)
   } catch (err) {
     console.error('Failed to create project', err)
   }

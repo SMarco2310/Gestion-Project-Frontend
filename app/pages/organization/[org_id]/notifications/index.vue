@@ -66,7 +66,14 @@ const formatNotifTime = (dateStr: string) => {
 }
 
 const handleNotificationClick = (notif: any) => {
-  navigateTo(`/notifications/${notif.id}`)
+  const route = useRoute();
+  if (notif.data?.task_id) {
+    navigateTo(`/organization/${route.params.org_id}/tasks/${notif.data.task_id}`)
+  } else if (notif.data?.projet_id) {
+    navigateTo(`/organization/${route.params.org_id}/projects/${notif.data.projet_id}`)
+  } else {
+    navigateTo(`/organization/${route.params.org_id}/notifications/${notif.id}`)
+  }
 }
 </script>
 

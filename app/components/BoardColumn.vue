@@ -26,6 +26,8 @@ export interface Task {
   statusIcon?: string
   statusColorClass?: string
   commentairesCount?: number
+  subtasksTotal?: number
+  subtasksCompleted?: number
   assignee: TaskAssignee
   bannerImage?: string
   projetName?: string | null
@@ -330,6 +332,10 @@ onUnmounted(() => {
 
                <!-- Assignee, Comments & Status -->
                <div class="flex items-center gap-2.5">
+                  <div v-if="item.subtasksTotal && item.subtasksTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:check-square-offset" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.subtasksCompleted }}/{{ item.subtasksTotal }}</span>
+                  </div>
                   <div v-if="item.commentairesCount && item.commentairesCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:chat-teardrop-text" class="text-sm" />
                     <span class="text-xs font-medium">{{ item.commentairesCount }}</span>

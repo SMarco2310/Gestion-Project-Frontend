@@ -38,7 +38,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     }
 
     if (isPublicRoute && to.path !== '/auth/verify-email') {
-      return navigateTo('/dashboard')
+      const { activeOrganization } = useOrganizations()
+      if (activeOrganization.value) {
+        return navigateTo(`/organization/${activeOrganization.value.id}`)
+      }
+      return navigateTo('/organizations')
     }
   }
 })

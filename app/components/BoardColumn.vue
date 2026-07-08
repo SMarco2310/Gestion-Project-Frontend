@@ -19,10 +19,11 @@ export interface TaskAssignee {
 export interface Task {
   id: string
   title: string
-  tag: TaskTag
+  tags: TaskTag[]
   reference: string
   issueTypeIcon?: string
   issueTypeColorClass?: string
+  status: string
   statusIcon?: string
   statusColorClass?: string
   commentairesCount?: number
@@ -44,7 +45,23 @@ const items = defineModel<Task[]>('items', { default: () => [] })
 const itemCount = computed(() => items.value.length)
 
 const activeDropdownId = ref<string | null>(null)
-const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved'])
+const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus'])
+
+const isCollapsed = ref(false)
+const isLockedColumn = computed(() => {
+  const t = props.title.toLowerCase()
+  return ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(t)
+})
+
+const isEditingTitle = ref(false)
+const editedTitle = ref(props.title)
+
+const saveTitle = () => {
+  if (editedTitle.value.trim() && editedTitle.value !== props.title) {
+    emit('rename', editedTitle.value.trim())
+  }
+  isEditingTitle.value = false
+}
 
 const onChange = (evt: any) => {
   if (evt.added) {
@@ -113,11 +130,19 @@ const submitNewTask = async () => {
   }
   
   try {
-    const statusVal = props.title === 'En cours' ? 'en cours' : (props.title === 'Terminé' ? 'terminé' : 'à faire')
+    const isSystemColumn = ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(props.title.toLowerCase())
+    let initialStatus = 'à faire'
+    
+    if (isSystemColumn) {
+      if (['en cours', 'in progress'].includes(props.title.toLowerCase())) initialStatus = 'en cours'
+      else if (['terminé', 'done'].includes(props.title.toLowerCase())) initialStatus = 'terminé'
+    }
+
     await createTask({
       title: newTaskTitle.value.trim(),
       projet_id: newTaskProject.value,
-      status: statusVal,
+      status: initialStatus,
+      board_column: props.title,
       priority: 'moyen',
       due_date: newTaskDueDate.value || getTodayDate(),
     })
@@ -170,18 +195,45 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col w-[85vw] shrink-0 snap-center md:w-[340px] md:shrink md:snap-align-none bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none h-full">
+  <div :class="[
+    'flex flex-col shrink-0 snap-center md:shrink-0 md:snap-align-none bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none max-h-full transition-all duration-300',
+    isCollapsed ? 'w-14 md:w-14 h-full' : 'w-[85vw] md:w-[340px] h-fit'
+  ]">
     <!-- Header -->
-    <div class="px-4 py-4 flex items-center gap-3">
-      <h2 class="text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider">{{ title }}</h2>
-      <span v-if="itemCount > 0" class="bg-form-border dark:bg-[#27272A] text-main dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded flex items-center justify-center min-w-[24px]">
+    <div :class="['px-4 flex items-center group/header', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
+      <div v-show="!isCollapsed" class="column-drag-handle cursor-grab active:cursor-grabbing text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 opacity-0 group-hover/header:opacity-100 transition-opacity p-1 -ml-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+         <Icon name="ph:dots-six-vertical" class="text-lg" />
+      </div>
+      <div v-if="isEditingTitle && !isLockedColumn" class="flex-1 flex items-center gap-2">
+        <input 
+          v-model="editedTitle" 
+          @keyup.enter="saveTitle"
+          @blur="saveTitle"
+          class="bg-transparent text-xs font-bold text-main dark:text-white uppercase tracking-wider focus:outline-none border-b border-primary w-full"
+          autoFocus
+        />
+      </div>
+      <h2 v-else-if="!isCollapsed" @click="!isLockedColumn && (isEditingTitle = true)" :class="['text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider transition-colors flex-1 truncate', !isLockedColumn ? 'cursor-text hover:text-main dark:hover:text-gray-200' : '']">{{ title }}</h2>
+      <h2 v-else class="text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider whitespace-nowrap rotate-180" style="writing-mode: vertical-rl;">{{ title }}</h2>
+      
+      <div v-if="!isEditingTitle && !isCollapsed && !isLockedColumn" class="flex items-center gap-1.5 opacity-0 group-hover/header:opacity-100 transition-opacity">
+        <button @click="$emit('deleteColumn')" class="p-1 rounded text-secondary hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Supprimer la colonne">
+           <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      <button @click="isCollapsed = !isCollapsed" class="p-1.5 rounded text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" :class="isCollapsed ? '' : 'opacity-0 group-hover/header:opacity-100'" :title="isCollapsed ? 'Développer' : 'Réduire'">
+        <Icon :name="isCollapsed ? 'ph:arrows-out-line-horizontal' : 'ph:arrows-in-line-horizontal'" class="w-4 h-4" />
+      </button>
+      
+      <span v-if="itemCount > 0" class="bg-form-border dark:bg-[#27272A] text-main dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded flex items-center justify-center min-w-[24px] shrink-0">
         {{ itemCount }}
       </span>
-      <Icon v-if="isDone" name="ph:check" class="text-emerald-500 ml-auto text-lg font-bold" />
+      <Icon v-if="isDone && !isCollapsed" name="ph:check" class="text-emerald-500 text-lg font-bold shrink-0" />
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto px-3 pb-3 custom-scrollbar">
+    <div v-show="!isCollapsed" class="flex-1 overflow-y-auto px-3 pb-3 custom-scrollbar">
       <!-- Create Button -->
       <div v-if="allowCreate && !isCreating" class="pt-2 pl-1 mb-2">
         <button @click.stop="isCreating = true" class="flex items-center gap-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm font-medium w-full text-left">
@@ -309,10 +361,10 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- Tag -->
-            <div class="flex items-start">
-               <div :style="{ backgroundColor: (item.tag.colorHex || '#9CA3AF') + '20', color: item.tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
-                  {{ item.tag.label }}
+            <!-- Tags -->
+            <div v-if="item.tags && item.tags.length > 0" class="flex flex-wrap items-start gap-1.5">
+               <div v-for="tag in item.tags" :key="tag.id || tag.label" :style="{ backgroundColor: (tag.colorHex || '#9CA3AF') + '20', color: tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
+                  {{ tag.label }}
                </div>
             </div>
 
@@ -325,6 +377,9 @@ onUnmounted(() => {
                    <span class="truncate">{{ item.projetName }}</span>
                  </div>
                  <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
+                    <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
+                      <div v-if="item.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                    </div>
                     <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
                     <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
                  </div>
@@ -340,12 +395,6 @@ onUnmounted(() => {
                     <Icon name="ph:chat-teardrop-text" class="text-sm" />
                     <span class="text-xs font-medium">{{ item.commentairesCount }}</span>
                   </div>
-                  
-                  <Icon 
-                    v-if="item.statusIcon" 
-                    :name="item.statusIcon" 
-                    :class="['text-sm', item.statusColorClass]" 
-                  />
                   
                   <!-- Assignee Avatar -->
                   <div 

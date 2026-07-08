@@ -6,9 +6,10 @@ interface Tache {
   reference_code: string
   description: string
   status: string
+  board_column?: string
   priority: string
-  tag_id?: number | null
-  tag?: any | null
+  tag_ids?: number[] | null
+  tags?: any[] | null
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
@@ -25,8 +26,9 @@ interface TaskPayload {
   title: string
   description?: string
   status?: string
+  board_column?: string
   priority?: string
-  tag_id?: number | string | null
+  tag_ids?: number[] | string[] | null
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   due_date?: string
@@ -50,9 +52,10 @@ export default function useTasks() {
     reference_code: task.reference_code ?? '',
     description: task.description ?? '',
     status: task.status ?? TaskStatus.TO_DO,
+    board_column: task.board_column ?? null,
     priority: task.priority ?? TaskPriority.MEDIUM,
-    tag_id: task.tag_id ?? null,
-    tag: task.tag ?? null,
+    tag_ids: task.tags ? task.tags.map((t: any) => t.id) : (task.tag_ids ?? []),
+    tags: task.tags ?? [],
     projet_id: task.projet_id ?? task.project_id ?? null,
     parent_task_id: task.parent_task_id ?? null,
     sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],

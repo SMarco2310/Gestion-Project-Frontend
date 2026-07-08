@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import { TaskStatus, TaskPriority } from '~/utils/enums'
+import { TaskPriority } from '~/utils/enums'
 import useProjets from '~/composables/useProjets'
 import useTags from '~/composables/useTags'
 import useOrganizations from '~/composables/useOrganizations'
@@ -17,7 +17,7 @@ const emit = defineEmits(['close', 'submit'])
 const form = ref({
   title: '',
   description: '',
-  status: TaskStatus.TO_DO,
+  status: 'À faire',
   priority: TaskPriority.MEDIUM,
   tag_id: '' as string | number,
   due_date: '',
@@ -79,7 +79,7 @@ watch(() => props.isOpen, (newVal) => {
     form.value = {
       title: '',
       description: '',
-      status: TaskStatus.TO_DO,
+      status: activeOrganization.value?.kanban_columns?.[0] || 'À faire',
       priority: TaskPriority.MEDIUM,
       tag_id: tags.value[0]?.id ?? '',
       due_date: getTodayDate(),

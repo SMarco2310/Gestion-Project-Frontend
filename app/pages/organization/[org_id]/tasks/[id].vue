@@ -284,11 +284,37 @@ const formatDisplayDate = (dateStr: string) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
 
-const statusConfig: Record<string, { label: string; colorClass: string }> = {
-  'à faire': { label: 'À FAIRE', colorClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500' },
-  'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
-  'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
-}
+
+const kanbanColumns = computed(() => {
+  return activeOrganization.value?.kanban_columns?.length 
+    ? activeOrganization.value.kanban_columns 
+    : ['À faire', 'En cours', 'Terminé']
+})
+
+const statusConfig = computed(() => {
+  const config: Record<string, { label: string; colorClass: string }> = {}
+  kanbanColumns.value.forEach(col => {
+    let colorClass = 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+    const lowerCol = col.toLowerCase()
+    if (lowerCol === 'à faire' || lowerCol === 'to do') colorClass = 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500'
+    else if (lowerCol === 'en cours' || lowerCol === 'in progress') colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500'
+    else if (lowerCol === 'terminé' || lowerCol === 'done') colorClass = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500'
+    
+    config[col] = {
+      label: col.toUpperCase(),
+      colorClass
+    }
+  })
+  
+  if (taskStatus.value && !config[taskStatus.value]) {
+    config[taskStatus.value] = {
+      label: taskStatus.value.toUpperCase(),
+      colorClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+    }
+  }
+  
+  return config
+})
 
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import type { DashboardCard } from '~/components/CardDashboard.vue'
-import { TaskStatus, TaskPriority } from '~/utils/enums'
+import { TaskPriority } from '~/utils/enums'
 import useAuth from '~/composables/useAuth'
+import useOrganizations from '~/composables/useOrganizations'
 import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
 import useCommentaire from '~/composables/useCommentaire'
@@ -15,9 +16,18 @@ definePageMeta({
 const route = useRoute()
 const { user, getProfile } = useAuth()
 const { tasks, getTasks } = useTasks()
-const { projets, getProjets } = useProjets()
+const { projets, getProjets, createProjet } = useProjets()
 const { commentaires, getCommentaires } = useCommentaire()
-const { createProjet } = useProjets()
+const { activeOrganization } = useOrganizations()
+
+const kanbanColumns = computed(() => {
+  return activeOrganization.value?.kanban_columns?.length 
+    ? activeOrganization.value.kanban_columns 
+    : ['À faire', 'En cours', 'Terminé']
+})
+
+const doneStatus = computed(() => kanbanColumns.value[kanbanColumns.value.length - 1])
+const isDone = (status: string) => status === doneStatus.value || status.toLowerCase() === 'terminé' || status.toLowerCase() === 'done'
 
 const isCreateProjectModalOpen = ref(false)
 
@@ -40,9 +50,9 @@ const handleCreateProjectSubmit = async (payload: any) => {
 
 const userName = computed(() => user.value?.name ?? 'Utilisateur')
 
-const doneCount = computed(() => tasks.value.filter((task) => task.status === TaskStatus.DONE).length)
+const doneCount = computed(() => tasks.value.filter((task) => isDone(task.status)).length)
 const createdCount = computed(() => tasks.value.length)
-const openCount = computed(() => tasks.value.filter((task) => task.status !== TaskStatus.DONE).length)
+const openCount = computed(() => tasks.value.filter((task) => !isDone(task.status)).length)
 const projectsCount = computed(() => projets.value.length)
 const commentsCount = computed(() => commentaires.value.length)
 
@@ -103,23 +113,30 @@ const cards = computed<DashboardCard[]>(() => [
 
 const statusMetrics = computed(() => {
   const total = tasks.value.length
+  const colors = [
+    { class: 'bg-[#FFB78C]', code: '#FFB78C' },
+    { class: 'bg-[#8CA8F9]', code: '#8CA8F9' },
+    { class: 'bg-[#A6C4FF]', code: '#A6C4FF' },
+    { class: 'bg-[#C4A6FF]', code: '#C4A6FF' },
+    { class: 'bg-[#FFA6C4]', code: '#FFA6C4' }
+  ]
+
   if (total === 0) {
-    return [
-      { label: 'À faire', percentage: '0%', colorClass: 'bg-[#FFB78C]', colorCode: '#FFB78C', rawPercent: 0 },
-      { label: 'En cours', percentage: '0%', colorClass: 'bg-[#8CA8F9]', colorCode: '#8CA8F9', rawPercent: 0 },
-      { label: 'Terminées', percentage: '0%', colorClass: 'bg-[#A6C4FF]', colorCode: '#A6C4FF', rawPercent: 0 },
-    ]
+    return kanbanColumns.value.slice(0, 3).map((col, i) => ({
+      label: col, percentage: '0%', colorClass: colors[i % colors.length].class, colorCode: colors[i % colors.length].code, rawPercent: 0
+    }))
   }
 
-  const todo = tasks.value.filter((task) => task.status === TaskStatus.TO_DO).length
-  const inProgress = tasks.value.filter((task) => task.status === TaskStatus.IN_PROGRESS).length
-  const done = tasks.value.filter((task) => task.status === TaskStatus.DONE).length
-
-  return [
-    { label: 'À faire', percentage: `${Math.round((todo / total) * 100)}%`, colorClass: 'bg-[#FFB78C]', colorCode: '#FFB78C', rawPercent: (todo / total) * 100 },
-    { label: 'En cours', percentage: `${Math.round((inProgress / total) * 100)}%`, colorClass: 'bg-[#8CA8F9]', colorCode: '#8CA8F9', rawPercent: (inProgress / total) * 100 },
-    { label: 'Terminées', percentage: `${Math.round((done / total) * 100)}%`, colorClass: 'bg-[#A6C4FF]', colorCode: '#A6C4FF', rawPercent: (done / total) * 100 },
-  ]
+  return kanbanColumns.value.slice(0, 3).map((col, i) => {
+    const count = tasks.value.filter((task) => task.status === col).length
+    return {
+      label: col,
+      percentage: `${Math.round((count / total) * 100)}%`,
+      colorClass: colors[i % colors.length].class,
+      colorCode: colors[i % colors.length].code,
+      rawPercent: (count / total) * 100
+    }
+  })
 })
 
 const priorities = computed(() => {
@@ -148,7 +165,7 @@ const epics = computed(() => {
   return projets.value.map((project) => {
     const projectTasks = tasks.value.filter((task) => String(task.projet_id) === String(project.id))
     const total = projectTasks.length
-    const done = projectTasks.filter((task) => task.status === TaskStatus.DONE).length
+    const done = projectTasks.filter((task) => isDone(task.status)).length
     const progress = total ? Math.round((done / total) * 100) : 0
 
     return {
@@ -167,7 +184,7 @@ const upcomingTasks = computed(() => {
   const sevenDays = 7 * 24 * 60 * 60 * 1000
   
   return tasks.value
-    .filter(t => t.status !== TaskStatus.DONE && t.due_date)
+    .filter(t => !isDone(t.status) && t.due_date)
     .filter(t => {
       const dueDate = new Date(t.due_date as string).getTime()
       return dueDate >= now - (24 * 60 * 60 * 1000) && dueDate <= now + sevenDays

@@ -4,7 +4,7 @@ import type { PropType } from 'vue'
 
 const { isOwner, user } = useAuth()
 const isDropdownOpen = ref(false)
-const emit = defineEmits(['edit', 'delete', 'cardClick'])
+const emit = defineEmits(['edit', 'delete', 'cardClick', 'archive', 'unarchive'])
 const isEditModalOpen = ref(false)
 
 const props = defineProps({
@@ -39,6 +39,10 @@ const props = defineProps({
     color: {
         type: String,
         default: 'blue'
+    },
+    is_archived: {
+        type: Boolean,
+        default: false
     },
     metrics: {
         type: Object,
@@ -79,6 +83,16 @@ const handleEdit = () => {
   
   isEditModalOpen.value = false
   emit('edit', props.id)
+}
+
+const handleArchive = () => {
+  isDropdownOpen.value = false
+  emit('archive', props.id)
+}
+
+const handleUnarchive = () => {
+  isDropdownOpen.value = false
+  emit('unarchive', props.id)
 }
 
 const tabThemeClasses = computed(() => {
@@ -140,6 +154,12 @@ const bodyThemeClasses = computed(() => {
                     <div v-if="isDropdownOpen" class="absolute right-0 mt-2 w-40 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden text-main dark:text-gray-300">
                         <button @click.stop="isDropdownOpen = false; emit('edit', props.id)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                             <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
+                        </button>
+                        <button v-if="!props.is_archived" @click.stop="handleArchive" class="w-full text-left px-4 py-3 text-sm font-medium text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2">
+                            <Icon name="heroicons:archive-box" class="w-4 h-4" /> Archiver
+                        </button>
+                        <button v-else @click.stop="handleUnarchive" class="w-full text-left px-4 py-3 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center gap-2">
+                            <Icon name="heroicons:arrow-up-tray" class="w-4 h-4" /> Désarchiver
                         </button>
                         <button @click.stop="handleDelete" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
                             <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer

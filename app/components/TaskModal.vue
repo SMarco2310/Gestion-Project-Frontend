@@ -24,7 +24,7 @@ const close = () => {
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
 const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
 const { getProjet } = useProjets()
-const { tags, getTags } = useTags()
+const { tags, getTags, createTag, updateTag: apiUpdateTag } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
 const { activeOrganization } = useOrganizations()
@@ -41,10 +41,11 @@ const editDescription = ref('')
 const editDueDate = ref('')
 const projectEndDate = ref('')
 const taskStatus = ref('')
+const taskBoardColumn = ref('')
 const taskPriority = ref('')
 const taskReference = ref('')
-const taskTagId = ref<number | string | null>(null)
-const taskTag = ref<any>(null)
+const taskTagIds = ref<(number | string)[]>([])
+const taskTags = ref<any[]>([])
 const taskDueDate = ref('')
 const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
@@ -83,10 +84,11 @@ const setTask = async (id: string | number | null) => {
       taskTitle.value = task.title || 'Sans titre'
       taskDescription.value = task.description || 'Ajouter une description...'
       if (task.status) taskStatus.value = task.status
+      if (task.board_column) taskBoardColumn.value = task.board_column
       if (task.priority) taskPriority.value = task.priority
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
-      taskTagId.value = task.tag_id || null
-      taskTag.value = task.tag || null
+      taskTagIds.value = task.tag_ids || []
+      taskTags.value = task.tags || []
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
@@ -218,6 +220,7 @@ const removeBanner = async () => {
 
 const isTagDropdownOpen = ref(false)
 const isStatusDropdownOpen = ref(false)
+const isBoardColumnDropdownOpen = ref(false)
 const isPriorityDropdownOpen = ref(false)
 const isCreateSubtaskModalOpen = ref(false)
 const commentText = ref('')
@@ -295,11 +298,19 @@ const formatDisplayDate = (dateStr: string) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
 
-const statusConfig: Record<string, { label: string; colorClass: string }> = {
-  'à faire': { label: 'À FAIRE', colorClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500' },
-  'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
-  'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
-}
+const kanbanColumns = computed(() => {
+  return activeOrganization.value?.kanban_columns?.length 
+    ? activeOrganization.value.kanban_columns 
+    : ['À faire', 'En cours', 'Terminé']
+})
+
+const statusConfig = computed(() => {
+  return {
+    'à faire': { label: 'À FAIRE', colorClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500' },
+    'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
+    'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
+  }
+})
 
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
@@ -316,6 +327,18 @@ const updateStatus = async (newStatus: string) => {
     addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  }
+}
+
+const updateBoardColumn = async (newColumn: string) => {
+  if (!props.taskId) return
+  try {
+    await updateTask(props.taskId, { board_column: newColumn })
+    taskBoardColumn.value = newColumn
+    isBoardColumnDropdownOpen.value = false
+    addToast({ title: 'Colonne modifiée', message: 'La colonne de la tâche a été mise à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier la colonne.', type: 'error' })
   }
 }
 
@@ -344,17 +367,66 @@ const updateAssignee = async (member: any | null) => {
   }
 }
 
-const updateTag = async (newTagId: number | string | null) => {
+const toggleTag = async (tag: any) => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, { tag_id: newTagId })
-    taskTagId.value = newTagId
-    taskTag.value = tags.value.find(t => t.id === newTagId) || null
-    isTagDropdownOpen.value = false
-    addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
+    let newTagIds = [...taskTagIds.value]
+    if (newTagIds.includes(tag.id)) {
+      newTagIds = newTagIds.filter(id => id !== tag.id)
+    } else {
+      newTagIds.push(tag.id)
+    }
+    
+    await updateTask(props.taskId, { tag_ids: newTagIds })
+    
+    taskTagIds.value = newTagIds
+    taskTags.value = tags.value.filter(t => newTagIds.includes(t.id))
   } catch (err) {
-    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'étiquette.', type: 'error' })
+    addToast({ title: 'Erreur', message: 'Impossible de modifier les étiquettes.', type: 'error' })
   }
+}
+
+const labelSearchQuery = ref('')
+const filteredLabels = computed(() => {
+  if (!labelSearchQuery.value) return tags.value
+  const q = labelSearchQuery.value.toLowerCase()
+  return tags.value.filter(t => t.name.toLowerCase().includes(q))
+})
+
+const isCreatingLabel = ref(false)
+const editingLabelId = ref<number | string | null>(null)
+const labelFormName = ref('')
+const labelFormColor = ref('#10B981')
+const defaultColors = ['#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#64748B', '#06B6D4', '#EAB308']
+
+const openCreateLabel = () => {
+    isCreatingLabel.value = true
+    editingLabelId.value = null
+    labelFormName.value = ''
+    labelFormColor.value = defaultColors[0]
+}
+
+const openEditLabel = (label: any) => {
+    isCreatingLabel.value = true
+    editingLabelId.value = label.id
+    labelFormName.value = label.name
+    labelFormColor.value = label.color || defaultColors[0]
+}
+
+const saveLabelForm = async () => {
+    if (!labelFormName.value.trim()) return
+    try {
+        if (editingLabelId.value) {
+            await apiUpdateTag(editingLabelId.value, { name: labelFormName.value, color: labelFormColor.value })
+            addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
+        } else {
+            await createTag({ name: labelFormName.value, color: labelFormColor.value })
+            addToast({ title: 'Étiquette créée', message: 'La nouvelle étiquette a été ajoutée.', type: 'success' })
+        }
+        isCreatingLabel.value = false
+    } catch (e) {
+        addToast({ title: 'Erreur', message: 'Impossible de sauvegarder l\'étiquette.', type: 'error' })
+    }
 }
 
 const handleCreateSubtaskSubmit = async (payload: any) => {
@@ -366,6 +438,17 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
   } catch (err) {
     console.error('Failed to create subtask', err)
     addToast({ title: 'Erreur', message: 'Impossible de créer la sous-tâche.', type: 'error' })
+  }
+}
+
+const toggleSubtaskStatus = async (sub: any) => {
+  const newStatus = sub.status === 'terminé' ? 'à faire' : 'terminé'
+  try {
+    await updateTask(sub.id, { status: newStatus })
+    sub.status = newStatus
+    addToast({ title: 'Sous-tâche mise à jour', message: 'Le statut de la sous-tâche a été modifié.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
   }
 }
 
@@ -463,9 +546,11 @@ const resetState = () => {
   editDueDate.value = ''
   projectEndDate.value = ''
   taskStatus.value = ''
+  taskBoardColumn.value = ''
   taskPriority.value = ''
   taskReference.value = ''
-  taskTag.value = null
+  taskTagIds.value = []
+  taskTags.value = []
   taskDueDate.value = ''
   taskCreatedAt.value = ''
   taskUpdatedAt.value = ''
@@ -480,6 +565,7 @@ const resetState = () => {
   editingCommentText.value = ''
   isTagDropdownOpen.value = false
   isStatusDropdownOpen.value = false
+  isBoardColumnDropdownOpen.value = false
   isPriorityDropdownOpen.value = false
   isAssigneeDropdownOpen.value = false
 }
@@ -597,7 +683,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <div v-if="taskSubtasks && taskSubtasks.length > 0" class="flex flex-col gap-2">
                   <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer">
                     <div class="flex items-center gap-3 overflow-hidden">
-                      <div class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center">
+                      <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
                         <div v-if="sub.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                       </div>
                       <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'terminé'}">{{ sub.title }}</span>
@@ -695,9 +781,10 @@ watch(() => props.isOpen, (newIsOpen) => {
             <!-- Sidebar (Right) -->
             <div class="w-full md:w-[320px] shrink-0 shadow-none md:shadow-[-2px_0_10px_rgba(0,0,0,0.02)] md:overflow-y-auto p-4 sm:p-6 custom-scrollbar border-t md:border-t-0 border-form-border dark:border-gray-800">
               
-              <!-- Status Dropdown -->
-              <div class="mb-6 flex gap-2">
+              <!-- Status & Column Dropdowns -->
+              <div class="mb-6 flex flex-col gap-2">
                 <div class="relative w-full">
+                  <div class="text-xs font-bold text-secondary dark:text-gray-500 mb-1 uppercase tracking-wider">Statut</div>
                   <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['flex items-center justify-between gap-2 px-3 py-2.5 neo-metallic rounded font-bold text-sm w-full hover:brightness-105 transition-colors', statusConfig[taskStatus]?.colorClass || '']">
                     {{ statusConfig[taskStatus]?.label || taskStatus }} <Icon name="heroicons:chevron-down" class="w-4 h-4" />
                   </button>
@@ -708,6 +795,22 @@ watch(() => props.isOpen, (newIsOpen) => {
                     <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
                       {{ config.label }}
                       <Icon v-if="taskStatus === key" name="heroicons:check" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="relative w-full mt-2">
+                  <div class="text-xs font-bold text-secondary dark:text-gray-500 mb-1 uppercase tracking-wider">Colonne (Tableau)</div>
+                  <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" class="flex items-center justify-between gap-2 px-3 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded font-bold text-sm w-full hover:brightness-105 transition-colors">
+                    {{ taskBoardColumn || 'À faire' }} <Icon name="heroicons:chevron-down" class="w-4 h-4" />
+                  </button>
+                  
+                  <!-- Dropdown Menu -->
+                  <div v-if="isBoardColumnDropdownOpen" @click="isBoardColumnDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                  <div v-if="isBoardColumnDropdownOpen" class="absolute left-0 top-full mt-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                    <button @click="updateBoardColumn(col as string)" v-for="col in kanbanColumns" :key="col" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskBoardColumn === col ? 'bg-canvas dark:bg-gray-700' : 'hover:bg-canvas dark:hover:bg-gray-800']">
+                      {{ col }}
+                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -774,21 +877,88 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div class="grid grid-cols-3 gap-2">
                     <div class="text-secondary dark:text-gray-500 font-medium pt-1">Étiquettes</div>
                     <div class="col-span-2 relative">
-                      <button @click="isTagDropdownOpen = !isTagDropdownOpen" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border border-transparent hover:border-gray-300 dark:hover:border-gray-600 transition-all uppercase" :style="{ backgroundColor: taskTag ? (taskTag.color || '#9CA3AF') + '20' : '#F3F4F6', color: taskTag ? (taskTag.color || '#9CA3AF') : '#374151' }">
-                        {{ taskTag?.name || 'SANS ÉTIQUETTE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
-                      </button>
+                      <div class="flex flex-wrap gap-1.5 mb-1 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 p-1 -ml-1 rounded transition-colors group" @click="isTagDropdownOpen = !isTagDropdownOpen">
+                        <template v-if="taskTags.length > 0">
+                          <span v-for="tag in taskTags" :key="tag.id" class="px-2 py-0.5 rounded text-[11px] font-bold uppercase" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '20', color: tag.color || '#9CA3AF' }">
+                            {{ tag.name }}
+                          </span>
+                        </template>
+                        <template v-else>
+                          <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border border-transparent bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 uppercase">
+                            SANS ÉTIQUETTE
+                          </span>
+                        </template>
+                        <Icon name="heroicons:chevron-down" class="w-3 h-3 text-secondary dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-1" />
+                      </div>
 
-                      <!-- Tag Dropdown Menu -->
+                      <!-- Label Dropdown Menu (Trello-style) -->
                       <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto">
-                        <button @click="updateTag(null)" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === null ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', 'text-gray-600 dark:text-gray-400']">
-                          SANS ÉTIQUETTE
-                          <Icon v-if="taskTagId === null" name="heroicons:check" class="w-4 h-4" />
-                        </button>
-                        <button @click="updateTag(tag.id)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === tag.id ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
-                          {{ tag.name }}
-                          <Icon v-if="taskTagId === tag.id" name="heroicons:check" class="w-4 h-4" />
-                        </button>
+                      <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
+                        
+                        <div class="p-3 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+                          <button v-if="isCreatingLabel" @click="isCreatingLabel = false" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                            <Icon name="heroicons:chevron-left" class="w-4 h-4 text-secondary" />
+                          </button>
+                          <p class="text-sm font-bold text-main dark:text-gray-200 flex-1 text-center">{{ isCreatingLabel ? (editingLabelId ? 'Modifier l\'étiquette' : 'Créer une étiquette') : 'Étiquettes' }}</p>
+                          <button @click="isTagDropdownOpen = false" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                            <Icon name="heroicons:x-mark" class="w-4 h-4 text-secondary" />
+                          </button>
+                        </div>
+
+                        <!-- Labels List View -->
+                        <div v-if="!isCreatingLabel" class="flex flex-col">
+                          <div class="p-2">
+                            <input v-model="labelSearchQuery" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" placeholder="Rechercher une étiquette..." />
+                          </div>
+                          <div class="max-h-60 overflow-y-auto px-2 pb-2 custom-scrollbar flex flex-col gap-1">
+                            <div v-for="tag in filteredLabels" :key="tag.id" class="flex items-center gap-2 group/label">
+                              <button @click="toggleTag(tag)" class="flex-1 flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left font-bold text-xs uppercase" :style="{ backgroundColor: tag.color || '#10B981', color: '#FFFFFF' }">
+                                <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4 text-white" />
+                                <span v-else class="w-4"></span>
+                                <span class="flex-1 truncate">{{ tag.name }}</span>
+                              </button>
+                              <button @click.stop="openEditLabel(tag)" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-secondary transition-colors" title="Modifier">
+                                <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <div v-if="filteredLabels.length === 0" class="text-center py-4 text-xs text-secondary">
+                              Aucune étiquette trouvée
+                            </div>
+                          </div>
+                          <div class="p-2 border-t border-form-border dark:border-gray-800">
+                            <button @click="openCreateLabel" class="w-full py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-xs font-bold text-main dark:text-gray-300 transition-colors">
+                              Créer une nouvelle étiquette
+                            </button>
+                          </div>
+                        </div>
+
+                        <!-- Create/Edit Label Form -->
+                        <div v-else class="p-3 flex flex-col gap-4">
+                          <!-- Preview -->
+                          <div class="w-full py-2 px-3 rounded font-bold text-xs uppercase text-white shadow-sm flex items-center gap-2" :style="{ backgroundColor: labelFormColor }">
+                            <span class="w-4"></span> {{ labelFormName || 'APERÇU' }}
+                          </div>
+                          
+                          <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary dark:text-gray-500">Titre</label>
+                            <input v-model="labelFormName" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" autoFocus />
+                          </div>
+                          
+                          <div class="flex flex-col gap-1">
+                            <label class="text-xs font-bold text-secondary dark:text-gray-500">Couleur</label>
+                            <div class="grid grid-cols-4 gap-1.5">
+                              <button v-for="color in defaultColors" :key="color" @click="labelFormColor = color" class="h-8 rounded transition-all flex items-center justify-center hover:brightness-110" :style="{ backgroundColor: color }">
+                                <Icon v-if="labelFormColor === color" name="heroicons:check" class="w-4 h-4 text-white" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div class="flex gap-2 mt-2">
+                            <button @click="isCreatingLabel = false" class="flex-1 py-1.5 rounded bg-gray-200 dark:bg-gray-800 text-main dark:text-gray-300 text-xs font-bold transition-colors">Annuler</button>
+                            <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-blue-500 text-white text-xs font-bold transition-colors">Enregistrer</button>
+                          </div>
+                        </div>
+
                       </div>
                     </div>
                   </div>

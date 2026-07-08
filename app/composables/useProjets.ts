@@ -136,13 +136,33 @@ export default function useProjets() {
         }
     }   
 
+    const archiveProjet = async (id: number | string, isArchived: boolean) => {
+        try {
+            const { $api } = useNuxtApp()
+            const data = await $api<any>(`/projets/${id}`, {
+                method: 'PUT',
+                body: { is_archived: isArchived }
+            })
+            const proj = data.projet ?? data
+            const index = projets.value.findIndex(p => String(p.id) === String(id))
+            if (index !== -1) {
+                projets.value[index].is_archived = isArchived
+            }
+            return proj
+        } catch (error: any) {
+            console.error('Archive Projet Error:', error)
+            throw error
+        }
+    }
+
     return {
         projets,
         getProjet,
         getProjets,
         createProjet,
         updateProjet,
-        deleteProjet
+        deleteProjet,
+        archiveProjet
     }
 
 }

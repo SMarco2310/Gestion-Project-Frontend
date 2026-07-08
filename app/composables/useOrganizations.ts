@@ -7,6 +7,7 @@ export interface Organization {
   reminder_days_before_end?: number;
   reminder_time_start?: string;
   reminder_time_end?: string;
+  kanban_columns?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -115,6 +116,24 @@ export default function useOrganizations() {
     }
   };
 
+  const updateKanbanColumns = async (id: number | string, columns: string[], renames?: Record<string, string>) => {
+    try {
+      const { $api } = useNuxtApp();
+      const data = await $api<{ kanban_columns: string[] } | any>(`/organizations/${id}/kanban-columns`, {
+        method: 'PUT',
+        body: { kanban_columns: columns, renames: renames || {} }
+      });
+      // Update local state if it's the active org
+      if (activeOrganization.value && String(activeOrganization.value.id) === String(id)) {
+        activeOrganization.value.kanban_columns = data.kanban_columns;
+      }
+      return data.kanban_columns;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
   const getMembers = async (orgId: number | string) => {
     try {
       const { $api } = useNuxtApp();
@@ -138,6 +157,7 @@ export default function useOrganizations() {
     deleteOrganization,
     setActiveOrganization,
     uploadLogo,
-    getMembers
+    getMembers,
+    updateKanbanColumns
   };
 }

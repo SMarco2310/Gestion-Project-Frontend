@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TaskStatus } from '~/utils/enums'
+import draggable from 'vuedraggable'
 
 definePageMeta({
     layout: 'custom',
@@ -9,11 +10,29 @@ definePageMeta({
 import { useToast } from '~/composables/useToast'
 
 const { tasks, getTasks, deleteTask, updateTask, createTask } = useTasks()
+const { activeOrganization, updateKanbanColumns } = useOrganizations()
 const { addToast } = useToast()
 
-const todoItems = ref<any[]>([])
-const inProgressItems = ref<any[]>([])
-const doneItems = ref<any[]>([])
+const kanbanColumns = computed(() => {
+  return activeOrganization.value?.kanban_columns?.length 
+    ? activeOrganization.value.kanban_columns 
+    : ['À faire', 'En cours', 'Terminé']
+})
+
+const draggableColumns = computed({
+  get: () => kanbanColumns.value.map((col: string) => ({ name: col })),
+  set: async (newCols: any[]) => {
+    if (!activeOrganization.value) return
+    const newColumns = newCols.map((c) => c.name)
+    try {
+      await updateKanbanColumns(activeOrganization.value.id, newColumns)
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
+    }
+  }
+})
+
+const boardItems = ref<Record<string, any[]>>({})
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
@@ -61,19 +80,97 @@ const handleCloseTaskModal = () => {
   taskModalEditMode.value = false
 }
 
-const handleTaskMoved = async (taskId: string, newStatus: string) => {
+const handleTaskMoved = async (taskId: string, newColumn: string) => {
   try {
-    // Map internal enum/status to the backend status string (en cours, à faire, terminé)
-    let mappedStatus = newStatus
-    if (newStatus === TaskStatus.TO_DO) mappedStatus = 'à faire'
-    if (newStatus === TaskStatus.IN_PROGRESS) mappedStatus = 'en cours'
-    if (newStatus === TaskStatus.DONE) mappedStatus = 'terminé'
-
-    await updateTask(taskId, { status: mappedStatus })
-    // No toast here to avoid spamming on drag and drop
+    const payload: any = { board_column: newColumn }
+    if (newColumn.toLowerCase() === 'terminé' || newColumn.toLowerCase() === 'done') {
+      payload.status = 'terminé'
+    }
+    await updateTask(taskId, payload)
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de déplacer la tâche.' })
     await getTasks() // Reset the board if it failed
+  }
+}
+
+const handleToggleStatus = async (taskId: string) => {
+  const task = tasks.value.find((t: any) => String(t.id) === String(taskId))
+  if (!task) return
+  const newStatus = task.status === 'terminé' ? 'à faire' : 'terminé'
+  try {
+    await updateTask(taskId, { status: newStatus })
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de changer le statut.' })
+  }
+}
+
+const handleRenameColumn = async (oldName: string, newName: string) => {
+  if (!activeOrganization.value) return
+  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(oldName.toLowerCase())) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de renommer une colonne système.' })
+    return
+  }
+  if (kanbanColumns.value.includes(newName)) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Ce nom de colonne existe déjà.' })
+    return
+  }
+  
+  const newColumns = kanbanColumns.value.map(col => col === oldName ? newName : col)
+  const renames = { [oldName]: newName }
+  
+  try {
+    await updateKanbanColumns(activeOrganization.value.id, newColumns, renames)
+    addToast({ type: 'success', title: 'Succès', message: 'Colonne renommée avec succès.' })
+    await getTasks() // Refresh tasks to get the new status
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de renommer la colonne.' })
+  }
+}
+
+const handleAddColumn = async () => {
+  if (!activeOrganization.value) return
+  const newName = 'Nouvelle colonne'
+  let finalName = newName
+  let i = 1
+  while (kanbanColumns.value.includes(finalName)) {
+    finalName = `${newName} ${i}`
+    i++
+  }
+  
+  const newColumns = [...kanbanColumns.value, finalName]
+  try {
+    await updateKanbanColumns(activeOrganization.value.id, newColumns)
+    addToast({ type: 'success', title: 'Succès', message: 'Colonne ajoutée avec succès.' })
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'ajouter la colonne.' })
+  }
+}
+
+const handleDeleteColumn = async (colName: string) => {
+  if (!activeOrganization.value) return
+  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(colName.toLowerCase())) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer une colonne système.' })
+    return
+  }
+  if (kanbanColumns.value.length <= 1) {
+    addToast({ type: 'warning', title: 'Action impossible', message: 'Vous ne pouvez pas supprimer la dernière colonne.' })
+    return
+  }
+  
+  if (!confirm(`Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ? Toutes les tâches qu'elle contient seront déplacées vers la première colonne.`)) {
+    return
+  }
+  
+  const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0]
+  const newColumns = kanbanColumns.value.filter(c => c !== colName)
+  const renames = { [colName]: targetCol }
+  
+  try {
+    await updateKanbanColumns(activeOrganization.value.id, newColumns, renames)
+    addToast({ type: 'success', title: 'Succès', message: 'Colonne supprimée avec succès.' })
+    await getTasks() // Refresh tasks
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la colonne.' })
   }
 }
 
@@ -85,11 +182,12 @@ const mapTaskToBoardItem = (task: any) => ({
   description: task.description,
   status: task.status,
   priority: task.priority,
-  tag: {
-    label: task.tag?.name || 'SANS ÉTIQUETTE',
-    colorHex: task.tag?.color || '#9CA3AF',
+  tags: task.tags?.map((t: any) => ({
+    id: t.id,
+    label: t.name || 'SANS ÉTIQUETTE',
+    colorHex: t.color || '#9CA3AF',
     icon: 'ph:tag-duotone',
-  },
+  })) || [],
   reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',
   issueTypeColorClass: 'text-emerald-600',
@@ -135,12 +233,14 @@ const tagOptions = computed(() => {
 
   // 2. Add any additional user-created tags found in current tasks
   tasks.value.forEach((t: any) => {
-    if (t.tag) {
-      const tagName = t.tag.name || t.tag
-      const tagId = tagName.toLowerCase()
-      if (!uniqueTags.has(tagId)) {
-        uniqueTags.set(tagId, { id: tagId, label: tagName.toUpperCase() })
-      }
+    if (t.tags) {
+      t.tags.forEach((tag: any) => {
+        const tagName = tag.name || tag
+        const tagId = tagName.toLowerCase()
+        if (!uniqueTags.has(tagId)) {
+          uniqueTags.set(tagId, { id: tagId, label: tagName.toUpperCase() })
+        }
+      })
     }
   })
   return Array.from(uniqueTags.values())
@@ -171,7 +271,7 @@ const filteredTasks = computed(() => {
   }
 
   if (selectedTags.value.length > 0) {
-    result = result.filter(t => t.tag != null && (selectedTags.value.includes(t.tag.name || t.tag)))
+    result = result.filter(t => t.tags && t.tags.some((tag: any) => selectedTags.value.includes(tag.name || tag)))
   }
 
   if (filterText.value) {
@@ -194,53 +294,33 @@ const filteredTasks = computed(() => {
 })
 
 const syncBoardItems = () => {
-  todoItems.value = filteredTasks.value
-    .filter((task) => task.status === TaskStatus.TO_DO || task.status === 'à faire')
-    .map(mapTaskToBoardItem)
+  const newBoardItems: Record<string, any[]> = {}
+  
+  kanbanColumns.value.forEach((col: string) => {
+    newBoardItems[col] = []
+  })
 
-  inProgressItems.value = filteredTasks.value
-    .filter((task) => task.status === TaskStatus.IN_PROGRESS || task.status === 'en cours')
-    .map(mapTaskToBoardItem)
+  const firstCol = kanbanColumns.value[0] || 'À faire'
 
-  doneItems.value = filteredTasks.value
-    .filter((task) => task.status === TaskStatus.DONE || task.status === 'terminé')
-    .map(mapTaskToBoardItem)
+  filteredTasks.value.forEach((task) => {
+    // If the task has a board_column, place it there. Otherwise fallback to its status.
+    let targetCol = task.board_column || task.status
+    
+    // If the target column doesn't exist on the board anymore, push it to the first column
+    if (!kanbanColumns.value.includes(targetCol)) {
+      targetCol = firstCol
+    }
+    
+    if (newBoardItems[targetCol]) {
+       newBoardItems[targetCol].push(mapTaskToBoardItem(task))
+    }
+  })
+
+  boardItems.value = newBoardItems
 }
 
-watch(filteredTasks, () => {
-  const totalInBoard = todoItems.value.length + inProgressItems.value.length + doneItems.value.length
-  let needsFullSync = filteredTasks.value.length !== totalInBoard
-
-  if (!needsFullSync) {
-    for (const t of filteredTasks.value) {
-      const mappedStatus = t.status === 'TO_DO' || t.status === 'à faire' ? TaskStatus.TO_DO : 
-                           (t.status === 'IN_PROGRESS' || t.status === 'en cours' ? TaskStatus.IN_PROGRESS : 
-                           (t.status === 'DONE' || t.status === 'terminé' ? TaskStatus.DONE : t.status))
-                           
-      const inTodo = todoItems.value.some(i => i.id === String(t.id))
-      const inInProgress = inProgressItems.value.some(i => i.id === String(t.id))
-      const inDone = doneItems.value.some(i => i.id === String(t.id))
-      
-      if (mappedStatus === TaskStatus.TO_DO && !inTodo) needsFullSync = true
-      if (mappedStatus === TaskStatus.IN_PROGRESS && !inInProgress) needsFullSync = true
-      if (mappedStatus === TaskStatus.DONE && !inDone) needsFullSync = true
-    }
-  }
-
-  if (needsFullSync) {
-    syncBoardItems()
-  } else {
-    filteredTasks.value.forEach(t => {
-      const mapped = mapTaskToBoardItem(t)
-      const updateItem = (list: any[]) => {
-        const item = list.find(i => i.id === mapped.id)
-        if (item) Object.assign(item, mapped)
-      }
-      updateItem(todoItems.value)
-      updateItem(inProgressItems.value)
-      updateItem(doneItems.value)
-    })
-  }
+watch([filteredTasks, kanbanColumns], () => {
+  syncBoardItems()
 }, { deep: true })
 
 onMounted(async () => {
@@ -280,40 +360,39 @@ onMounted(async () => {
         </div>
   </header>
     <!-- Kanban Board Columns -->
-    <div class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto snap-x snap-mandatory flex-nowrap custom-scrollbar">
-      <!-- Empty State Column -->
-      <BoardColumn 
-        title="À faire" 
-        v-model:items="todoItems" 
-        :allowCreate="true"
-        @taskClick="handleTaskClick"
-        @editTask="handleEditTask"
-        @deleteTask="handleDeleteTask"
-        @taskMoved="handleTaskMoved($event, TaskStatus.TO_DO)"
-      />
-      
-      <!-- In Progress State Column -->
-      <BoardColumn 
-        title="En cours" 
-        v-model:items="inProgressItems" 
-        :allowCreate="false"
-        @taskClick="handleTaskClick"
-        @editTask="handleEditTask"
-        @deleteTask="handleDeleteTask"
-        @taskMoved="handleTaskMoved($event, TaskStatus.IN_PROGRESS)"
-      />
-    
-      <!-- Loaded State Column -->
-      <BoardColumn 
-        title="Terminé" 
-        v-model:items="doneItems" 
-        :isDone="true" 
-        @taskClick="handleTaskClick"
-        @editTask="handleEditTask"
-        @deleteTask="handleDeleteTask"
-        @taskMoved="handleTaskMoved($event, TaskStatus.DONE)"
-      />
-    </div>
+    <draggable 
+      v-model="draggableColumns"
+      item-key="name"
+      class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto snap-x snap-mandatory flex-nowrap custom-scrollbar"
+      handle=".column-drag-handle"
+      ghost-class="opacity-40"
+      :animation="200"
+    >
+      <template #item="{ element: col }">
+        <BoardColumn 
+          :title="col.name" 
+          v-model:items="boardItems[col.name]" 
+          :allowCreate="true"
+          :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
+          @taskClick="handleTaskClick"
+          @editTask="handleEditTask"
+          @deleteTask="handleDeleteTask"
+          @taskMoved="handleTaskMoved($event, col.name)"
+          @rename="handleRenameColumn(col.name, $event)"
+          @deleteColumn="handleDeleteColumn(col.name)"
+          @toggleStatus="handleToggleStatus"
+        />
+      </template>
+      <template #footer>
+        <!-- Add Column Button -->
+        <div class="w-[85vw] min-w-[85vw] md:w-[340px] md:min-w-[340px] shrink-0 snap-center md:shrink-0 md:snap-align-none flex items-start h-fit max-h-full">
+          <button @click="handleAddColumn" class="w-full py-4 bg-canvas/50 dark:bg-[#161618]/50 hover:bg-canvas dark:hover:bg-[#161618] border-2 border-dashed border-form-border dark:border-[#2A2A2D] rounded-lg text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200 transition-colors flex items-center justify-center gap-2 font-medium whitespace-nowrap">
+            <Icon name="ph:plus" class="text-xl" />
+            Ajouter une colonne
+          </button>
+        </div>
+      </template>
+    </draggable>
     <!-- Task Modal -->
     <TaskModal 
       :isOpen="isTaskModalOpen" 

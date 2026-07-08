@@ -173,8 +173,8 @@ const fetchProject = async (id: number | string | null) => {
       projectTasks.value = tasksData
       totalTasks.value = tasksData.length
       todoTasks.value = tasksData.filter((t: any) => t.status === 'à faire').length
-      inProgressTasks.value = tasksData.filter((t: any) => t.status === 'en cours').length
       doneTasks.value = tasksData.filter((t: any) => t.status === 'terminé').length
+      inProgressTasks.value = totalTasks.value - todoTasks.value - doneTasks.value
       
       if (totalTasks.value > 0) {
         tasksProgress.value = Math.round((doneTasks.value / totalTasks.value) * 100)
@@ -557,8 +557,8 @@ const updateStatus = async (status: string) => {
                     class="w-2.5 h-2.5 rounded-full shrink-0"
                     :class="{
                       'bg-orange-400': task.status === 'à faire',
-                      'bg-blue-500': task.status === 'en cours',
-                      'bg-emerald-500': task.status === 'terminé'
+                      'bg-emerald-500': task.status === 'terminé',
+                      'bg-blue-500': task.status !== 'à faire' && task.status !== 'terminé'
                     }"
                   ></div>
                   <span
@@ -579,8 +579,8 @@ const updateStatus = async (status: string) => {
                     class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
                     :class="{
                       'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': task.status === 'à faire',
-                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': task.status === 'en cours',
-                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'terminé'
+                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'terminé',
+                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': task.status !== 'à faire' && task.status !== 'terminé'
                     }"
                   >{{ task.status }}</span>
                   <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>

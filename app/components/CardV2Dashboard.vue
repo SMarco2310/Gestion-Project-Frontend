@@ -5,7 +5,7 @@ const props = defineProps<{
   totalIssues: number
   statusMetrics: Array<{ label: string; percentage: string; colorClass: string; colorCode: string; rawPercent: number }>
   priorities: Array<{ label: string; count: number; icon: string; iconColor: string; barColor: string; percent: number }>
-  epics: Array<{ id: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
+  epics: Array<{ reference_code: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
 }>()
 
 const donutStyle = computed(() => {
@@ -94,12 +94,12 @@ const donutStyle = computed(() => {
       <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
         <div 
           v-for="epic in epics" 
-          :key="epic.id"
+          :key="epic.reference_code"
           class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5"
         >
           <div class="flex items-center gap-3">
             <span :class="['text-[10px] font-bold px-2 py-0.5 rounded', epic.badgeBg, epic.badgeText]">
-              {{ epic.id }}
+              {{ epic.reference_code }}
             </span>
             <span class="text-sm text-main dark:text-gray-200 truncate flex-1">{{ epic.title }}</span>
             <span class="text-xs text-secondary dark:text-gray-400">{{ epic.progress }}%</span>

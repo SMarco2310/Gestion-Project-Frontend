@@ -35,7 +35,7 @@ const fetchMembers = async () => {
   isLoading.value = true;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/api/organizations/${orgId}/members`, { method: 'GET' });
+    const res = await $api<any>(`/organizations/${orgId}/members`, { method: 'GET' });
     members.value = res.data?.data || res.data || [];
   } catch (err) {
     console.error('Error fetching org members', err);
@@ -53,7 +53,7 @@ onMounted(() => {
 const inviteFunction = async ()=>{
    try {
 
-    const data = await $api<{success:boolean, message:string, invitation:any}>(`/api/invitations`, {
+    const data = await $api<{success:boolean, message:string, invitation:any}>(`/invitations`, {
        method: 'POST', 
        body:{
          email:inviteEmail.value,
@@ -99,7 +99,7 @@ const handleEditRole = async () => {
   if (!activeOrganization.value || !editingMember.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<{success:boolean, message:string}>(`/api/organizations/${orgId}/members/${editingMember.value.id}`, {
+    const res = await $api<{success:boolean, message:string}>(`/organizations/${orgId}/members/${editingMember.value.id}`, {
       method: 'PUT',
       body: { role: editingRole.value }
     });
@@ -123,7 +123,7 @@ const removeMember = async (memberId: number) => {
   if (!activeOrganization.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    await $api(`/api/organizations/${orgId}/members/${memberId}`, { method: 'DELETE' });
+    await $api(`/organizations/${orgId}/members/${memberId}`, { method: 'DELETE' });
     members.value = members.value.filter((m: any) => m.id !== memberId);
     addToast({ type: 'success', title: 'Succès', message: 'Membre retiré de l\'organisation.' });
   } catch (err) {

@@ -21,7 +21,7 @@ export default function useTags() {
     error.value = null
     try {
       const { $api } = useNuxtApp()
-      const response = await $api<{ tags: Tag[], success: boolean }>('/api/tags', {
+      const response = await $api<{ tags: Tag[], success: boolean }>('/tags', {
         method: 'GET'
       })
       tags.value = response.tags
@@ -40,7 +40,7 @@ export default function useTags() {
     error.value = null
     try {
       const { $api } = useNuxtApp()
-      const response = await $api<{ tag: Tag, success: boolean }>('/api/tags', {
+      const response = await $api<{ tag: Tag, success: boolean }>('/tags', {
         method: 'POST',
         body: payload
       })
@@ -60,7 +60,7 @@ export default function useTags() {
     error.value = null
     try {
       const { $api } = useNuxtApp()
-      const response = await $api<{ tag: Tag, success: boolean }>(`/api/tags/${tagId}`, {
+      const response = await $api<{ tag: Tag, success: boolean }>(`/tags/${tagId}`, {
         method: 'PUT',
         body: payload
       })
@@ -83,7 +83,7 @@ export default function useTags() {
     error.value = null
     try {
       const { $api } = useNuxtApp()
-      await $api(`/api/tags/${tagId}`, {
+      await $api(`/tags/${tagId}`, {
         method: 'DELETE'
       })
       tags.value = tags.value.filter(t => t.id !== Number(tagId))

@@ -26,7 +26,9 @@ export default function useProjets() {
     const getProjets = async ()=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<any>('/api/projets',{
+            const { activeOrganization } = useOrganizations();
+            const query = activeOrganization.value?.id ? `?organization_id=${activeOrganization.value.id}` : '';
+            const data = await $api<any>(`/projets${query}`,{
                 method:'GET'
             });
 
@@ -42,7 +44,7 @@ export default function useProjets() {
     const getProjet = async (id:number|string|any)=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{projet:Projet,success:boolean} | any>(`/api/projets/${id}`,{
+            const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
                 method:'GET'
             });
 
@@ -60,7 +62,7 @@ export default function useProjets() {
         try{
             const { $api } = useNuxtApp();
             const { activeOrganization } = useOrganizations();
-            const data = await $api<{projet:Projet,success:boolean}>(`/api/projets`,{
+            const data = await $api<{projet:Projet,success:boolean}>(`/projets`,{
                 method:'POST',
                 body:{
                    name: name,
@@ -88,7 +90,7 @@ export default function useProjets() {
     const updateProjet = async (id:number,name:string,description:string,start_date:string|Date,end_date:string|Date,status:string)=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{projet:Projet,success:boolean} | any>(`/api/projets/${id}`,{
+            const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
                 method:'PUT',
                 body:{
                     name:name,
@@ -112,7 +114,7 @@ export default function useProjets() {
     const deleteProjet = async (id:number|string|any)=>{
         try{
             const { $api } = useNuxtApp();
-            const data = await $api<{message:string,success:boolean}>(`/api/projets/${id}`,{
+            const data = await $api<{message:string,success:boolean}>(`/projets/${id}`,{
                 method:"DELETE"
             });
             projets.value = projets.value.filter((p) => String(p.id) !== String(id));

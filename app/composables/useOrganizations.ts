@@ -27,7 +27,7 @@ export default function useOrganizations() {
   const getOrganizations = async () => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Organization[] } | any>('/api/organizations', {
+      const data = await $api<{ data: Organization[] } | any>('/organizations', {
         method: 'GET'
       });
       // Handle both paginated and non-paginated responses
@@ -42,7 +42,7 @@ export default function useOrganizations() {
   const getOrganization = async (id: number | string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Organization } | any>(`/api/organizations/${id}`, {
+      const data = await $api<{ data: Organization } | any>(`/organizations/${id}`, {
         method: 'GET'
       });
       return data.organization ?? data.data ?? data;
@@ -55,7 +55,7 @@ export default function useOrganizations() {
   const createOrganization = async (name: string, description?: string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Organization } | any>('/api/organizations', {
+      const data = await $api<{ data: Organization } | any>('/organizations', {
         method: 'POST',
         body: { name, description }
       });
@@ -69,7 +69,7 @@ export default function useOrganizations() {
   const updateOrganization = async (id: number | string, payload: Partial<Organization>) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Organization } | any>(`/api/organizations/${id}`, {
+      const data = await $api<{ data: Organization } | any>(`/organizations/${id}`, {
         method: 'PUT',
         body: payload
       });
@@ -83,7 +83,7 @@ export default function useOrganizations() {
   const deleteOrganization = async (id: number | string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ message: string } | any>(`/api/organizations/${id}`, {
+      const data = await $api<{ message: string } | any>(`/organizations/${id}`, {
         method: 'DELETE'
       });
       organizations.value = organizations.value.filter(org => String(org.id) !== String(id));
@@ -104,7 +104,7 @@ export default function useOrganizations() {
       const formData = new FormData();
       formData.append('logo', file);
       
-      const data = await $api<{ organization: Organization } | any>(`/api/organizations/${id}/logo`, {
+      const data = await $api<{ organization: Organization } | any>(`/organizations/${id}/logo`, {
         method: 'POST',
         body: formData
       });

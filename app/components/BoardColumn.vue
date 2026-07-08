@@ -65,7 +65,7 @@ const orgMembers = ref<any[]>([])
 const fetchOrgMembers = async () => {
   if (!activeOrganization.value) return
   try {
-    const res = await $api<any>(`/api/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
+    const res = await $api<any>(`/organizations/${activeOrganization.value.id}/members`, { method: 'GET' })
     const members = res.data?.data ?? res.data ?? []
     orgMembers.value = members.map((m: any, i: number) => ({
       id: m.id,

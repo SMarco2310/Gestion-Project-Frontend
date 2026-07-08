@@ -66,7 +66,7 @@ const submit = async () => {
 
   try {
     const { $api } = useNuxtApp()
-    await $api('/api/update-password', {
+    await $api('/update-password', {
       method: 'PUT',
       body: { 
         current_password: currentPassword.value,

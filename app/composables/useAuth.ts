@@ -41,7 +41,7 @@ export default function useAuth() {
   const login = async (email: string, password: string) => {
     const { $api } = useNuxtApp()
 
-    const data = await $api<{ user: User; token: string; message: string }>('/api/login', {
+    const data = await $api<{ user: User; token: string; message: string }>('/login', {
       method: 'POST',
       body: { email, password },
     })
@@ -53,7 +53,7 @@ export default function useAuth() {
   const signup = async (name: string, email: string, password: string) => {
     const { $api } = useNuxtApp()
 
-    const data = await $api<{ user: User; token: string; message: string }>('/api/signup', {
+    const data = await $api<{ user: User; token: string; message: string }>('/signup', {
       method: 'POST',
       body: { name, email, password },
     })
@@ -67,7 +67,7 @@ export default function useAuth() {
 
     try {
       if (token.value) {
-        await $api<{ message: string }>('/api/logout', {
+        await $api<{ message: string }>('/logout', {
           method: 'POST',
         })
       }
@@ -87,7 +87,7 @@ export default function useAuth() {
     const { $api } = useNuxtApp()
 
     try {
-      const data = await $api<{ user: User; message: string }>('/api/me', {
+      const data = await $api<{ user: User; message: string }>('/me', {
         method: 'GET',
         headers: {Authorization: `Bearer ${token.value}`},
       })
@@ -109,7 +109,7 @@ export default function useAuth() {
     const { $api } = useNuxtApp()
 
     try {
-      const data = await $api<{ user: User; message: string }>('/api/users/profile', {
+      const data = await $api<{ user: User; message: string }>('/users/profile', {
         method: 'PUT',
         body: { name, email, bio },
         headers: {Authorization: `Bearer ${token.value}`},
@@ -133,7 +133,7 @@ export default function useAuth() {
     formData.append('profile_picture', file)
 
     try {
-      const data = await $api<{ user: User; message: string }>('/api/users/profile-picture', {
+      const data = await $api<{ user: User; message: string }>('/users/profile-picture', {
         method: 'POST',
         body: formData,
         headers: { Authorization: `Bearer ${token.value}` },
@@ -153,7 +153,7 @@ export default function useAuth() {
   const forgotPassword = async (email: string) => {
     const { $api } = useNuxtApp()
 
-    const data = await $api<{ message: string }>('/api/forgot-password', {
+    const data = await $api<{ message: string }>('/forgot-password', {
       method: 'POST',
       body: { email },
     })
@@ -172,7 +172,7 @@ export default function useAuth() {
   ) => {
     const { $api } = useNuxtApp()
 
-    const data = await $api<{ message: string }>('/api/reset-password', {
+    const data = await $api<{ message: string }>('/reset-password', {
       method: 'POST',
       body: { token: tokenValue, email, password, password_confirmation },
     })
@@ -209,7 +209,7 @@ export default function useAuth() {
   const resendVerificationEmail = async () => {
     const { $api } = useNuxtApp()
     try {
-      const data = await $api<{ message: string, success: boolean }>('/api/email/verification-notification', {
+      const data = await $api<{ message: string, success: boolean }>('/email/verification-notification', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token.value}` }
       })

@@ -13,7 +13,7 @@ export default function useTeams() {
   const getTeams = async (orgId: number | string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Team[] } | any>(`/api/organizations/${orgId}/teams`, {
+      const data = await $api<{ data: Team[] } | any>(`/organizations/${orgId}/teams`, {
         method: 'GET'
       });
       teams.value = data.data ?? data;
@@ -27,7 +27,7 @@ export default function useTeams() {
   const getTeam = async (orgId: number | string, teamId: number | string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Team } | any>(`/api/organizations/${orgId}/teams/${teamId}`, {
+      const data = await $api<{ data: Team } | any>(`/organizations/${orgId}/teams/${teamId}`, {
         method: 'GET'
       });
       return data.data ?? data;
@@ -40,7 +40,7 @@ export default function useTeams() {
   const createTeam = async (orgId: number | string, name: string, description?: string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Team } | any>(`/api/organizations/${orgId}/teams`, {
+      const data = await $api<{ data: Team } | any>(`/organizations/${orgId}/teams`, {
         method: 'POST',
         body: { name, description }
       });
@@ -54,7 +54,7 @@ export default function useTeams() {
   const updateTeam = async (orgId: number | string, teamId: number | string, name: string, description?: string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ data: Team } | any>(`/api/organizations/${orgId}/teams/${teamId}`, {
+      const data = await $api<{ data: Team } | any>(`/organizations/${orgId}/teams/${teamId}`, {
         method: 'PUT',
         body: { name, description }
       });
@@ -68,7 +68,7 @@ export default function useTeams() {
   const deleteTeam = async (orgId: number | string, teamId: number | string) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ message: string } | any>(`/api/organizations/${orgId}/teams/${teamId}`, {
+      const data = await $api<{ message: string } | any>(`/organizations/${orgId}/teams/${teamId}`, {
         method: 'DELETE'
       });
       teams.value = teams.value.filter(team => String(team.id) !== String(teamId));

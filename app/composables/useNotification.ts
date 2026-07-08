@@ -62,7 +62,7 @@ export default function useNotification() {
         unreadCount.value = notifications.value.filter((n) => !n.read_at).length
         return notifications.value
       }
-      const rawData = await $api<any>('/api/notifications', { method: 'GET' })
+      const rawData = await $api<any>('/notifications', { method: 'GET' })
       const notificationsArray = rawData.data?.data ?? rawData.data ?? rawData ?? []
       notifications.value = notificationsArray
       // Update unread count from the fetched list
@@ -84,7 +84,7 @@ export default function useNotification() {
       if (USE_MOCK_DATA) {
         return unreadCount.value;
       }
-      const data = await $api<{ unread_count: number }>('/api/notifications/unread-count', { method: 'GET' })
+      const data = await $api<{ unread_count: number }>('/notifications/unread-count', { method: 'GET' })
       unreadCount.value = data.unread_count
       return data.unread_count
     } catch (error) {
@@ -104,7 +104,7 @@ export default function useNotification() {
         unreadCount.value = Math.max(0, unreadCount.value - 1)
         return;
       }
-      await $api(`/api/notifications/${id}/read`, { method: 'POST' })
+      await $api(`/notifications/${id}/read`, { method: 'POST' })
       // Update local state
       const notif = notifications.value.find((n) => n.id === id)
       if (notif) notif.read_at = new Date().toISOString()
@@ -127,7 +127,7 @@ export default function useNotification() {
         unreadCount.value = 0
         return;
       }
-      await $api('/api/notifications/read-all', { method: 'POST' })
+      await $api('/notifications/read-all', { method: 'POST' })
       notifications.value.forEach((n) => {
         if (!n.read_at) n.read_at = new Date().toISOString()
       })
@@ -152,7 +152,7 @@ export default function useNotification() {
         }
         return;
       }
-      await $api(`/api/notifications/${id}`, { method: 'DELETE' })
+      await $api(`/notifications/${id}`, { method: 'DELETE' })
       const index = notifications.value.findIndex((n) => n.id === id)
       if (index !== -1) {
         const wasUnread = !notifications.value[index].read_at

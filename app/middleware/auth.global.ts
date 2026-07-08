@@ -21,12 +21,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
       await getProfile()
     } catch (error) {
       // Token is likely expired or invalid
+      token.value = null
       return navigateTo('/auth/login')
     }
   }
 
   // Ensure user has an active organization before accessing protected routes (except profile and invite)
-  if (token.value && !isPublicRoute && to.path !== '/organizations' && !to.path.startsWith('/profile') && !isInviteRoute) {
+  if (token.value && !isPublicRoute && !to.path.startsWith('/organizations') && !to.path.startsWith('/profile') && !isInviteRoute) {
     const { activeOrganization } = useOrganizations()
     if (!activeOrganization.value) {
       return navigateTo('/organizations')

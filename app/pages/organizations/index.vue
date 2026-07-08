@@ -16,7 +16,7 @@ const invitations = ref<any[]>([])
 
 const fetchOrgsAndInvites = async () => {
   try {
-    const orgsData = await $api<any>('/api/organizations')
+    const orgsData = await $api<any>('/organizations')
     organizations.value = orgsData.data?.data || orgsData.data || []
   } catch (err) {
     console.error(err)
@@ -34,7 +34,7 @@ const selectOrganization = (org: any) => {
 }
 
 const acceptInvitation = (inviteId: number, orgId: number) => {
-  // In a real app, call $api(`/api/invitations/${inviteId}/accept`, { method: 'POST' })
+  // In a real app, call $api(`/invitations/${inviteId}/accept`, { method: 'POST' })
   navigateTo('/dashboard');
 }
 
@@ -73,8 +73,8 @@ const handleCreateOrganization = async () => {
     
     <!-- Top Left Branding -->
     <div class="absolute top-8 left-8 z-20 flex items-center gap-3">
-       <img src="/assets/logo_app.png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
-       <span class="text-main dark:text-white font-bold text-xl tracking-wide">Gestion de Projets</span>
+       <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md" />
+       <span class="text-main dark:text-white font-bold text-xl tracking-wide">Gestion Pro</span>
     </div>
 
     <!-- Top Right Actions -->

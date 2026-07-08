@@ -18,7 +18,7 @@ const fetchTeams = async () => {
   isLoading.value = true;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/api/organizations/${orgId}/teams`, { method: 'GET' });
+    const res = await $api<any>(`/organizations/${orgId}/teams`, { method: 'GET' });
     teams.value = res.data?.data || res.data || [];
   } catch (err) {
     console.error('Error fetching teams', err);
@@ -40,7 +40,7 @@ const handleCreateTeam = async () => {
   if (!activeOrganization.value || !newTeamName.value) return;
   try {
     const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/api/organizations/${orgId}/teams`, {
+    const res = await $api<any>(`/organizations/${orgId}/teams`, {
       method: 'POST',
       body: { name: newTeamName.value }
     });

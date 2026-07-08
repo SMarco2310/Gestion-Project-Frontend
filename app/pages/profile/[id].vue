@@ -26,7 +26,7 @@ const handleVerifyEmail = () => {
 onMounted(async () => {
     try {
         const id = route.params.id;
-        const data = await $api<any>(`/api/users/${id}`, { method: 'GET' });
+        const data = await $api<any>(`/users/${id}`, { method: 'GET' });
         userProfile.value = data.user || data;
     } catch (e) {
         console.error("Failed to load user profile");

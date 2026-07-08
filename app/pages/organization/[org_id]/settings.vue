@@ -257,7 +257,7 @@ const confirmDelete = async () => {
 
               <div>
                 <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
-                <textarea v-model="form.description" rows="4" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"></textarea>
+                <RichTextEditor v-model="form.description" class="w-full" />
               </div>
 
               <div class="pt-4 flex justify-end">

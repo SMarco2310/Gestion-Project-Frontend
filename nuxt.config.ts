@@ -3,7 +3,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint', '@nuxt/icon'],
+  modules: ['@nuxtjs/tailwindcss', '@nuxt/eslint', '@nuxt/icon', 'nuxt-tiptap-editor'],
   css: ['~/assets/css/main.css'],
   app: {
     // Transitions disabled to fix page freezing bugs on route change

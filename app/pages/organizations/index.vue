@@ -158,7 +158,7 @@ const handleCreateOrganization = async () => {
             </div>
             
             <h2 class="text-xl font-bold text-main dark:text-white mb-2">{{ org.name }}</h2>
-            <p v-if="org.description" class="text-sm text-secondary dark:text-gray-400 line-clamp-2 mt-auto">{{ org.description }}</p>
+            <div v-if="org.description" class="text-sm text-secondary dark:text-gray-400 line-clamp-2 mt-auto prose dark:prose-invert max-w-none" v-html="org.description"></div>
           </div>
 
         </div>
@@ -193,12 +193,10 @@ const handleCreateOrganization = async () => {
           
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description (optionnel)</label>
-            <textarea 
+            <RichTextEditor 
               v-model="newOrgForm.description" 
-              rows="3" 
-              placeholder="Décrivez brièvement votre organisation..."
-              class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow resize-none"
-            ></textarea>
+              class="w-full"
+            />
           </div>
         </div>
 

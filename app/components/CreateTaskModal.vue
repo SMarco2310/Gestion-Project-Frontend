@@ -334,12 +334,10 @@ const submit = async () => {
               <!-- Description -->
               <div>
                 <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Description</label>
-                <textarea 
+                <RichTextEditor 
                   v-model="form.description" 
-                  rows="3"
-                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all resize-none"
-                  placeholder="Détails supplémentaires..."
-                ></textarea>
+                  class="w-full"
+                />
               </div>
 
             </div>

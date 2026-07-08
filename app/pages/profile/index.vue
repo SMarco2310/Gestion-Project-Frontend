@@ -160,7 +160,7 @@ const formatDate = (dateString?: string) => {
                     
                     <div>
                         <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Bio</label>
-                        <textarea v-model="bio" rows="4" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all resize-none shadow-inner"></textarea>
+                        <RichTextEditor v-model="bio" class="w-full" />
                     </div>
                 </div>
 

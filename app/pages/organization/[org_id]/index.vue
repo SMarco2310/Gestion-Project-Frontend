@@ -56,6 +56,14 @@ const openCount = computed(() => tasks.value.filter((task) => !isDone(task.statu
 const projectsCount = computed(() => projets.value.length)
 const commentsCount = computed(() => commentaires.value.length)
 
+const totalUsersCount = computed(() => {
+  return activeOrganization.value?.users?.length || activeOrganization.value?.members?.length || 1
+})
+
+const activeProjectsCount = computed(() => {
+  return projets.value.filter(p => !isDone(p.status)).length
+})
+
 const recentCount = computed(() => {
   const now = Date.now()
   const twentyFourHours = 24 * 60 * 60 * 1000
@@ -229,6 +237,15 @@ onMounted(async () => {
             Créer un projet
           </button>
         </section>
+    <br>
+    <section>
+        <DashboardAnalytics 
+          :totalUsers="totalUsersCount"
+          :activeProjects="activeProjectsCount"
+          :tasks="tasks"
+          :kanbanColumns="kanbanColumns"
+        />
+    </section>
     <br>
     <section>
         <!-- Stats Cards with only numbers -->

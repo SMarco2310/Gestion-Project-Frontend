@@ -73,8 +73,13 @@ const handleCreateTeam = async () => {
       </div>
     </section>
 
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex items-center justify-center py-20">
+      <Icon name="eos-icons:loading" class="w-10 h-10 text-primary animate-spin" />
+    </div>
+
     <!-- Teams Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+    <div v-else-if="teams.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       
       <div v-for="team in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer">
         <div class="flex justify-between items-start mb-4">
@@ -109,10 +114,8 @@ const handleCreateTeam = async () => {
 
     </div>
 
-
-
     <!-- Empty State -->
-    <div v-if="teams.length === 0" class="flex flex-col items-center justify-center py-20 px-4">
+    <div v-else class="flex flex-col items-center justify-center py-20 px-4">
       <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
         <Icon name="heroicons:user-group" class="w-8 h-8" />
       </div>

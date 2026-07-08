@@ -233,7 +233,7 @@ const handleInviteNew = async () => {
                 </div>
               </td>
               <td class="px-6 py-4">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium" :class="{
+                <span class="whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium" :class="{
                   'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400': (member.pivot?.role || 'membre').toLowerCase() === 'team_lead',
                   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': (member.pivot?.role || 'membre').toLowerCase() === 'admin',
                   'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300': (member.pivot?.role || 'membre').toLowerCase() === 'membre'

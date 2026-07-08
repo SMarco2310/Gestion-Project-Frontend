@@ -38,6 +38,7 @@ const props = defineProps<{
   title: string
   isDone?: boolean // Used for column checkmark and crossed-out text
   allowCreate?: boolean // Used to show the '+ Create' button when empty
+  color?: string
 }>()
 
 const items = defineModel<Task[]>('items', { default: () => [] })
@@ -45,7 +46,7 @@ const items = defineModel<Task[]>('items', { default: () => [] })
 const itemCount = computed(() => items.value.length)
 
 const activeDropdownId = ref<string | null>(null)
-const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus'])
+const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus', 'updateColor'])
 
 const isCollapsed = ref(false)
 const isLockedColumn = computed(() => {
@@ -75,6 +76,35 @@ const newTaskDueDate = ref('')
 const newTaskProject = ref('')
 const newTaskAssignee = ref<any>(null)
 const isAssigneeDropdownOpen = ref(false)
+
+const predefinedColors = [
+  { hex: '#216e4e', name: 'Vert' },
+  { hex: '#7f5f01', name: 'Jaune' },
+  { hex: '#a54800', name: 'Orange' },
+  { hex: '#ae2e24', name: 'Rouge' },
+  { hex: '#5e4db2', name: 'Violet' },
+  { hex: '#0055cc', name: 'Bleu' },
+  { hex: '#206a83', name: 'Sarcelle' },
+  { hex: '#4c6b1f', name: 'Vert clair' },
+  { hex: '#943d73', name: 'Rose' },
+  { hex: '', name: 'Défaut' }
+]
+
+const isColorPickerOpen = ref(false)
+const colorPickerStyle = ref({ top: '0px', left: '0px' })
+
+const toggleColorPicker = (event: MouseEvent) => {
+  if (isColorPickerOpen.value) {
+    isColorPickerOpen.value = false
+    return
+  }
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  colorPickerStyle.value = {
+    top: `${rect.bottom + 8}px`,
+    left: `${rect.left}px`
+  }
+  isColorPickerOpen.value = true
+}
 
 const { $api } = useNuxtApp()
 const { activeOrganization } = useOrganizations()
@@ -198,35 +228,42 @@ onUnmounted(() => {
   <div :class="[
     'flex flex-col shrink-0 snap-center md:shrink-0 md:snap-align-none bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none max-h-full transition-all duration-300',
     isCollapsed ? 'w-14 md:w-14 h-full' : 'w-[85vw] md:w-[340px] h-fit'
-  ]">
+  ]" :style="color ? { backgroundColor: color, borderColor: color } : {}">
     <!-- Header -->
     <div :class="['px-4 flex items-center group/header', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
-      <div v-show="!isCollapsed" class="column-drag-handle cursor-grab active:cursor-grabbing text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 opacity-0 group-hover/header:opacity-100 transition-opacity p-1 -ml-2 rounded hover:bg-gray-200 dark:hover:bg-gray-800">
+      <div v-show="!isCollapsed" :class="['column-drag-handle cursor-grab active:cursor-grabbing opacity-0 group-hover/header:opacity-100 transition-opacity p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
          <Icon name="ph:dots-six-vertical" class="text-lg" />
       </div>
+      
+      <div v-if="!isCollapsed && !isLockedColumn" class="flex items-center justify-center shrink-0">
+         <button @click="toggleColorPicker" :class="['cursor-pointer relative flex items-center justify-center rounded w-4 h-4 shadow-sm border overflow-hidden hover:scale-110 transition-transform', color ? 'border-white/30' : 'border-black/10 dark:border-white/10']" title="Modifier la couleur">
+            <div class="absolute inset-0 pointer-events-none" :style="{ backgroundColor: color || '#9CA3AF' }"></div>
+         </button>
+      </div>
+
       <div v-if="isEditingTitle && !isLockedColumn" class="flex-1 flex items-center gap-2">
         <input 
           v-model="editedTitle" 
           @keyup.enter="saveTitle"
           @blur="saveTitle"
-          class="bg-transparent text-xs font-bold text-main dark:text-white uppercase tracking-wider focus:outline-none border-b border-primary w-full"
+          :class="['bg-transparent text-xs font-bold uppercase tracking-wider focus:outline-none border-b w-full', color ? 'text-white border-white/50' : 'text-main dark:text-white border-primary']"
           autoFocus
         />
       </div>
-      <h2 v-else-if="!isCollapsed" @click="!isLockedColumn && (isEditingTitle = true)" :class="['text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider transition-colors flex-1 truncate', !isLockedColumn ? 'cursor-text hover:text-main dark:hover:text-gray-200' : '']">{{ title }}</h2>
-      <h2 v-else class="text-xs font-bold text-secondary dark:text-gray-400 uppercase tracking-wider whitespace-nowrap rotate-180" style="writing-mode: vertical-rl;">{{ title }}</h2>
+      <h2 v-else-if="!isCollapsed" @click="!isLockedColumn && (isEditingTitle = true)" :class="['text-xs font-bold uppercase tracking-wider transition-colors flex-1 truncate', color ? 'text-white' : 'text-secondary dark:text-gray-400', !isLockedColumn ? (color ? 'cursor-text hover:text-white/80' : 'cursor-text hover:text-main dark:hover:text-gray-200') : '']">{{ title }}</h2>
+      <h2 v-else :class="['text-xs font-bold uppercase tracking-wider whitespace-nowrap rotate-180', color ? 'text-white' : 'text-secondary dark:text-gray-400']" style="writing-mode: vertical-rl;">{{ title }}</h2>
       
       <div v-if="!isEditingTitle && !isCollapsed && !isLockedColumn" class="flex items-center gap-1.5 opacity-0 group-hover/header:opacity-100 transition-opacity">
-        <button @click="$emit('deleteColumn')" class="p-1 rounded text-secondary hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Supprimer la colonne">
+        <button @click="$emit('deleteColumn')" :class="['p-1 rounded transition-colors', color ? 'text-white/70 hover:text-white hover:bg-red-500/30' : 'text-secondary hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20']" title="Supprimer la colonne">
            <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
         </button>
       </div>
 
-      <button @click="isCollapsed = !isCollapsed" class="p-1.5 rounded text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" :class="isCollapsed ? '' : 'opacity-0 group-hover/header:opacity-100'" :title="isCollapsed ? 'Développer' : 'Réduire'">
+      <button @click="isCollapsed = !isCollapsed" :class="['p-1.5 rounded transition-colors', isCollapsed ? '' : 'opacity-0 group-hover/header:opacity-100', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']" :title="isCollapsed ? 'Développer' : 'Réduire'">
         <Icon :name="isCollapsed ? 'ph:arrows-out-line-horizontal' : 'ph:arrows-in-line-horizontal'" class="w-4 h-4" />
       </button>
       
-      <span v-if="itemCount > 0" class="bg-form-border dark:bg-[#27272A] text-main dark:text-gray-300 text-xs font-bold px-2 py-0.5 rounded flex items-center justify-center min-w-[24px] shrink-0">
+      <span v-if="itemCount > 0" :class="['text-xs font-bold px-2 py-0.5 rounded flex items-center justify-center min-w-[24px] shrink-0', color ? 'bg-white/20 text-white' : 'bg-form-border dark:bg-[#27272A] text-main dark:text-gray-300']">
         {{ itemCount }}
       </span>
       <Icon v-if="isDone && !isCollapsed" name="ph:check" class="text-emerald-500 text-lg font-bold shrink-0" />
@@ -236,7 +273,7 @@ onUnmounted(() => {
     <div v-show="!isCollapsed" class="flex-1 overflow-y-auto px-3 pb-3 custom-scrollbar">
       <!-- Create Button -->
       <div v-if="allowCreate && !isCreating" class="pt-2 pl-1 mb-2">
-        <button @click.stop="isCreating = true" class="flex items-center gap-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm font-medium w-full text-left">
+        <button @click.stop="isCreating = true" :class="['flex items-center gap-2 transition-colors text-sm font-medium w-full text-left', color ? 'text-white/80 hover:text-white hover:bg-white/10 rounded-lg p-1.5 -ml-1.5' : 'text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200']">
           <Icon name="ph:plus" class="text-lg" />
           Créer
         </button>
@@ -420,6 +457,36 @@ onUnmounted(() => {
       </draggable>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div v-if="isColorPickerOpen" class="fixed inset-0 z-[200]" @click="isColorPickerOpen = false">
+      <div 
+        class="fixed bg-white dark:bg-[#282E33] shadow-[0_8px_16px_-4px_rgba(9,30,66,0.25),0_0_0_1px_rgba(9,30,66,0.08)] dark:shadow-[0_8px_16px_-4px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.08)] rounded p-3 w-[240px]"
+        :style="colorPickerStyle"
+        @click.stop
+      >
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-semibold text-secondary dark:text-[#B6C2CF]">Couleur de la colonne</span>
+          <button @click="isColorPickerOpen = false" class="text-secondary hover:text-main dark:text-[#B6C2CF] dark:hover:text-white transition-colors p-1 rounded hover:bg-gray-100 dark:hover:bg-[#A6C5E229]">
+            <Icon name="ph:x" class="w-3.5 h-3.5" />
+          </button>
+        </div>
+        <div class="grid grid-cols-5 gap-1.5">
+          <button 
+            v-for="c in predefinedColors" 
+            :key="c.name"
+            @click="$emit('updateColor', c.hex); isColorPickerOpen = false"
+            class="h-8 rounded flex items-center justify-center hover:opacity-80 transition-opacity relative group"
+            :class="c.hex === '' ? 'bg-[#091E420F] dark:bg-[#A6C5E20A] hover:bg-[#091E4214] dark:hover:bg-[#A6C5E214]' : ''"
+            :style="c.hex ? { backgroundColor: c.hex } : {}"
+            :title="c.name"
+          >
+            <Icon v-if="color === c.hex || (!color && c.hex === '')" name="ph:check-bold" class="w-4 h-4 text-white" :class="c.hex === '' ? 'text-[#172B4D] dark:text-[#B6C2CF]' : ''" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>

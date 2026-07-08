@@ -147,6 +147,10 @@ const calendarEvents = computed(() => {
 
 // Load tasks and projects on mount
 onMounted(async () => {
+  if (window.innerWidth < 768) {
+    activeView.value = 'timeGridDay'
+  }
+  
   await Promise.all([getTasks(), getProjets()])
   
   if (externalEventsRef.value) {
@@ -245,7 +249,7 @@ const calendarOptions = computed(() => ({
       </button>
     </header>
 
-    <div class="flex-1 flex gap-4 overflow-hidden h-full">
+    <div class="flex-1 flex gap-4 overflow-hidden h-full relative">
       <div class="flex-1 bg-white dark:bg-[#1D1D1D] rounded-3xl border border-form-border dark:border-gray-800 p-6 shadow-sm overflow-hidden flex flex-col calendar-wrapper gap-4">
         
         <!-- Custom Toolbar -->
@@ -321,7 +325,7 @@ const calendarOptions = computed(() => ({
               :showProjects="true"
               :projectOptions="projets.map(p => ({ id: p.id, label: p.name }))"
               @update:filters="handleFiltersUpdate"
-              class="z-50"
+              class="relative z-30"
             >
               <template #trigger>
                 <button class="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-bold text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors pointer-events-none">
@@ -341,18 +345,20 @@ const calendarOptions = computed(() => ({
 
         <FullCalendar ref="calendarRef" class="flex-1 h-full" :options="calendarOptions">
           <template v-slot:dayHeaderContent="arg">
-            <div class="flex items-center justify-center py-2">
+            <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
                 v-if="arg.isToday"
-                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white px-5 py-1.5 rounded-full text-sm font-bold tracking-wide"
+                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-md text-white px-2 md:px-5 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[28px] md:min-w-0"
               >
-                {{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}
+                <span class="md:hidden">{{ arg.date.getDate() }}</span>
+                <span class="hidden md:inline">{{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}</span>
               </div>
               <div 
                 v-else
-                class="text-sm font-bold text-secondary dark:text-gray-400 tracking-wide"
+                class="text-xs md:text-sm font-bold text-secondary dark:text-gray-400 tracking-wide"
               >
-                {{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}
+                <span class="md:hidden">{{ arg.date.getDate() }}</span>
+                <span class="hidden md:inline">{{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}</span>
               </div>
             </div>
           </template>
@@ -422,14 +428,14 @@ const calendarOptions = computed(() => ({
 
       <!-- Unscheduled Tasks Sidebar -->
       <Transition 
-        enter-active-class="transition duration-300 ease-out"
+        enter-active-class="transition duration-200 ease-out"
         enter-from-class="transform translate-x-12 opacity-0"
         enter-to-class="transform translate-x-0 opacity-100"
-        leave-active-class="transition duration-200 ease-in"
+        leave-active-class="transition duration-150 ease-in"
         leave-from-class="transform translate-x-0 opacity-100"
         leave-to-class="transform translate-x-12 opacity-0"
       >
-        <div v-show="isSidebarOpen" class="w-80 shrink-0 bg-white dark:bg-[#1D1D1D] rounded-xl border border-form-border dark:border-gray-800 flex flex-col neo-shadow overflow-hidden h-full">
+        <div v-show="isSidebarOpen" class="absolute inset-y-0 right-0 z-40 md:static md:z-auto w-80 shrink-0 bg-white dark:bg-[#1D1D1D] rounded-xl border border-form-border dark:border-gray-800 flex flex-col neo-shadow overflow-hidden h-full">
           <div class="p-4 border-b border-form-border dark:border-gray-800 bg-gray-50 dark:bg-black/20 flex justify-between items-center">
             <h3 class="font-bold text-main dark:text-white">Tâches non planifiées</h3>
             <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">{{ unscheduledTasks.length }}</span>

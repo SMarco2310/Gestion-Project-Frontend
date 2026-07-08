@@ -104,6 +104,10 @@ const handleToggleStatus = async (taskId: string) => {
   }
 }
 
+const kanbanColors = computed(() => {
+  return activeOrganization.value?.kanban_colors || {}
+})
+
 const handleRenameColumn = async (oldName: string, newName: string) => {
   if (!activeOrganization.value) return
   if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(oldName.toLowerCase())) {
@@ -118,8 +122,15 @@ const handleRenameColumn = async (oldName: string, newName: string) => {
   const newColumns = kanbanColumns.value.map(col => col === oldName ? newName : col)
   const renames = { [oldName]: newName }
   
+  const currentColors = activeOrganization.value.kanban_colors || {}
+  const newColors = { ...currentColors }
+  if (newColors[oldName]) {
+    newColors[newName] = newColors[oldName]
+    delete newColors[oldName]
+  }
+  
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns, renames)
+    await updateKanbanColumns(activeOrganization.value.id, newColumns, newColors, renames)
     addToast({ type: 'success', title: 'Succès', message: 'Colonne renommée avec succès.' })
     await getTasks() // Refresh tasks to get the new status
   } catch (error) {
@@ -139,7 +150,7 @@ const handleAddColumn = async () => {
   
   const newColumns = [...kanbanColumns.value, finalName]
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns)
+    await updateKanbanColumns(activeOrganization.value.id, newColumns, activeOrganization.value.kanban_colors || {})
     addToast({ type: 'success', title: 'Succès', message: 'Colonne ajoutée avec succès.' })
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'ajouter la colonne.' })
@@ -165,12 +176,29 @@ const handleDeleteColumn = async (colName: string) => {
   const newColumns = kanbanColumns.value.filter(c => c !== colName)
   const renames = { [colName]: targetCol }
   
+  const currentColors = activeOrganization.value.kanban_colors || {}
+  const newColors = { ...currentColors }
+  delete newColors[colName]
+  
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns, renames)
+    await updateKanbanColumns(activeOrganization.value.id, newColumns, newColors, renames)
     addToast({ type: 'success', title: 'Succès', message: 'Colonne supprimée avec succès.' })
     await getTasks() // Refresh tasks
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la colonne.' })
+  }
+}
+
+const handleUpdateColumnColor = async (colName: string, color: string) => {
+  if (!activeOrganization.value) return
+  const currentColors = activeOrganization.value.kanban_colors || {}
+  const newColors = { ...currentColors, [colName]: color }
+  
+  try {
+    await updateKanbanColumns(activeOrganization.value.id, kanbanColumns.value, newColors)
+    addToast({ type: 'success', title: 'Succès', message: 'Couleur de colonne modifiée.' })
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de modifier la couleur.' })
   }
 }
 
@@ -371,6 +399,7 @@ onMounted(async () => {
       <template #item="{ element: col }">
         <BoardColumn 
           :title="col.name" 
+          :color="kanbanColors[col.name]"
           v-model:items="boardItems[col.name]" 
           :allowCreate="true"
           :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
@@ -381,6 +410,7 @@ onMounted(async () => {
           @rename="handleRenameColumn(col.name, $event)"
           @deleteColumn="handleDeleteColumn(col.name)"
           @toggleStatus="handleToggleStatus"
+          @updateColor="handleUpdateColumnColor(col.name, $event)"
         />
       </template>
       <template #footer>

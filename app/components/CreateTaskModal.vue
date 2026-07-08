@@ -17,7 +17,7 @@ const emit = defineEmits(['close', 'submit'])
 const form = ref({
   title: '',
   description: '',
-  status: 'À faire',
+  board_column: 'À faire',
   priority: TaskPriority.MEDIUM,
   tag_id: '' as string | number,
   due_date: '',
@@ -36,8 +36,49 @@ const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 
 const isAssigneeDropdownOpen = ref(false)
+const isStatusDropdownOpen = ref(false)
 const orgMembers = ref<any[]>([])
 const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+
+const kanbanColumns = computed(() => {
+  return activeOrganization.value?.kanban_columns?.length 
+    ? activeOrganization.value.kanban_columns 
+    : ['À faire', 'En cours', 'Terminé']
+})
+
+const kanbanColors = computed(() => {
+  return activeOrganization.value?.kanban_colors || {}
+})
+
+const statusConfig = computed(() => {
+  const config: Record<string, { label: string; colorClass?: string; style?: any }> = {}
+  kanbanColumns.value.forEach(col => {
+    let colorClass = 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+    let style: any = undefined
+    const lowerCol = col.toLowerCase()
+    
+    if (kanbanColors.value[col]) {
+      colorClass = ''
+      style = {
+        backgroundColor: kanbanColors.value[col] + '20',
+        color: kanbanColors.value[col]
+      }
+    } else if (lowerCol === 'à faire' || lowerCol === 'to do') {
+      colorClass = 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500'
+    } else if (lowerCol === 'en cours' || lowerCol === 'in progress') {
+      colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500'
+    } else if (lowerCol === 'terminé' || lowerCol === 'done') {
+      colorClass = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500'
+    }
+    
+    config[col] = {
+      label: col.toUpperCase(),
+      colorClass,
+      style
+    }
+  })
+  return config
+})
 
 const fetchOrgMembers = async () => {
   if (!activeOrganization.value) return
@@ -79,7 +120,7 @@ watch(() => props.isOpen, (newVal) => {
     form.value = {
       title: '',
       description: '',
-      status: activeOrganization.value?.kanban_columns?.[0] || 'À faire',
+      board_column: kanbanColumns.value[0] || 'À faire',
       priority: TaskPriority.MEDIUM,
       tag_id: tags.value[0]?.id ?? '',
       due_date: getTodayDate(),
@@ -179,17 +220,35 @@ const submit = async () => {
                 <p v-if="errors.projet_id" class="text-red-500 text-xs mt-1 font-medium">Veuillez sélectionner un projet.</p>
               </div>
 
-              <!-- Tag & Status Row -->
+              <!-- Status, Priority & Tag Row -->
               <div class="flex gap-4">
                 <div class="flex-1">
-                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Étiquette</label>
-                  <CustomSelect 
-                    v-model="form.tag_id"
-                    :options="tags.map(t => ({ value: t.id, label: t.name }))"
-                    placeholder="Sélectionner"
-                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer text-xs font-bold flex justify-between items-center"
-                  />
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Statut</label>
+                  <div class="relative">
+                    <div class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 cursor-pointer flex justify-between items-center transition-all" @click="isStatusDropdownOpen = !isStatusDropdownOpen">
+                      <div class="flex items-center gap-2 truncate">
+                        <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[form.board_column]?.colorClass]" :style="statusConfig[form.board_column]?.style">
+                          {{ statusConfig[form.board_column]?.label || form.board_column }}
+                        </span>
+                      </div>
+                      <Icon name="ph:caret-down" class="w-4 h-4 flex-shrink-0 text-secondary dark:text-gray-400 transition-transform duration-200" :class="isStatusDropdownOpen ? 'rotate-180' : ''" />
+                    </div>
+                    
+                    <!-- Dropdown -->
+                    <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-[120]"></div>
+                    <div v-if="isStatusDropdownOpen" class="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-[130] overflow-hidden">
+                      <ul class="max-h-48 overflow-y-auto custom-scrollbar p-1 flex flex-col gap-1">
+                        <li v-for="col in kanbanColumns" :key="col" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center justify-between text-sm transition-colors" @click="form.board_column = col; isStatusDropdownOpen = false">
+                          <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
+                            {{ statusConfig[col]?.label || col }}
+                          </span>
+                          <Icon v-if="form.board_column === col" name="ph:check" class="w-4 h-4 text-primary dark:text-blue-500" />
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
+
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Priorité</label>
                   <CustomSelect 
@@ -201,6 +260,16 @@ const submit = async () => {
                     ]"
                     placeholder="Priorité"
                     buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer uppercase text-xs font-bold flex justify-between items-center"
+                  />
+                </div>
+
+                <div class="flex-1">
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Étiquette</label>
+                  <CustomSelect 
+                    v-model="form.tag_id"
+                    :options="tags.map(t => ({ value: t.id, label: t.name }))"
+                    placeholder="Sélectionner"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer text-xs font-bold flex justify-between items-center"
                   />
                 </div>
               </div>

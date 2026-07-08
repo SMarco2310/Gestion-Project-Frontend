@@ -8,6 +8,7 @@ export interface Organization {
   reminder_time_start?: string;
   reminder_time_end?: string;
   kanban_columns?: string[];
+  kanban_colors?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }
@@ -116,18 +117,26 @@ export default function useOrganizations() {
     }
   };
 
-  const updateKanbanColumns = async (id: number | string, columns: string[], renames?: Record<string, string>) => {
+  const updateKanbanColumns = async (id: number | string, columns: string[], colors?: Record<string, string>, renames?: Record<string, string>) => {
     try {
       const { $api } = useNuxtApp();
-      const data = await $api<{ kanban_columns: string[] } | any>(`/organizations/${id}/kanban-columns`, {
+      const payload: any = { kanban_columns: columns, renames: renames || {} };
+      if (colors) {
+        payload.kanban_colors = colors;
+      }
+      
+      const data = await $api<{ kanban_columns: string[], kanban_colors?: Record<string, string> } | any>(`/organizations/${id}/kanban-columns`, {
         method: 'PUT',
-        body: { kanban_columns: columns, renames: renames || {} }
+        body: payload
       });
       // Update local state if it's the active org
       if (activeOrganization.value && String(activeOrganization.value.id) === String(id)) {
         activeOrganization.value.kanban_columns = data.kanban_columns;
+        if (data.kanban_colors) {
+          activeOrganization.value.kanban_colors = data.kanban_colors;
+        }
       }
-      return data.kanban_columns;
+      return data;
     } catch (error) {
       console.error(error);
       throw error;

@@ -141,12 +141,12 @@ const removeMember = async (memberId: number) => {
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Organisation</h1>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les détails et les membres de votre organisation.</p>
       </div>
-      <div class="flex items-center gap-3">
+      <!-- <div class="flex items-center gap-3">
         <NuxtLink v-if="canManageMembers" to="/organization/settings" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
           <Icon name="heroicons:cog-6-tooth" class="w-5 h-5" />
           Paramètres
         </NuxtLink>
-      </div>
+      </div> -->
     </section>
 
     <!-- Organization Info Card -->
@@ -245,10 +245,15 @@ const removeMember = async (memberId: number) => {
           </div>
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
-            <select v-model="inviteRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="member">Membre</option>
-              <option value="admin">Administrateur</option>
-            </select>
+            <CustomSelect 
+              v-model="inviteRole"
+              :options="[
+                { value: 'member', label: 'Membre' },
+                { value: 'admin', label: 'Administrateur' }
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
@@ -277,11 +282,16 @@ const removeMember = async (memberId: number) => {
               Modifier le rôle de <strong>{{ editingMember?.name }}</strong>.
             </p>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Rôle</label>
-            <select v-model="editingRole" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="membre">Membre</option>
-              <option value="admin">Administrateur</option>
-              <option v-if="currentUserRole.toLowerCase() === 'propriétaire' || currentUserRole.toLowerCase() === 'proprietaire'" value="proprietaire">Propriétaire</option>
-            </select>
+            <CustomSelect 
+              v-model="editingRole"
+              :options="[
+                { value: 'membre', label: 'Membre' },
+                { value: 'admin', label: 'Administrateur' },
+                ...(currentUserRole.toLowerCase() === 'propriétaire' || currentUserRole.toLowerCase() === 'proprietaire' ? [{ value: 'proprietaire', label: 'Propriétaire' }] : [])
+              ]"
+              placeholder="Sélectionner un rôle"
+              buttonClass="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center"
+            />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">

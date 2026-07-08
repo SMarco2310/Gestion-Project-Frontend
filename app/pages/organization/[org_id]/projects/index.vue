@@ -8,8 +8,10 @@ definePageMeta({
 import useTasks from '~/composables/useTasks'
 
 const { isOwner } = useAuth()
-const { projets, getProjets, createProjet, deleteProjet } = useProjets()
+const { projets, getProjets, createProjet, deleteProjet, archiveProjet } = useProjets()
 const { tasks, getTasks } = useTasks()
+
+const isArchivedSectionOpen = ref(false)
 
 await Promise.all([
   getProjets(),
@@ -25,6 +27,34 @@ const getProjectMetrics = (projectId: number | string) => {
   const tasksProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }
+}
+
+const getProjectUsers = (p: any) => {
+  const usersMap = new Map();
+  // Directly assigned users
+  if (p.users && Array.isArray(p.users)) {
+    p.users.forEach((u: any) => usersMap.set(u.id, u));
+  }
+  // Team members
+  if (p.teams && Array.isArray(p.teams)) {
+    p.teams.forEach((t: any) => {
+      if (t.members && Array.isArray(t.members)) {
+        t.members.forEach((u: any) => usersMap.set(u.id, u));
+      }
+    });
+  }
+  // Include project owner if available
+  if (p.user) {
+    usersMap.set(p.user.id, p.user);
+  }
+  
+  return Array.from(usersMap.values()).map((u: any) => {
+    let pic = u.profile_picture;
+    if (pic && !pic.startsWith('http')) {
+      pic = `http://localhost:8000${pic}`;
+    }
+    return { ...u, profile_picture: pic };
+  });
 }
 
 const isCreateModalOpen = ref(false)
@@ -64,6 +94,29 @@ const handleDeleteProject = async (projectId: number | string) => {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
   }
 }
+
+const handleArchiveProject = async (projectId: number | string) => {
+  try {
+    await archiveProjet(projectId, true)
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet archivé', message: 'Le projet a été archivé avec succès.' })
+  } catch (error) {
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'archiver le projet.' })
+  }
+}
+
+const handleUnarchiveProject = async (projectId: number | string) => {
+  try {
+    await archiveProjet(projectId, false)
+    const { addToast } = useToast()
+    addToast({ type: 'success', title: 'Projet désarchivé', message: 'Le projet a été désarchivé avec succès.' })
+  } catch (error) {
+    const { addToast } = useToast()
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de désarchiver le projet.' })
+  }
+}
+
 const handleCreateProjectSubmit = async (data: any) => {
   try {
     await createProjet(
@@ -71,7 +124,8 @@ const handleCreateProjectSubmit = async (data: any) => {
       data.description,
       data.status,
       data.start_date,
-      data.end_date
+      data.end_date,
+      data.color
     )
     await getProjets()
     const { addToast } = useToast()
@@ -125,6 +179,9 @@ const filteredProjets = computed(() => {
   return result
 })
 
+const activeProjects = computed(() => filteredProjets.value.filter((p: any) => !p.is_archived))
+const archivedProjects = computed(() => filteredProjets.value.filter((p: any) => p.is_archived))
+
 
 </script>
 
@@ -163,22 +220,37 @@ const filteredProjets = computed(() => {
     </header>
 
     <template v-if="projets && projets.length > 0">
-      <section v-if="filteredProjets.length > 0" id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <section v-if="activeProjects.length > 0" id="projects-section" class="pt-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <ProjetCard
-          v-for="p in filteredProjets" :key="p.id"
+          v-for="p in activeProjects" :key="p.id"
           :id="p.id"
+          :user_id="(p as any).user_id"
           :reference_code="p.reference_code"
           :name="p.name"
           :description="p.description"
           :status="(p as any).status || 'à faire'"
+          :color="p.color"
+          :is_archived="p.is_archived"
           :end_date="(p as any).end_date || ''"
           :metrics="getProjectMetrics(p.id)"
+          :users="getProjectUsers(p)"
           @cardClick="handleProjectClick"
           @delete="handleDeleteProject"
           @edit="handleEditProject"
+          @archive="handleArchiveProject"
+          @unarchive="handleUnarchiveProject"
         />
       </section>
       
+      <div v-else-if="filteredProjets.length > 0" class="flex flex-col items-center justify-center py-16 text-center">
+        <!-- We have projects but they are all archived -->
+        <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+          <Icon name="heroicons:archive-box" class="w-8 h-8 text-gray-400" />
+        </div>
+        <h3 class="text-lg font-bold text-main dark:text-white mb-2">Tous les projets sont archivés</h3>
+        <p class="text-secondary dark:text-gray-400 text-sm">Déployez la section des projets archivés ci-dessous pour les voir.</p>
+      </div>
+
       <div v-else class="flex flex-col items-center justify-center py-16 text-center">
         <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
           <Icon name="heroicons:magnifying-glass" class="w-8 h-8 text-gray-400" />
@@ -187,7 +259,36 @@ const filteredProjets = computed(() => {
         <p class="text-secondary dark:text-gray-400 text-sm">Vos filtres ou votre recherche ne correspondent à aucun projet.</p>
       </div>
 
+      <!-- Archived Projects Collapsible Section -->
+      <div v-if="archivedProjects.length > 0" class="mt-12 mb-8 border-t border-form-border dark:border-gray-800 pt-6">
+        <button @click="isArchivedSectionOpen = !isArchivedSectionOpen" class="flex items-center gap-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors font-bold group">
+          <Icon :name="isArchivedSectionOpen ? 'heroicons:chevron-down' : 'heroicons:chevron-right'" class="w-5 h-5 text-gray-400 group-hover:text-gray-500 dark:text-gray-500 dark:group-hover:text-gray-400 transition-colors" />
+          <Icon name="heroicons:archive-box" class="w-5 h-5" />
+          <span>Projets archivés ({{ archivedProjects.length }})</span>
+        </button>
 
+        <section v-show="isArchivedSectionOpen" class="pt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 opacity-70 hover:opacity-100 transition-opacity duration-300">
+          <ProjetCard
+            v-for="p in archivedProjects" :key="p.id"
+            :id="p.id"
+            :user_id="(p as any).user_id"
+            :reference_code="p.reference_code"
+            :name="p.name"
+            :description="p.description"
+            :status="(p as any).status || 'à faire'"
+            :color="p.color"
+            :is_archived="p.is_archived"
+            :end_date="(p as any).end_date || ''"
+            :metrics="getProjectMetrics(p.id)"
+            :users="getProjectUsers(p)"
+            @cardClick="handleProjectClick"
+            @delete="handleDeleteProject"
+            @edit="handleEditProject"
+            @archive="handleArchiveProject"
+            @unarchive="handleUnarchiveProject"
+          />
+        </section>
+      </div>
     </template>
 
     <template v-else>

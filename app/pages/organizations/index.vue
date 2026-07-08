@@ -30,12 +30,12 @@ onMounted(() => {
 const selectOrganization = (org: any) => {
   const { setActiveOrganization } = useOrganizations()
   setActiveOrganization(org)
-  navigateTo('/dashboard');
+  navigateTo(`/organization/${org.id}`);
 }
 
 const acceptInvitation = (inviteId: number, orgId: number) => {
   // In a real app, call $api(`/invitations/${inviteId}/accept`, { method: 'POST' })
-  navigateTo('/dashboard');
+  navigateTo(`/organization/${orgId}`);
 }
 
 const { createOrganization: apiCreateOrganization, setActiveOrganization } = useOrganizations()
@@ -59,7 +59,7 @@ const handleCreateOrganization = async () => {
   try {
     const newOrg = await apiCreateOrganization(newOrgForm.value.name, newOrgForm.value.description)
     setActiveOrganization(newOrg)
-    navigateTo('/dashboard')
+    navigateTo(`/organization/${newOrg.id}`)
   } catch (err: any) {
     createError.value = err.data?.message || 'Erreur lors de la création'
   } finally {
@@ -79,7 +79,7 @@ const handleCreateOrganization = async () => {
 
     <!-- Top Right Actions -->
     <div class="absolute top-8 right-8 z-20">
-       <NuxtLink to="/profile" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white font-medium transition-colors">
+       <NuxtLink to="/profile?source=org" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white font-medium transition-colors">
          Profil
        </NuxtLink>
     </div>

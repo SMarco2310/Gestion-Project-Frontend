@@ -11,6 +11,7 @@ interface Commentaire {
 interface CommentairePayload {
   content: string
   tache_id: number | string | null
+  mentions?: (number | string)[]
 }
 
 export default function useCommentaire() {
@@ -43,7 +44,7 @@ export default function useCommentaire() {
 
     try {
       const { $api } = useNuxtApp()
-      const data = await $api<{ commentaires: Commentaire[]; success: boolean } | any>(`/commentaires${query}`, {
+      const data = await $api<{ commentaires?: Commentaire[]; success?: boolean; data?: any } | any>(`/commentaires${query}`, {
         method: 'GET',
       })
 
@@ -104,6 +105,20 @@ export default function useCommentaire() {
     }
   }
 
+  const deleteCommentaire = async (id: number | string) => {
+    try {
+      const { $api } = useNuxtApp()
+      await $api(`/commentaires/${id}`, {
+        method: 'DELETE',
+      })
+      commentaires.value = commentaires.value.filter(c => String(c.id) !== String(id))
+      return true
+    } catch (err) {
+      console.error('Failed to delete commentaire:', err)
+      throw err
+    }
+  }
+
   return {
     commentaires,
     isLoading,
@@ -111,5 +126,6 @@ export default function useCommentaire() {
     getCommentaires,
     createCommentaire,
     updateCommentaire,
+    deleteCommentaire,
   }
 }

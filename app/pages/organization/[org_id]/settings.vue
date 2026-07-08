@@ -175,7 +175,7 @@ const confirmDelete = async () => {
       await deleteOrganization(activeOrganization.value.id)
       setActiveOrganization(null)
       addToast({ type: 'success', title: 'Succès', message: 'Organisation supprimée.' })
-      navigateTo('/dashboard')
+      navigateTo('/organizations')
     } catch (err) {
       console.error('Error deleting org', err)
       addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'organisation.' })

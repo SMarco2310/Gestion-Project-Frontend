@@ -24,6 +24,7 @@ const form = ref({
   name: '',
   description: '',
   status: ProjectStatus.TO_DO,
+  color: 'blue',
   start_date: getTodayDate(),
   end_date: getTodayDate()
 })
@@ -41,6 +42,7 @@ watch(() => props.isOpen, (newVal) => {
       name: '',
       description: '',
       status: ProjectStatus.TO_DO,
+      color: 'blue',
       start_date: getTodayDate(),
       end_date: getTodayDate()
     }
@@ -53,10 +55,13 @@ const close = () => {
 }
 
 const submit = async () => {
-  // Simple validation
+  const start = form.value.start_date ? new Date(form.value.start_date) : null
+  const end = form.value.end_date ? new Date(form.value.end_date) : null
+  const today = new Date(minDate.value)
+  
   errors.value.title = !form.value.name.trim()
   errors.value.description = !form.value.description.trim()
-  errors.value.dates = !form.value.start_date || !form.value.end_date
+  errors.value.dates = !start || !end || (start < today) || (end < start)
 
   if (errors.value.title || errors.value.description || errors.value.dates) {
     return // Stop submission if validation fails
@@ -126,14 +131,16 @@ const submit = async () => {
               <div class="flex gap-4">
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Statut</label>
-                  <select 
+                  <CustomSelect 
                     v-model="form.status"
-                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all appearance-none cursor-pointer"
-                  >
-                    <option :value="ProjectStatus.TO_DO">À faire</option>
-                    <option :value="ProjectStatus.IN_PROGRESS">En cours</option>
-                    <option :value="ProjectStatus.DONE">Terminé</option>
-                  </select>
+                    :options="[
+                      { value: ProjectStatus.TO_DO, label: 'À faire' },
+                      { value: ProjectStatus.IN_PROGRESS, label: 'En cours' },
+                      { value: ProjectStatus.DONE, label: 'Terminé' }
+                    ]"
+                    placeholder="Statut"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer flex justify-between items-center text-sm"
+                  />
                 </div>
               </div>
 
@@ -146,6 +153,7 @@ const submit = async () => {
                     <input 
                       v-model="form.start_date" 
                       type="date" 
+                      :min="minDate"
                       class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                     />
                   </div>
@@ -160,7 +168,32 @@ const submit = async () => {
                       :min="form.start_date || minDate"
                       class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
                     />
+                    <p v-if="errors.dates" class="text-red-500 text-xs mt-1 absolute -bottom-5 left-0 w-full font-medium">Dates invalides.</p>
                   </div>
+                </div>
+              </div>
+
+              <!-- Color Selection -->
+              <div>
+                <label class="block text-sm font-bold text-main dark:text-gray-300 mb-2">Couleur du dossier</label>
+                <div class="flex items-center gap-3">
+                  <button 
+                    v-for="color in ['purple', 'blue', 'green', 'rose', 'amber', 'slate']" 
+                    :key="color"
+                    @click="form.color = color"
+                    class="w-8 h-8 rounded-full border-2 transition-transform"
+                    :class="[
+                      form.color === color ? 'border-primary dark:border-blue-500 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                      {
+                        'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
+                        'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
+                        'bg-emerald-100 dark:bg-emerald-900/40': color === 'green',
+                        'bg-rose-100 dark:bg-rose-900/40': color === 'rose',
+                        'bg-amber-100 dark:bg-amber-900/40': color === 'amber',
+                        'bg-slate-200 dark:bg-slate-700': color === 'slate'
+                      }
+                    ]"
+                  ></button>
                 </div>
               </div>
 

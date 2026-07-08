@@ -8,7 +8,12 @@ export default defineNuxtConfig({
   app: {
     // Transitions disabled to fix page freezing bugs on route change
     pageTransition: false,
-    layoutTransition: false
+    layoutTransition: false,
+    head:{
+      link:[
+        { rel: 'icon', type: 'image/png', href: '/logo.png' }
+      ]
+    }
   },
   runtimeConfig: {
     public: {
@@ -36,9 +41,6 @@ export default defineNuxtConfig({
 
     '/auth/**':{
     },
-    '/dashboard/**':{
-      
-    }
   }
   
 })

@@ -13,6 +13,7 @@ interface Projet{
   created_at: string,
   updated_at: string,
   id: number|string|any,
+  is_archived?: boolean,
 }
 
 export default function useProjets() {
@@ -146,7 +147,8 @@ export default function useProjets() {
             const proj = data.projet ?? data
             const index = projets.value.findIndex(p => String(p.id) === String(id))
             if (index !== -1) {
-                projets.value[index].is_archived = isArchived
+                const found = projets.value[index]
+                if (found) found.is_archived = isArchived
             }
             return proj
         } catch (error: any) {

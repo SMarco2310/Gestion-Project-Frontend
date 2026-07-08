@@ -202,13 +202,11 @@ const submit = async () => {
                 <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">
                   Description <span class="text-red-500">*</span>
                 </label>
-                <textarea 
+                <RichTextEditor 
                   v-model="form.description" 
-                  rows="4"
-                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all resize-none"
-                  :class="errors.description ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
-                  placeholder="Décrivez les objectifs et détails de ce projet..."
-                ></textarea>
+                  class="w-full"
+                  :class="errors.description ? 'ring-1 ring-red-500' : ''"
+                />
                 <p v-if="errors.description" class="text-red-500 text-xs mt-1 font-medium">Ce champ est requis.</p>
               </div>
 

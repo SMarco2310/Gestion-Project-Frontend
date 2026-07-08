@@ -64,8 +64,8 @@ const projectEndDate = ref('')
 const taskStatus = ref('')
 const taskPriority = ref('')
 const taskReference = ref('')
-const taskTagId = ref<number | string | null>(null)
-const taskTag = ref<any>(null)
+const taskTagIds = ref<(number | string)[]>([])
+const taskTags = ref<any[]>([])
 const taskDueDate = ref('')
 const taskCreatedAt = ref('')
 const taskUpdatedAt = ref('')
@@ -85,8 +85,8 @@ const setTask = async (id: string | number | null) => {
       if (task.priority) taskPriority.value = task.priority
       if (task.board_column) taskBoardColumn.value = task.board_column
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
-      taskTagId.value = task.tag_id || null
-      taskTag.value = task.tag || null
+      taskTagIds.value = task.tag_ids || []
+      taskTags.value = task.tags || []
       taskDueDate.value = task.due_date || 'Aucune'
       taskCreatedAt.value = task.created_at || ''
       taskUpdatedAt.value = task.updated_at || ''
@@ -253,7 +253,7 @@ const updateDueDate = async (event: Event) => {
   const target = event.target as HTMLInputElement
   const newDate = target.value
   try {
-    await updateTask((route.params.id as string), { due_date: newDate || null })
+    await updateTask((route.params.id as string), { due_date: newDate || undefined })
     taskDueDate.value = newDate || 'Aucune'
     addToast({ title: 'Échéance modifiée', message: 'La date a été mise à jour.', type: 'success' })
   } catch (err) {
@@ -410,16 +410,22 @@ const updatePriority = async (newPriority: string) => {
   }
 }
 
-const updateTag = async (newTagId: number | string | null) => {
+const toggleTag = async (tag: any) => {
   if (!(route.params.id as string)) return
   try {
-    await updateTask((route.params.id as string), { tag_id: newTagId })
-    taskTagId.value = newTagId
-    taskTag.value = tags.value.find(t => t.id === newTagId) || null
-    isTagDropdownOpen.value = false
-    addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
+    let newTagIds = [...taskTagIds.value]
+    if (newTagIds.includes(tag.id)) {
+      newTagIds = newTagIds.filter(id => id !== tag.id)
+    } else {
+      newTagIds.push(tag.id)
+    }
+    
+    await updateTask((route.params.id as string), { tag_ids: newTagIds as any })
+    
+    taskTagIds.value = newTagIds
+    taskTags.value = tags.value.filter(t => newTagIds.includes(t.id))
   } catch (err) {
-    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'étiquette.', type: 'error' })
+    addToast({ title: 'Erreur', message: 'Impossible de modifier les étiquettes.', type: 'error' })
   }
 }
 
@@ -530,7 +536,8 @@ const resetState = () => {
   taskStatus.value = ''
   taskPriority.value = ''
   taskReference.value = ''
-  taskTag.value = ''
+  taskTags.value = []
+  taskTagIds.value = []
   taskDueDate.value = ''
   taskCreatedAt.value = ''
   taskUpdatedAt.value = ''
@@ -681,22 +688,20 @@ watch(() => true, (newIsOpen) => {
                   </div>
                 </div>
 
-                <!-- Tags (Single Tag for id.vue) -->
+                <!-- Tags -->
                 <div class="relative">
                   <button @click="isTagDropdownOpen = !isTagDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs transition-colors hover:brightness-105">
                     <Icon name="heroicons:tag" class="w-3.5 h-3.5" /> 
-                    <span v-if="taskTag" class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-white shadow-sm" :style="{ backgroundColor: taskTag.color || '#9CA3AF' }">{{ taskTag.name }}</span>
-                    <span v-else>Étiquette</span>
+                    <div v-if="taskTags.length > 0" class="flex gap-1">
+                      <span v-for="tag in taskTags" :key="tag.id" class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-white shadow-sm" :style="{ backgroundColor: tag.color || '#9CA3AF' }">{{ tag.name }}</span>
+                    </div>
+                    <span v-else>Étiquettes</span>
                   </button>
                   <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
                   <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                    <button @click="updateTag(null)" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === null ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', 'text-gray-600 dark:text-gray-400']">
-                      SANS ÉTIQUETTE
-                      <Icon v-if="taskTagId === null" name="heroicons:check" class="w-4 h-4" />
-                    </button>
-                    <button @click="updateTag(tag.id)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagId === tag.id ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
+                    <button @click="toggleTag(tag)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagIds.includes(tag.id) ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
                       {{ tag.name }}
-                      <Icon v-if="taskTagId === tag.id" name="heroicons:check" class="w-4 h-4" />
+                      <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -730,10 +735,9 @@ watch(() => true, (newIsOpen) => {
               
               <div class="mb-8">
                 <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Description</h3>
-                <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-text transition-colors whitespace-pre-wrap min-h-[60px]">
-                  {{ taskDescription }}
+                <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 cursor-text transition-colors min-h-[60px] prose dark:prose-invert max-w-none focus:outline-none" v-html="taskDescription || 'Ajouter une description...'">
                 </div>
-                <textarea v-else v-model="editDescription" class="w-full h-32 p-4 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
+                <RichTextEditor v-else v-model="editDescription" class="w-full" />
               </div>
 
               <!-- Sous-tâches -->

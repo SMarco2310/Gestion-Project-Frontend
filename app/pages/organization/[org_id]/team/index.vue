@@ -143,7 +143,7 @@ const handleCreateTeam = async () => {
           </div>
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
-            <textarea v-model="newTeamDesc" rows="3" placeholder="Description de l'équipe..." class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"></textarea>
+            <RichTextEditor v-model="newTeamDesc" class="w-full" />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">

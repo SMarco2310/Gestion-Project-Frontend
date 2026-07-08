@@ -411,7 +411,7 @@ const toggleTag = async (tag: any) => {
       newTagIds.push(tag.id)
     }
     
-    await updateTask(props.taskId, { tag_ids: newTagIds })
+    await updateTask(props.taskId, { tag_ids: newTagIds as any })
     
     taskTagIds.value = newTagIds
     taskTags.value = tags.value.filter(t => newTagIds.includes(t.id))
@@ -437,7 +437,7 @@ const openCreateLabel = () => {
     isCreatingLabel.value = true
     editingLabelId.value = null
     labelFormName.value = ''
-    labelFormColor.value = defaultColors[0]
+    labelFormColor.value = defaultColors[0] || '#10B981'
 }
 
 const openEditLabel = (label: any) => {
@@ -861,10 +861,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                   </div>
                   <button v-if="!isEditing" @click="startEditing" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm">Modifier</button>
                 </div>
-                <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-lg neo-input bg-gray-50 dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-100 dark:hover:bg-[#202022] cursor-text transition-colors whitespace-pre-wrap min-h-[60px] shadow-inner">
-                  {{ taskDescription }}
+                <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-lg neo-input bg-gray-50 dark:bg-[#1A1A1D] text-secondary dark:text-gray-400 text-sm hover:bg-gray-100 dark:hover:bg-[#202022] cursor-text transition-colors min-h-[60px] shadow-inner prose dark:prose-invert max-w-none focus:outline-none" v-html="taskDescription || 'Ajouter une description...'">
                 </div>
-                <textarea v-else v-model="editDescription" class="w-full h-32 p-4 rounded-lg neo-input bg-gray-50 dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar shadow-inner"></textarea>
+                <RichTextEditor v-else v-model="editDescription" class="w-full shadow-inner" />
               </div>
 
               <!-- Sous-tâches -->

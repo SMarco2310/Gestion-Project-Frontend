@@ -396,10 +396,9 @@ const updateStatus = async (status: string) => {
           <!-- Description -->
           <div class="mb-8">
             <h3 class="text-base font-bold text-main dark:text-gray-200 mb-2">Description</h3>
-            <div v-if="!isEditing" @click="startEditing" class="text-secondary dark:text-gray-400 text-sm leading-relaxed whitespace-pre-wrap cursor-text p-2 -ml-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-              {{ projectDescription }}
+            <div v-if="!isEditing" @click="startEditing" class="text-secondary dark:text-gray-400 text-sm cursor-text p-2 -ml-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors prose dark:prose-invert max-w-none focus:outline-none min-h-[60px]" v-html="projectDescription || 'Ajouter une description...'">
             </div>
-            <textarea v-else v-model="editDescription" class="w-full h-32 p-3 rounded-lg neo-input bg-[#F4F5F7] dark:bg-[#1A1A1D] text-main dark:text-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 resize-y custom-scrollbar"></textarea>
+            <RichTextEditor v-else v-model="editDescription" class="w-full" />
           </div>
 
           <!-- Color Selection (Only in Edit Mode) -->

@@ -190,7 +190,7 @@ const handleInviteNew = async () => {
           </NuxtLink>
           <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">{{ team.name }}</h1>
         </div>
-        <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">{{ team.description }}</p>
+        <div class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1 prose dark:prose-invert max-w-none" v-html="team.description"></div>
       </div>
       <div class="flex items-center gap-3 self-end sm:self-auto">
         <button @click="openEditModal" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-main dark:text-white font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-2">
@@ -277,7 +277,7 @@ const handleInviteNew = async () => {
           </div>
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
-            <textarea v-model="editTeamForm.description" rows="3" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"></textarea>
+            <RichTextEditor v-model="editTeamForm.description" class="w-full" />
           </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">

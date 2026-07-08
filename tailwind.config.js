@@ -1,6 +1,7 @@
-import type { Config } from 'tailwindcss'
+import typography from '@tailwindcss/typography'
 
-export default <Partial<Config>>{
+/** @type {import('tailwindcss').Config} */
+export default {
   darkMode: 'class', // Allow manual dark mode toggling using a 'dark' class
   theme: {
     extend: {
@@ -16,4 +17,7 @@ export default <Partial<Config>>{
       },
     },
   },
+  plugins: [
+    typography,
+  ]
 }

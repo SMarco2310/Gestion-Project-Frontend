@@ -56,12 +56,14 @@ const openCount = computed(() => tasks.value.filter((task) => !isDone(task.statu
 const projectsCount = computed(() => projets.value.length)
 const commentsCount = computed(() => commentaires.value.length)
 
+const orgMembersCount = ref(0)
+
 const totalUsersCount = computed(() => {
-  return activeOrganization.value?.users?.length || activeOrganization.value?.members?.length || 1
+  return orgMembersCount.value || (activeOrganization.value as any)?.users?.length || (activeOrganization.value as any)?.members?.length || 1
 })
 
 const activeProjectsCount = computed(() => {
-  return projets.value.filter(p => !isDone(p.status)).length
+  return projets.value.filter(p => !isDone(p.status) && !p.is_archived).length
 })
 
 const recentCount = computed(() => {
@@ -131,18 +133,34 @@ const statusMetrics = computed(() => {
 
   if (total === 0) {
     return kanbanColumns.value.slice(0, 3).map((col, i) => ({
-      label: col, percentage: '0%', colorClass: colors[i % colors.length].class, colorCode: colors[i % colors.length].code, rawPercent: 0
+      label: col, percentage: '0%', colorClass: colors[i % colors.length]?.class || 'bg-[#FFB78C]', colorCode: colors[i % colors.length]?.code || '#FFB78C', rawPercent: 0
     }))
   }
 
   return kanbanColumns.value.slice(0, 3).map((col, i) => {
-    const count = tasks.value.filter((task) => task.status === col).length
+    let count = 0
+    tasks.value.forEach((task) => {
+      // Determine which column this task belongs to
+      let assignedCol = null
+      if (task.board_column && kanbanColumns.value.includes(task.board_column)) {
+        assignedCol = task.board_column
+      } else if (task.status) {
+        const matched = kanbanColumns.value.find(c => c.toLowerCase() === task.status.toLowerCase())
+        if (matched) assignedCol = matched
+      }
+      
+      // If it belongs to THIS column, increment
+      if (assignedCol === col) {
+        count++
+      }
+    })
+    
     return {
       label: col,
-      percentage: `${Math.round((count / total) * 100)}%`,
-      colorClass: colors[i % colors.length].class,
-      colorCode: colors[i % colors.length].code,
-      rawPercent: (count / total) * 100
+      percentage: `${total > 0 ? Math.round((count / total) * 100) : 0}%`,
+      colorClass: colors[i % colors.length]?.class || 'bg-[#FFB78C]',
+      colorCode: colors[i % colors.length]?.code || '#FFB78C',
+      rawPercent: total > 0 ? (count / total) * 100 : 0
     }
   })
 })
@@ -216,6 +234,15 @@ const recentCommentsData = computed(() => {
 })
 
 onMounted(async () => {
+  if (activeOrganization.value) {
+    const { getMembers } = useOrganizations()
+    getMembers(activeOrganization.value.id).then((res: any) => {
+      if (res && res.length !== undefined) {
+        orgMembersCount.value = res.length
+      }
+    }).catch(() => null)
+  }
+
   await Promise.all([
     getProfile().catch(() => null),
     getTasks().catch(() => null),

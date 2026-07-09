@@ -1,8 +1,28 @@
 <script setup lang="ts">
+import { AreaChart } from 'vue-chrts'
+
 // Landing page does not need auth middleware
 definePageMeta({
   layout: false // explicitly disable any layout just in case
 })
+
+const chartData = [
+  { month: 'Jan', Activity: 400 },
+  { month: 'Fév', Activity: 600 },
+  { month: 'Mar', Activity: 500 },
+  { month: 'Avr', Activity: 800 },
+  { month: 'Mai', Activity: 1200 },
+  { month: 'Juin', Activity: 1500 },
+]
+
+const categories = {
+  Activity: {
+    name: 'Activité Globale',
+    color: '#3b82f6'
+  }
+}
+
+const xFormatter = (i: number) => chartData[i]?.month || ''
 </script>
 
 <template>
@@ -103,14 +123,19 @@ definePageMeta({
             </p>
           </div>
 
-          <!-- Feature 4 (Illustration placeholder) -->
-          <div class="p-8 rounded-2xl bg-[#F8FAFC] border border-slate-100 shadow-sm flex items-center justify-center min-h-[200px]">
-             <div class="flex items-center gap-4 text-slate-400">
-               <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 font-medium text-slate-600">A</div>
-               <div class="h-px w-16 bg-gradient-to-r from-transparent via-blue-400 to-transparent"></div>
-               <div class="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center border border-slate-100 text-blue-500">
-                 <Icon name="heroicons:arrows-right-left" class="w-4 h-4" />
-               </div>
+          <!-- Feature 4 (Interactive Analytics Illustration) -->
+          <div class="p-8 rounded-2xl bg-[#F8FAFC] border border-slate-100 shadow-sm flex flex-col justify-center min-h-[300px]">
+             <h3 class="text-sm font-bold text-slate-900 mb-4 tracking-tight uppercase">Analytique Intégrée</h3>
+             <div class="flex-1 w-full relative">
+               <ClientOnly>
+                 <AreaChart
+                   :data="chartData"
+                   :categories="categories"
+                   :xFormatter="xFormatter"
+                   :height="220"
+                   class="w-full h-full"
+                 />
+               </ClientOnly>
              </div>
           </div>
         </div>

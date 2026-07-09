@@ -691,14 +691,11 @@ watch(() => true, (newIsOpen) => {
                 <!-- Tags -->
                 <div class="relative">
                   <button @click="isTagDropdownOpen = !isTagDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs transition-colors hover:brightness-105">
-                    <Icon name="heroicons:tag" class="w-3.5 h-3.5" /> 
-                    <div v-if="taskTags.length > 0" class="flex gap-1">
-                      <span v-for="tag in taskTags" :key="tag.id" class="px-1.5 py-0.5 rounded text-[10px] uppercase font-bold text-white shadow-sm" :style="{ backgroundColor: tag.color || '#9CA3AF' }">{{ tag.name }}</span>
-                    </div>
-                    <span v-else>Étiquettes</span>
+                    <Icon name="heroicons:tag" class="w-3.5 h-3.5" /> Étiquettes
+                    <span v-if="taskTags.length > 0" class="ml-1 px-1.5 py-0.5 rounded-full bg-gray-300 dark:bg-gray-700 text-[10px]">{{ taskTags.length }}</span>
                   </button>
                   <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
+                  <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
                     <button @click="toggleTag(tag)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagIds.includes(tag.id) ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
                       {{ tag.name }}
                       <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4" />
@@ -731,6 +728,13 @@ watch(() => true, (newIsOpen) => {
                   <input v-if="isEditing" v-model="editDueDate" type="date" :max="projectEndDate" class="bg-transparent border-none focus:ring-0 text-xs font-bold text-main dark:text-gray-300 cursor-pointer pr-2" />
                   <span v-else class="text-xs font-bold text-main dark:text-gray-300 pr-3">{{ formatDisplayDate(taskDueDate) }}</span>
                 </div>
+              </div>
+
+              <!-- Display selected labels if any -->
+              <div v-if="taskTags.length > 0" class="flex flex-wrap gap-1.5 mb-6">
+                <span v-for="tag in taskTags" :key="tag.id" class="px-2 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '20', color: tag.color || '#9CA3AF' }">
+                  {{ tag.name }}
+                </span>
               </div>
               
               <div class="mb-8">
@@ -769,7 +773,7 @@ watch(() => true, (newIsOpen) => {
             </div>
 
             <!-- Sidebar (Right) -->
-            <div class="w-full md:w-[350px] lg:w-[400px] shrink-0 bg-[#F4F5F7] dark:bg-[#1A1A1D] md:overflow-y-auto p-4 sm:p-6 custom-scrollbar border-t md:border-t-0 md:border-l border-form-border dark:border-gray-800 flex flex-col">
+            <div class="w-full md:w-[450px] lg:w-[500px] xl:w-[600px] shrink-0 bg-[#F4F5F7] dark:bg-[#1A1A1D] md:overflow-y-auto p-4 sm:p-6 custom-scrollbar border-t md:border-t-0 md:border-l border-form-border dark:border-gray-800 flex flex-col">
               
               <div class="flex items-center justify-between mb-6">
                 <div class="flex items-center gap-2 text-main dark:text-gray-200">
@@ -845,7 +849,7 @@ watch(() => true, (newIsOpen) => {
               </div>
             </div>
           </div>
-        </div>
+  </div>
       <CreateTaskModal
         :is-open="isCreateSubtaskModalOpen"
         :parent-task-id="(route.params.id as string)"

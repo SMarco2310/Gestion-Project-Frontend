@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 const {user,updateProfile,logout,uploadProfilePicture}=useAuth();
+const colorMode = useColorMode()
 
 const router = useRouter();
 const route = useRoute();
@@ -180,6 +181,40 @@ const formatDate = (dateString?: string) => {
                     <span class="text-[#FCA5A5] text-sm font-medium text-left whitespace-nowrap truncate mr-2 group-hover:text-red-400 transition-colors">Se déconnecter partout</span>
                     <Icon name="heroicons:arrow-right-on-rectangle" class="w-4 h-4 text-[#FCA5A5] flex-shrink-0 group-hover:text-red-400 transition-colors" />
                 </button>
+            </div>
+
+            <!-- Appearance Card -->
+            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-lg">
+                <div class="flex items-center gap-2 mb-4 px-1">
+                    <Icon name="heroicons:paint-brush" class="w-5 h-5 text-secondary dark:text-gray-300" />
+                    <h3 class="font-bold text-main dark:text-gray-200">Apparence</h3>
+                </div>
+                
+                <div class="space-y-2">
+                    <button @click="colorMode.preference = 'light'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'light' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                        <span class="flex items-center gap-3">
+                            <Icon name="heroicons:sun" class="w-5 h-5 text-amber-500" />
+                            <span class="text-main dark:text-gray-300 text-sm font-medium">Mode clair</span>
+                        </span>
+                        <Icon v-if="colorMode.preference === 'light'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
+                    </button>
+                    
+                    <button @click="colorMode.preference = 'dark'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'dark' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                        <span class="flex items-center gap-3">
+                            <Icon name="heroicons:moon" class="w-5 h-5 text-indigo-400" />
+                            <span class="text-main dark:text-gray-300 text-sm font-medium">Mode sombre</span>
+                        </span>
+                        <Icon v-if="colorMode.preference === 'dark'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
+                    </button>
+                    
+                    <button @click="colorMode.preference = 'system'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'system' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                        <span class="flex items-center gap-3">
+                            <Icon name="heroicons:computer-desktop" class="w-5 h-5 text-secondary dark:text-gray-400" />
+                            <span class="text-main dark:text-gray-300 text-sm font-medium">Système</span>
+                        </span>
+                        <Icon v-if="colorMode.preference === 'system'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
+                    </button>
+                </div>
             </div>
         </div>
         

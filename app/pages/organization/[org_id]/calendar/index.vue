@@ -6,6 +6,8 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction'
 import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
+import CreateTaskModal from '~/components/CreateTaskModal.vue'
+import CreateProjectModal from '~/components/CreateProjectModal.vue'
 
 definePageMeta({
   layout: 'custom',
@@ -14,8 +16,6 @@ definePageMeta({
 const { tasks, getTasks, updateTask } = useTasks()
 const { projets, getProjets } = useProjets()
 
-const isSidebarOpen = ref(false)
-const externalEventsRef = ref<HTMLElement | null>(null)
 const calendarRef = ref<any>(null)
 let draggableInstance: any = null
 
@@ -27,12 +27,11 @@ const goPrev = () => calendarRef.value?.getApi().prev()
 const goNext = () => calendarRef.value?.getApi().next()
 const goToday = () => calendarRef.value?.getApi().today()
 
-const activeView = ref('timeGridWeek')
+const activeView = ref('dayGridMonth')
 const isViewDropdownOpen = ref(false)
 
 const viewOptions = [
   { value: 'dayGridMonth', label: 'Ce mois' },
-  { value: 'timeGridWeek', label: 'Cette semaine' },
   { value: 'timeGridDay', label: 'Aujourd\'hui' }
 ]
 
@@ -44,15 +43,32 @@ const changeView = (viewValue: string) => {
 
 const currentViewLabel = computed(() => {
   const view = viewOptions.find(v => v.value === activeView.value)
-  return view ? view.label : 'Cette semaine'
+  return view ? view.label : 'Ce mois'
 })
 
-// Close dropdown when clicking outside
+const isCreateTaskModalOpen = ref(false)
+const isCreateProjectModalOpen = ref(false)
+const isAddEventDropdownOpen = ref(false)
+
+const openCreateTask = () => {
+  isAddEventDropdownOpen.value = false
+  isCreateTaskModalOpen.value = true
+}
+
+const openCreateProject = () => {
+  isAddEventDropdownOpen.value = false
+  isCreateProjectModalOpen.value = true
+}
+
+// Close dropdowns when clicking outside
 onMounted(() => {
   document.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
     if (!target.closest('.view-dropdown')) {
       isViewDropdownOpen.value = false
+    }
+    if (!target.closest('.add-event-dropdown')) {
+      isAddEventDropdownOpen.value = false
     }
   })
 })
@@ -75,10 +91,6 @@ const activeFilterCount = computed(() => {
 const handleFiltersUpdate = (newFilters: any) => {
   activeFilters.value = newFilters
 }
-
-const unscheduledTasks = computed(() => {
-  return tasks.value.filter((task: any) => !task.due_date)
-})
 
 const calendarEvents = computed(() => {
   const taskEvents = tasks.value
@@ -152,20 +164,6 @@ onMounted(async () => {
   }
   
   await Promise.all([getTasks(), getProjets()])
-  
-  if (externalEventsRef.value) {
-    draggableInstance = new Draggable(externalEventsRef.value, {
-      itemSelector: '.fc-event',
-      eventData: function(eventEl) {
-        return {
-          title: eventEl.innerText,
-          id: 't-' + eventEl.dataset.taskId,
-          backgroundColor: eventEl.dataset.color,
-          borderColor: eventEl.dataset.color
-        }
-      }
-    })
-  }
 })
 
 onUnmounted(() => {
@@ -190,24 +188,7 @@ const calendarOptions = computed(() => ({
   allDaySlot: true,
   height: '100%',
   datesSet: (arg: any) => {
-    // Attempt to format like '01-07 January 2025' or fallback to default title
-    if (arg.view.type === 'timeGridWeek') {
-      const start = arg.start
-      const end = new Date(arg.end)
-      end.setDate(end.getDate() - 1) // end is exclusive in FC
-      
-      const formatMonth = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' })
-      const startMonth = formatMonth.format(start)
-      const endMonth = formatMonth.format(end)
-      
-      if (startMonth === endMonth) {
-         currentTitle.value = `${String(start.getDate()).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')} ${startMonth}`
-      } else {
-         currentTitle.value = arg.view.title
-      }
-    } else {
-      currentTitle.value = arg.view.title
-    }
+    currentTitle.value = arg.view.title
   },
   eventClick: (clickInfo: any) => {
     // In a real app, open the task side sheet
@@ -234,19 +215,9 @@ const calendarOptions = computed(() => ({
 <template>
   <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4">
     <header class="pb-4 flex justify-between items-center">
-      <div class="flex items-center gap-2 text-sm font-semibold text-secondary dark:text-gray-400">
-        <span class="hover:text-main dark:hover:text-gray-200 cursor-pointer transition-colors">Projets</span>
-        <Icon name="heroicons:chevron-right" class="w-4 h-4" />
-        <span class="text-main dark:text-gray-200 font-bold">Planning</span>
+      <div class="py-2 pb-5">
+        <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Planning</h1>
       </div>
-      <button 
-        @click="isSidebarOpen = !isSidebarOpen" 
-        class="px-4 py-2.5 rounded-xl transition-all duration-300 flex items-center gap-3 relative group font-bold text-white bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] hover:scale-[1.02] active:scale-95"
-        :class="{'ring-2 ring-primary dark:ring-blue-500': isSidebarOpen}"
-      >
-        <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 drop-shadow-md shrink-0" />
-        <span class="relative z-10 tracking-wide hidden sm:inline">Backlog</span>
-      </button>
     </header>
 
     <div class="flex-1 flex gap-4 overflow-hidden h-full relative">
@@ -336,14 +307,38 @@ const calendarOptions = computed(() => ({
               </template>
             </FilterDropdown>
             
-            <button class="flex items-center gap-2 px-5 py-2 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all">
-              <Icon name="heroicons:plus" class="w-4 h-4 drop-shadow-md" />
-              <span class="tracking-wide drop-shadow-sm">Add Event</span>
-            </button>
+            <div class="relative z-30 add-event-dropdown">
+              <button 
+                @click="isAddEventDropdownOpen = !isAddEventDropdownOpen"
+                class="flex items-center gap-2 px-5 py-2 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                <Icon name="heroicons:plus" class="w-4 h-4 drop-shadow-md" />
+                <span class="tracking-wide drop-shadow-sm">Ajouter</span>
+              </button>
+              
+              <transition name="fade">
+                <div v-if="isAddEventDropdownOpen" class="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#252525] border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden py-1">
+                  <div 
+                    @click="openCreateProject"
+                    class="px-4 py-2.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1D1D1D] transition-colors flex items-center gap-2 font-bold text-main dark:text-gray-300"
+                  >
+                    <Icon name="heroicons:briefcase" class="w-4 h-4 text-blue-500" />
+                    Projet
+                  </div>
+                  <div 
+                    @click="openCreateTask"
+                    class="px-4 py-2.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1D1D1D] transition-colors flex items-center gap-2 font-bold text-main dark:text-gray-300"
+                  >
+                    <Icon name="heroicons:check-circle" class="w-4 h-4 text-emerald-500" />
+                    Tâche
+                  </div>
+                </div>
+              </transition>
+            </div>
           </div>
         </div>
 
-        <FullCalendar ref="calendarRef" class="flex-1 h-full" :options="calendarOptions">
+        <FullCalendar ref="calendarRef" class="flex-1 h-full " :options="calendarOptions">
           <template v-slot:dayHeaderContent="arg">
             <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
@@ -426,47 +421,18 @@ const calendarOptions = computed(() => ({
         </FullCalendar>
       </div>
 
-      <!-- Unscheduled Tasks Sidebar -->
-      <Transition 
-        enter-active-class="transition duration-200 ease-out"
-        enter-from-class="transform translate-x-12 opacity-0"
-        enter-to-class="transform translate-x-0 opacity-100"
-        leave-active-class="transition duration-150 ease-in"
-        leave-from-class="transform translate-x-0 opacity-100"
-        leave-to-class="transform translate-x-12 opacity-0"
-      >
-        <div v-show="isSidebarOpen" class="absolute inset-y-0 right-0 z-40 md:static md:z-auto w-80 shrink-0 bg-white dark:bg-[#1D1D1D] rounded-xl border border-form-border dark:border-gray-800 flex flex-col neo-shadow overflow-hidden h-full">
-          <div class="p-4 border-b border-form-border dark:border-gray-800 bg-gray-50 dark:bg-black/20 flex justify-between items-center">
-            <h3 class="font-bold text-main dark:text-white">Tâches non planifiées</h3>
-            <span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-bold">{{ unscheduledTasks.length }}</span>
-          </div>
-          
-          <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2 custom-scrollbar" ref="externalEventsRef">
-            <div 
-              v-for="task in unscheduledTasks" 
-              :key="task.id" 
-              :data-task-id="task.id"
-              :data-color="task.priority === 'haute' ? '#ef4444' : task.priority === 'basse' ? '#10b981' : '#3b82f6'"
-              class="fc-event bg-canvas dark:bg-[#151515] p-3 rounded-lg border border-form-border dark:border-gray-800 cursor-grab active:cursor-grabbing hover:border-primary transition-colors group relative"
-            >
-              <div class="flex items-center gap-2 mb-1">
-                 <Icon name="heroicons:bolt" class="w-4 h-4 shrink-0" :class="task.priority === 'haute' ? 'text-red-500' : task.priority === 'basse' ? 'text-emerald-500' : 'text-blue-500'" />
-                 <span class="text-sm font-semibold text-main dark:text-gray-200 line-clamp-1 flex-1">{{ task.title }}</span>
-              </div>
-              <div class="flex items-center justify-between mt-2 pl-6">
-                <span class="text-xs text-secondary dark:text-gray-500 font-mono">{{ task.reference_code || `TSK-${task.id}` }}</span>
-                <span class="text-[10px] uppercase font-bold border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5 whitespace-nowrap" :class="{'bg-gray-100 dark:bg-gray-800 text-gray-500': task.status === 'à faire'}">{{ task.status }}</span>
-              </div>
-            </div>
-            
-            <div v-if="unscheduledTasks.length === 0" class="text-center p-8 text-secondary dark:text-gray-500 flex flex-col items-center gap-2 mt-10">
-              <Icon name="heroicons:check-badge" class="w-10 h-10 text-emerald-500/50" />
-              <p class="text-sm font-medium">Toutes les tâches sont planifiées !</p>
-            </div>
-          </div>
-        </div>
-      </Transition>
     </div>
+
+    <CreateTaskModal 
+      :isOpen="isCreateTaskModalOpen" 
+      @close="isCreateTaskModalOpen = false" 
+      @created="getTasks"
+    />
+    <CreateProjectModal 
+      :isOpen="isCreateProjectModalOpen" 
+      @close="isCreateProjectModalOpen = false" 
+      @created="getProjets"
+    />
   </div>
 </template>
 

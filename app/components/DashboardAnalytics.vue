@@ -15,7 +15,10 @@ const topStats = computed(() => [
 
 const currentYear = new Date().getFullYear()
 
-const chartPoints = computed(() => {
+import { AreaChart } from 'vue-chrts'
+
+const chartData = computed(() => {
+  const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
   const counts = new Array(12).fill(0)
   props.tasks.forEach(task => {
     if (task.created_at) {
@@ -26,15 +29,57 @@ const chartPoints = computed(() => {
     }
   })
   
-  const max = Math.max(...counts, 1)
-  
-  return counts.map((count, index) => {
-    const x = (index / 11) * 550
-    const y = 180 - (count / max) * 150
-    return `${x},${y}`
-  }).join(' ')
+  return counts.map((count, index) => ({
+    month: months[index],
+    tasks: count
+  }))
 })
 
+const categories = {
+  tasks: {
+    name: 'Tâches Créées',
+    color: '#3b82f6'
+  }
+}
+
+const xFormatter = (i: number) => chartData.value[i]?.month || ''
+
+const dailyChartData = computed(() => {
+  const data: { date: Date; label: string; count: number }[] = []
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  
+  // Last 14 days
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    d.setHours(0, 0, 0, 0)
+    data.push({
+      date: d,
+      label: `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`,
+      count: 0
+    })
+  }
+
+  props.tasks.forEach(task => {
+    if (task.created_at) {
+      const d = new Date(task.created_at)
+      d.setHours(0, 0, 0, 0)
+      
+      const target = data.find(item => item.date.getTime() === d.getTime())
+      if (target) {
+        target.count++
+      }
+    }
+  })
+
+  return data.map(item => ({
+    day: item.label,
+    tasks: item.count
+  }))
+})
+
+const xDailyFormatter = (i: number) => dailyChartData.value[i]?.day || ''
 
 const recentTasks = computed(() => {
   return [...props.tasks]
@@ -94,42 +139,45 @@ const recentTasks = computed(() => {
     </div>
 
     <!-- Middle Row: Charts -->
-    <div class="grid grid-cols-1 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
-      <!-- Line Chart Card -->
+      <!-- Monthly Line Chart Card -->
       <div class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 flex flex-col h-[350px]">
         <div class="flex items-center justify-between mb-8">
           <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ MENSUELLE</h3>
           <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">{{ currentYear }}</span>
         </div>
         
-        <div class="flex-1 w-full relative">
-          <!-- Custom SVG Line Chart -->
-          <svg viewBox="0 -10 550 180" class="w-full h-[85%] absolute bottom-8 overflow-visible" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.15" />
-                <stop offset="100%" stop-color="#3B82F6" stop-opacity="0" />
-              </linearGradient>
-            </defs>
-            <path 
-              :d="`M0,180 L${chartPoints} L550,180 Z`" 
-              fill="url(#lineGradient)" 
+        <div class="flex-1 w-full relative h-[250px]">
+          <ClientOnly>
+            <AreaChart
+              :data="chartData"
+              :categories="categories"
+              :xFormatter="xFormatter"
+              :height="240"
+              class="w-full h-full"
             />
-            <polyline 
-              :points="chartPoints" 
-              fill="none" 
-              stroke="#3B82F6" 
-              stroke-width="2.5" 
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          </ClientOnly>
+        </div>
+      </div>
+
+      <!-- Daily Line Chart Card -->
+      <div class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 flex flex-col h-[350px]">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ QUOTIDIENNE</h3>
+          <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">14 Jours</span>
+        </div>
+        
+        <div class="flex-1 w-full relative h-[250px]">
+          <ClientOnly>
+            <AreaChart
+              :data="dailyChartData"
+              :categories="categories"
+              :xFormatter="xDailyFormatter"
+              :height="240"
+              class="w-full h-full"
             />
-          </svg>
-          
-          <!-- X Axis Labels -->
-          <div class="absolute bottom-0 w-full flex justify-between text-[10px] font-bold text-gray-300 dark:text-gray-600 px-1">
-            <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span>
-          </div>
+          </ClientOnly>
         </div>
       </div>
     </div>

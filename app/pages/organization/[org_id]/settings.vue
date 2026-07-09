@@ -238,9 +238,11 @@ const confirmDelete = async () => {
                   <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : 'http://localhost:8000' + activeOrganization.logo" class="w-full h-full object-cover" />
                   <span v-else class="text-2xl font-bold text-blue-500">{{ activeOrganization?.name?.substring(0, 2).toUpperCase() }}</span>
                 </div>
-                <button @click="triggerFileInput" type="button" class="absolute -bottom-2 -right-2 p-1.5 bg-primary text-white rounded-lg shadow-sm hover:bg-blue-600 transition-colors">
+                <button @click="triggerFileInput" type="button" class="absolute -bottom-2 -right-2 p-1.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all neo-emboss">
                   <Icon name="heroicons:camera" class="w-4 h-4" />
                 </button>
+
+                
               </div>
               <div>
                 <h3 class="font-bold text-main dark:text-white">Logo de l'organisation</h3>
@@ -261,7 +263,7 @@ const confirmDelete = async () => {
               </div>
 
               <div class="pt-4 flex justify-end">
-                <button type="submit" class="px-6 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2" :disabled="isLoading">
+                <button type="submit" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
                   <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
                   Sauvegarder
                 </button>
@@ -310,7 +312,7 @@ const confirmDelete = async () => {
               </div>
 
               <div class="pt-4 flex justify-end">
-                <button type="submit" class="px-6 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors shadow-lg shadow-blue-500/30 flex items-center gap-2" :disabled="isLoading">
+                <button type="submit" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
                   <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
                   Sauvegarder les rappels
                 </button>
@@ -326,7 +328,7 @@ const confirmDelete = async () => {
                 <h2 class="text-xl font-bold text-main dark:text-white">Étiquettes</h2>
                 <p class="text-sm text-secondary dark:text-gray-400 mt-1">Gérez les étiquettes personnalisées pour cette organisation.</p>
               </div>
-              <button @click="openCreateTagModal" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
+              <button @click="openCreateTagModal" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 neo-emboss">
                 <Icon name="heroicons:plus" class="w-4 h-4" />
                 Créer une étiquette
               </button>

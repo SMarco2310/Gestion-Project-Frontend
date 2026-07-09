@@ -171,7 +171,7 @@ const removeMember = async (memberId: number) => {
     <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden">
       <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
         <h3 class="text-xl font-bold text-main dark:text-white">Membres</h3>
-        <button v-if="canManageMembers" @click="isInviteModalOpen = true" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 shadow-sm text-sm">
+        <button v-if="canManageMembers" @click="isInviteModalOpen = true" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
           <Icon name="heroicons:user-plus" class="w-4 h-4" />
           Inviter un membre
         </button>

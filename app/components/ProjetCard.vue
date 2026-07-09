@@ -58,6 +58,15 @@ const canEdit = computed(() => {
   return isOwner.value || (props.user_id && user.value && props.user_id === user.value.id)
 })
 
+const isOverdue = computed(() => {
+  if (props.status.toLowerCase() === 'terminé' || !props.end_date) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const endDate = new Date(props.end_date)
+  endDate.setHours(0, 0, 0, 0)
+  return endDate < today
+})
+
 
 // A simple native function to format dates
 const formatDate = (dateString: string) => {
@@ -139,7 +148,7 @@ const bodyThemeClasses = computed(() => {
             </div>
 
             <!-- Folder Body (z-20) -->
-            <div class="relative z-20 w-full rounded-3xl rounded-tl-none p-5 transition-colors duration-300 flex flex-col gap-4" :class="bodyThemeClasses">
+            <div class="relative z-20 w-full rounded-3xl rounded-tl-none p-5 transition-all duration-300 flex flex-col gap-4" :class="[bodyThemeClasses, isOverdue ? 'ring-2 ring-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)]' : '']">
                 
                 <!-- Top Right Options Menu -->
                 <div class="absolute top-5 right-4 z-20" v-if="canEdit">
@@ -238,9 +247,14 @@ const bodyThemeClasses = computed(() => {
                             </div>
                         </template>
                     </div>
-                    <div class="flex items-center gap-1.5 text-white/90 text-xs font-medium bg-black/20 px-3 py-1.5 rounded-full shadow-inner backdrop-blur-sm">
-                        <Icon name="heroicons:calendar" class="w-3.5 h-3.5 text-white/80" />
-                        <span>{{ formatDate(props.end_date) }}</span>
+                    <div class="flex items-center gap-2">
+                        <div v-if="isOverdue" class="flex items-center justify-center w-6 h-6 bg-red-500 text-white rounded-full shadow-sm animate-pulse" title="En retard">
+                            <Icon name="heroicons:exclamation-triangle" class="w-3.5 h-3.5 mt-[1px]" />
+                        </div>
+                        <div class="flex items-center gap-1.5 text-white/90 text-xs font-medium bg-black/20 px-3 py-1.5 rounded-full shadow-inner backdrop-blur-sm" :class="isOverdue ? 'ring-1 ring-red-400' : ''">
+                            <Icon name="heroicons:calendar" class="w-3.5 h-3.5 text-white/80" />
+                            <span>{{ formatDate(props.end_date) }}</span>
+                        </div>
                     </div>
                 </div>
             </div>

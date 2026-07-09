@@ -222,6 +222,16 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('mousedown', handleClickOutside)
 })
+
+const isItemOverdue = (item: any) => {
+  if (item.status === 'terminé' || !item.dueDate) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(item.dueDate)
+  dueDate.setHours(0, 0, 0, 0)
+  return dueDate < today
+}
+
 </script>
 
 <template>
@@ -231,7 +241,7 @@ onUnmounted(() => {
   ]" :style="color ? { backgroundColor: color, borderColor: color } : {}">
     <!-- Header -->
     <div :class="['px-4 flex items-center group/header', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
-      <div v-show="!isCollapsed" :class="['column-drag-handle cursor-grab active:cursor-grabbing opacity-0 group-hover/header:opacity-100 transition-opacity p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
+      <div v-show="!isCollapsed" :class="['column-drag-handle cursor-grab active:cursor-grabbing p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
          <Icon name="ph:dots-six-vertical" class="text-lg" />
       </div>
       
@@ -354,13 +364,16 @@ onUnmounted(() => {
         v-model="items" 
         group="tasks" 
         item-key="id" 
-        class="flex flex-col gap-2.5 min-h-[100px] h-full"
+        class="flex-1 flex flex-col gap-2.5 min-h-[100px]"
         ghost-class="opacity-40"
+        drag-class="cursor-grabbing"
+        :animation="200"
         @change="onChange"
       >
         <template #item="{ element: item }">
           <div 
             class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
+            :class="isItemOverdue(item) ? 'ring-1 ring-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : ''"
             @click="emit('taskClick', item.id)"
           >
             <!-- Banner Image -->
@@ -424,6 +437,9 @@ onUnmounted(() => {
 
                <!-- Assignee, Comments & Status -->
                <div class="flex items-center gap-2.5">
+                  <div v-if="isItemOverdue(item)" class="flex items-center gap-1 bg-red-500/10 text-red-600 dark:text-red-400 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider neo-badge border border-red-200 dark:border-red-900/50">
+                    <Icon name="heroicons:exclamation-triangle" class="w-3 h-3" />
+                  </div>
                   <div v-if="item.subtasksTotal && item.subtasksTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:check-square-offset" class="text-sm" />
                     <span class="text-xs font-medium">{{ item.subtasksCompleted }}/{{ item.subtasksTotal }}</span>

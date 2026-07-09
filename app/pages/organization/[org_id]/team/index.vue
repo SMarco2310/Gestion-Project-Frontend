@@ -55,10 +55,36 @@ const handleCreateTeam = async () => {
   }
 }
 
+const activeDropdownId = ref<number | null>(null)
+
+const toggleDropdown = (id: number) => {
+  if (activeDropdownId.value === id) {
+    activeDropdownId.value = null
+  } else {
+    activeDropdownId.value = id
+  }
+}
+
+const { deleteTeam } = useTeams()
+
+const handleDeleteTeam = async (teamId: number) => {
+  activeDropdownId.value = null
+  if (!activeOrganization.value) return
+  if (!confirm('Voulez-vous vraiment supprimer cette équipe ? Toutes ses données seront perdues.')) return
+  
+  try {
+    await deleteTeam(activeOrganization.value.id, teamId)
+    addToast({ type: 'success', title: 'Succès', message: 'Équipe supprimée.' })
+    await fetchTeams()
+  } catch (error) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'équipe.' })
+  }
+}
+
 </script>
 
 <template>
-  <div>
+  <div @click="activeDropdownId = null">
     <!-- Header Section -->
     <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div class="flex flex-col gap-2">
@@ -86,9 +112,19 @@ const handleCreateTeam = async () => {
           <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 flex items-center justify-center">
             <Icon name="heroicons:user-group" class="w-6 h-6" />
           </div>
-          <button class="text-gray-400 hover:text-main dark:hover:text-white p-1 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-            <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5" />
-          </button>
+          <div class="relative">
+            <button @click.stop="toggleDropdown(team.id)" class="text-gray-400 hover:text-main dark:hover:text-white p-1 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+              <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5" />
+            </button>
+            <div v-if="activeDropdownId === team.id" class="absolute right-0 mt-2 w-40 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden text-main dark:text-gray-300">
+              <button @click.stop="activeDropdownId = null; navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
+                <Icon name="heroicons:pencil" class="w-4 h-4" /> Gérer
+              </button>
+              <button @click.stop="handleDeleteTeam(team.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
+                <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
+              </button>
+            </div>
+          </div>
         </div>
         
         <h2 class="text-xl font-bold text-main dark:text-white mb-2">{{ team.name }}</h2>

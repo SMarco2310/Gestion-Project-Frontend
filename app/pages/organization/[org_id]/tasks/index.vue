@@ -19,18 +19,38 @@ const kanbanColumns = computed(() => {
     : ['À faire', 'En cours', 'Terminé']
 })
 
-const draggableColumns = computed({
-  get: () => kanbanColumns.value.map((col: string) => ({ name: col })),
-  set: async (newCols: any[]) => {
-    if (!activeOrganization.value) return
-    const newColumns = newCols.map((c) => c.name)
-    try {
-      await updateKanbanColumns(activeOrganization.value.id, newColumns)
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
-    }
+const localColumns = ref<{name: string}[]>([])
+
+watch(kanbanColumns, (newCols) => {
+  // Only update localColumns if it's empty or lengths differ, to avoid interrupting drags
+  // Actually, we should sync it whenever the actual source of truth changes, 
+  // but be careful not to create a new array reference if the content is the same order.
+  const currentLocalNames = localColumns.value.map(c => c.name).join(',')
+  const newNames = newCols.join(',')
+  if (currentLocalNames !== newNames) {
+    localColumns.value = newCols.map((col: string) => ({ name: col }))
   }
-})
+}, { immediate: true })
+
+const handleColumnReorder = async () => {
+  if (!activeOrganization.value) return
+  const newColumns = localColumns.value.map((c) => c.name)
+  const oldColumns = [...activeOrganization.value.kanban_columns || []]
+  
+  // Optmistic UI update
+  activeOrganization.value = {
+    ...activeOrganization.value,
+    kanban_columns: newColumns
+  }
+  
+  try {
+    await updateKanbanColumns(activeOrganization.value.id, newColumns)
+  } catch (e) {
+    // Revert on error
+    activeOrganization.value.kanban_columns = oldColumns
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
+  }
+}
 
 const boardItems = ref<Record<string, any[]>>({})
 
@@ -172,12 +192,12 @@ const handleDeleteColumn = async (colName: string) => {
     return
   }
   
-  const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0]
+  const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0] || ''
   const newColumns = kanbanColumns.value.filter(c => c !== colName)
-  const renames = { [colName]: targetCol }
+  const renames: Record<string, string> = { [colName]: targetCol }
   
-  const currentColors = activeOrganization.value.kanban_colors || {}
-  const newColors = { ...currentColors }
+  const currentColors: Record<string, string> = activeOrganization.value.kanban_colors || {}
+  const newColors: Record<string, string> = { ...currentColors }
   delete newColors[colName]
   
   try {
@@ -210,6 +230,7 @@ const mapTaskToBoardItem = (task: any) => ({
   description: task.description,
   status: task.status,
   priority: task.priority,
+  dueDate: task.due_date,
   tags: task.tags?.map((t: any) => ({
     id: t.id,
     label: t.name || 'SANS ÉTIQUETTE',
@@ -339,8 +360,9 @@ const syncBoardItems = () => {
       targetCol = firstCol
     }
     
-    if (newBoardItems[targetCol]) {
-       newBoardItems[targetCol].push(mapTaskToBoardItem(task))
+    const colArray = newBoardItems[targetCol]
+    if (colArray) {
+       colArray.push(mapTaskToBoardItem(task))
     }
   })
 
@@ -389,9 +411,10 @@ onMounted(async () => {
   </header>
     <!-- Kanban Board Columns -->
     <draggable 
-      v-model="draggableColumns"
+      v-model="localColumns"
+      @change="handleColumnReorder"
       item-key="name"
-      class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto snap-x snap-mandatory flex-nowrap custom-scrollbar"
+      class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
       handle=".column-drag-handle"
       ghost-class="opacity-40"
       :animation="200"
@@ -415,7 +438,7 @@ onMounted(async () => {
       </template>
       <template #footer>
         <!-- Add Column Button -->
-        <div class="w-[85vw] min-w-[85vw] md:w-[340px] md:min-w-[340px] shrink-0 snap-center md:shrink-0 md:snap-align-none flex items-start h-fit max-h-full">
+        <div class="w-[85vw] min-w-[85vw] md:w-[340px] md:min-w-[340px] shrink-0 md:shrink-0 flex items-start h-fit max-h-full">
           <button @click="handleAddColumn" class="w-full py-4 bg-canvas/50 dark:bg-[#161618]/50 hover:bg-canvas dark:hover:bg-[#161618] border-2 border-dashed border-form-border dark:border-[#2A2A2D] rounded-lg text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200 transition-colors flex items-center justify-center gap-2 font-medium whitespace-nowrap">
             <Icon name="ph:plus" class="text-xl" />
             Ajouter une colonne

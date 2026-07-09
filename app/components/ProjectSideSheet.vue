@@ -277,6 +277,15 @@ const statusConfig: Record<string, { label: string; colorClass: string }> = {
   'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
 }
 
+const isOverdue = computed(() => {
+  if (projectStatus.value === 'terminé' || !projectEndDate.value) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const endDate = new Date(projectEndDate.value)
+  endDate.setHours(0, 0, 0, 0)
+  return endDate < today
+})
+
 const getTodayDate = () => {
   const today = new Date()
   const yyyy = today.getFullYear()
@@ -599,7 +608,12 @@ const updateStatus = async (status: string) => {
             </div>
             <div class="flex flex-col gap-1">
                <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de fin prévue</span>
-               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectEndDate) || 'Non définie' }}</span>
+               <div v-if="!isEditing" class="flex items-center gap-2">
+                 <div v-if="isOverdue" class="flex items-center justify-center w-6 h-6 bg-red-500 text-white rounded-full shadow-sm animate-pulse" title="En retard">
+                     <Icon name="heroicons:exclamation-triangle" class="w-3.5 h-3.5 mt-[1px]" />
+                 </div>
+                 <span class="text-sm text-main dark:text-gray-300 font-medium" :class="isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : ''">{{ formatDate(projectEndDate) || 'Non définie' }}</span>
+               </div>
                <input v-else v-model="editEndDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
           </div>

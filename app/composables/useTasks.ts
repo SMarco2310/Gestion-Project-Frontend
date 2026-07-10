@@ -20,6 +20,8 @@ interface Tache {
   banner_image?: string
   assignee_id?: string | number | null
   assignee?: any | null
+  checklists?: any[]
+  attachments?: any[]
 }
 
 interface TaskPayload {
@@ -66,6 +68,8 @@ export default function useTasks() {
     banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
     assignee_id: task.assignee_id ?? null,
     assignee: task.assignee ?? null,
+    checklists: task.checklists ?? [],
+    attachments: task.attachments ?? [],
   })
 
   const getTasks = async (projectId?: number | string) => {
@@ -210,6 +214,61 @@ export default function useTasks() {
     }
   }
 
+  // --- Checklists ---
+  const createChecklist = async (taskId: number | string, title: string) => {
+    const data = await $api<any>(`/taches/${taskId}/checklists`, {
+      method: 'POST',
+      body: { title },
+    })
+    return data.checklist
+  }
+
+  const deleteChecklist = async (checklistId: number | string) => {
+    await $api<any>(`/checklists/${checklistId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  const createChecklistItem = async (checklistId: number | string, content: string) => {
+    const data = await $api<any>(`/checklists/${checklistId}/items`, {
+      method: 'POST',
+      body: { content },
+    })
+    return data.item
+  }
+
+  const updateChecklistItem = async (itemId: number | string, payload: { content?: string, is_done?: boolean }) => {
+    const data = await $api<any>(`/checklist-items/${itemId}`, {
+      method: 'PUT',
+      body: payload,
+    })
+    return data.item
+  }
+
+  const deleteChecklistItem = async (itemId: number | string) => {
+    await $api<any>(`/checklist-items/${itemId}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // --- Attachments ---
+  const uploadAttachment = async (taskId: number | string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const data = await $api<any>(`/taches/${taskId}/attachments`, {
+      method: 'POST',
+      body: formData,
+    })
+    return data.attachment
+  }
+
+  const deleteAttachment = async (attachmentId: number | string) => {
+    await $api<any>(`/attachments/${attachmentId}`, {
+      method: 'DELETE',
+    })
+  }
+
   return {
     tasks,
     isLoading,
@@ -220,5 +279,12 @@ export default function useTasks() {
     updateTask,
     uploadBanner,
     deleteTask,
+    createChecklist,
+    deleteChecklist,
+    createChecklistItem,
+    updateChecklistItem,
+    deleteChecklistItem,
+    uploadAttachment,
+    deleteAttachment,
   }
 }

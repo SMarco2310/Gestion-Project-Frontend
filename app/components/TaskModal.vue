@@ -22,7 +22,7 @@ const close = () => {
 
 
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
-const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
+const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner, createChecklist, deleteChecklist, createChecklistItem, updateChecklistItem, deleteChecklistItem, uploadAttachment, deleteAttachment } = useTasks()
 const { getProjet } = useProjets()
 const { tags, getTags, createTag, updateTag: apiUpdateTag } = useTags()
 const { user } = useAuth()
@@ -52,6 +52,8 @@ const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
 const taskProjetReference = ref('')
 const taskSubtasks = ref<any[]>([])
+const taskChecklists = ref<any[]>([])
+const taskAttachments = ref<any[]>([])
 const taskBannerImage = ref('')
 
 const isAssigneeDropdownOpen = ref(false)
@@ -127,6 +129,8 @@ const setTask = async (id: string | number | null) => {
       }
       
       taskSubtasks.value = task.sub_tasks || []
+      taskChecklists.value = task.checklists || []
+      taskAttachments.value = task.attachments || []
     }
   } catch (e) {
     console.error(e)
@@ -355,15 +359,21 @@ const updateBoardColumn = async (newColumn: string) => {
   if (!props.taskId) return
   try {
     const payload: any = { board_column: newColumn }
-    if (newColumn.toLowerCase() === 'terminé' || newColumn.toLowerCase() === 'done') {
-      payload.status = 'terminé'
-    } else if (taskStatus.value === 'terminé') {
-      payload.status = 'en cours'
-    }
     await updateTask(props.taskId, payload)
     taskBoardColumn.value = newColumn
-    if (payload.status) taskStatus.value = payload.status
     isBoardColumnDropdownOpen.value = false
+    addToast({ title: 'Colonne modifiée', message: 'La colonne de la tâche a été mise à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier la colonne.', type: 'error' })
+  }
+}
+
+const toggleTaskStatus = async () => {
+  if (!props.taskId) return
+  const newStatus = taskStatus.value === 'done' ? 'not done' : 'done'
+  try {
+    await updateTask(props.taskId, { status: newStatus })
+    taskStatus.value = newStatus
     addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
@@ -470,7 +480,7 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
 }
 
 const toggleSubtaskStatus = async (sub: any) => {
-  const newStatus = sub.status === 'terminé' ? 'à faire' : 'terminé'
+  const newStatus = sub.status === 'done' ? 'not done' : 'done'
   try {
     await updateTask(sub.id, { status: newStatus })
     sub.status = newStatus
@@ -564,6 +574,105 @@ const handleDeleteComment = async (commentId: string | number) => {
     }
   }
 }
+
+// --- Checklists ---
+const isAddingChecklist = ref(false)
+const newChecklistTitle = ref('')
+
+const handleAddChecklist = async () => {
+  if (!props.taskId || !newChecklistTitle.value.trim()) return
+  try {
+    const checklist = await createChecklist(props.taskId, newChecklistTitle.value.trim())
+    checklist.items = []
+    taskChecklists.value.push(checklist)
+    newChecklistTitle.value = ''
+    isAddingChecklist.value = false
+    addToast({ title: 'Checklist créée', message: 'La checklist a été ajoutée avec succès.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de créer la checklist.', type: 'error' })
+  }
+}
+
+const handleDeleteChecklist = async (checklistId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer cette checklist ?')) {
+    try {
+      await deleteChecklist(checklistId)
+      taskChecklists.value = taskChecklists.value.filter(c => c.id !== checklistId)
+      addToast({ title: 'Checklist supprimée', message: 'La checklist a été supprimée avec succès.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer la checklist.', type: 'error' })
+    }
+  }
+}
+
+const newChecklistItemContent = ref<Record<string, string>>({})
+
+const handleAddChecklistItem = async (checklistId: string | number) => {
+  const content = newChecklistItemContent.value[checklistId]
+  if (!content || !content.trim()) return
+  try {
+    const item = await createChecklistItem(checklistId, content.trim())
+    const checklist = taskChecklists.value.find(c => c.id === checklistId)
+    if (checklist) checklist.items.push(item)
+    newChecklistItemContent.value[checklistId] = ''
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible d\'ajouter l\'élément.', type: 'error' })
+  }
+}
+
+const toggleChecklistItem = async (item: any) => {
+  try {
+    const newStatus = !item.is_done
+    await updateChecklistItem(item.id, { is_done: newStatus })
+    item.is_done = newStatus
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'état.', type: 'error' })
+  }
+}
+
+const handleDeleteChecklistItem = async (checklist: any, itemId: string | number) => {
+  try {
+    await deleteChecklistItem(itemId)
+    checklist.items = checklist.items.filter((i: any) => i.id !== itemId)
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de supprimer l\'élément.', type: 'error' })
+  }
+}
+
+// --- Attachments ---
+const attachmentInput = ref<HTMLInputElement | null>(null)
+
+const triggerAttachmentUpload = () => {
+  attachmentInput.value?.click()
+}
+
+const handleAttachmentUploadForm = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0 && props.taskId) {
+    const file = target.files[0] as File
+    if (!file) return
+    try {
+      const attachment = await uploadAttachment(props.taskId, file)
+      taskAttachments.value.push(attachment)
+      addToast({ type: 'success', title: 'Fichier ajouté', message: 'Le fichier a été ajouté avec succès.' })
+    } catch (e) {
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger le fichier.' })
+    }
+  }
+}
+
+const handleDeleteAttachmentFile = async (attachmentId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer ce fichier ?')) {
+    try {
+      await deleteAttachment(attachmentId)
+      taskAttachments.value = taskAttachments.value.filter(a => a.id !== attachmentId)
+      addToast({ title: 'Fichier supprimé', message: 'Le fichier a été supprimé avec succès.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer le fichier.', type: 'error' })
+    }
+  }
+}
+
 
 const resetState = () => {
   isEditing.value = false
@@ -691,6 +800,12 @@ watch(() => props.isOpen, (newIsOpen) => {
               
               <!-- Quick Actions Row -->
               <div class="flex flex-wrap gap-2 mb-8 items-center">
+                <!-- Status Toggle -->
+                <button @click="toggleTaskStatus" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', taskStatus === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']">
+                  <Icon :name="taskStatus === 'done' ? 'ph:check-circle-fill' : 'ph:circle'" class="w-4 h-4" />
+                  {{ taskStatus === 'done' ? 'Terminé' : 'Pas terminé' }}
+                </button>
+
                 <!-- Status/Column -->
                 <div class="relative">
                   <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', statusConfig[taskBoardColumn]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']" :style="statusConfig[taskBoardColumn]?.style">
@@ -846,12 +961,99 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
                 <RichTextEditor v-else v-model="editDescription" class="w-full shadow-inner" />
               </div>
+              <!-- Checklists -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 text-main dark:text-gray-200">
+                    <Icon name="ph:list-checks" class="w-5 h-5" />
+                    <h3 class="text-base font-bold">Checklists</h3>
+                  </div>
+                  <div v-if="!isAddingChecklist" @click="isAddingChecklist = true" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm cursor-pointer">
+                    Ajouter
+                  </div>
+                </div>
+                
+                <div v-if="isAddingChecklist" class="mb-4 bg-gray-50 dark:bg-[#1A1A1D] p-3 rounded-lg border border-form-border dark:border-gray-800 flex flex-col gap-2">
+                  <input v-model="newChecklistTitle" type="text" placeholder="Titre de la checklist..." class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:border-primary" @keydown.enter="handleAddChecklist" />
+                  <div class="flex gap-2 justify-end">
+                    <button @click="isAddingChecklist = false" class="px-3 py-1.5 rounded text-secondary dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Annuler</button>
+                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded bg-blue-500 text-white text-xs font-bold shadow-sm hover:bg-blue-600 transition-colors">Enregistrer</button>
+                  </div>
+                </div>
+
+                <div v-if="taskChecklists.length > 0" class="flex flex-col gap-4">
+                  <div v-for="checklist in taskChecklists" :key="checklist.id" class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center group/checklist">
+                      <h4 class="font-bold text-sm text-main dark:text-gray-300">{{ checklist.title }}</h4>
+                      <button @click="handleDeleteChecklist(checklist.id)" class="text-secondary opacity-0 group-hover/checklist:opacity-100 hover:text-red-500 transition-all p-1">
+                        <Icon name="heroicons:trash" class="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <!-- Progress bar -->
+                    <div v-if="checklist.items && checklist.items.length > 0" class="flex items-center gap-3 mb-2">
+                      <span class="text-[10px] font-bold text-secondary">{{ Math.round((checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100) }}%</span>
+                      <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                      <div v-for="item in checklist.items" :key="item.id" class="flex items-center gap-3 group/item p-1 -mx-1 rounded hover:bg-gray-100 dark:hover:bg-[#1A1A1D] transition-colors">
+                        <div @click="toggleChecklistItem(item)" class="w-4 h-4 rounded border-2 border-secondary dark:border-gray-500 flex items-center justify-center cursor-pointer hover:border-primary transition-colors bg-white dark:bg-[#222224]">
+                          <Icon v-if="item.is_done" name="heroicons:check" class="w-3 h-3 text-primary dark:text-blue-500" />
+                        </div>
+                        <span class="text-sm flex-1 text-main dark:text-gray-300" :class="{'line-through text-secondary dark:text-gray-500': item.is_done}">{{ item.content }}</span>
+                        <button @click="handleDeleteChecklistItem(checklist, item.id)" class="text-secondary opacity-0 group-hover/item:opacity-100 hover:text-red-500 transition-all p-1">
+                          <Icon name="heroicons:x-mark" class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <input v-model="newChecklistItemContent[checklist.id]" type="text" placeholder="Ajouter un élément..." class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-1.5 text-main dark:text-gray-200 placeholder-gray-400" @keydown.enter="handleAddChecklistItem(checklist.id)" />
+                      <button v-if="newChecklistItemContent[checklist.id]?.trim()" @click="handleAddChecklistItem(checklist.id)" class="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs font-bold rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">Ajouter</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attachments -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 text-main dark:text-gray-200">
+                    <Icon name="ph:paperclip" class="w-5 h-5" />
+                    <h3 class="text-base font-bold">Pièces jointes</h3>
+                  </div>
+                  <button @click="triggerAttachmentUpload" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm">
+                    Ajouter
+                  </button>
+                </div>
+                
+                <input type="file" ref="attachmentInput" class="hidden" @change="handleAttachmentUploadForm" />
+                
+                <div v-if="taskAttachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div v-for="attachment in taskAttachments" :key="attachment.id" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 group relative">
+                    <div class="w-10 h-10 rounded bg-white dark:bg-[#2D2D2F] flex items-center justify-center shrink-0 border border-gray-200 dark:border-gray-700">
+                      <img v-if="attachment.mime_type?.startsWith('image/')" :src="attachment.file_path" class="w-full h-full object-cover rounded" />
+                      <Icon v-else name="ph:file" class="w-5 h-5 text-secondary" />
+                    </div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                      <a :href="attachment.file_path" target="_blank" class="text-sm font-bold text-main dark:text-gray-200 truncate hover:underline" :title="attachment.file_name">{{ attachment.file_name }}</a>
+                      <span class="text-[10px] text-secondary font-medium uppercase tracking-wider">{{ new Date(attachment.created_at).toLocaleDateString() }}</span>
+                    </div>
+                    <button @click="handleDeleteAttachmentFile(attachment.id)" class="absolute right-2 top-2 p-1.5 bg-white dark:bg-[#2D2D2F] border border-gray-200 dark:border-gray-700 rounded-md text-secondary opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all shadow-sm">
+                      <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
 
               <!-- Sous-tâches -->
               <div class="mb-8">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2 text-main dark:text-gray-200">
-                    <Icon name="heroicons:check-square" class="w-5 h-5" />
+                    <Icon name="ph:check-square-offset" class="w-5 h-5" />
                     <h3 class="text-base font-bold">Sous-tâches</h3>
                   </div>
                   <button @click="isCreateSubtaskModalOpen = true" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm">
@@ -861,9 +1063,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                 
                 <!-- Progress bar -->
                 <div v-if="taskSubtasks.length > 0" class="flex items-center gap-3 mb-4">
-                  <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'terminé').length / taskSubtasks.length) * 100) }}%</span>
+                  <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100) }}%</span>
                   <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'terminé').length / taskSubtasks.length) * 100}%` }"></div>
+                    <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
                   </div>
                 </div>
 
@@ -871,9 +1073,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-white dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                     <div class="flex items-center gap-3 overflow-hidden">
                       <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                        <div v-if="sub.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                       </div>
-                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'terminé'}">{{ sub.title }}</span>
+                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'done'}">{{ sub.title }}</span>
                     </div>
                   </div>
                 </div>

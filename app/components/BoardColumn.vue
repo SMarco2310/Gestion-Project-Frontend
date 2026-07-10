@@ -27,6 +27,9 @@ export interface Task {
   statusIcon?: string
   statusColorClass?: string
   commentairesCount?: number
+  attachmentsCount?: number
+  checklistsTotal?: number
+  checklistsCompleted?: number
   subtasksTotal?: number
   subtasksCompleted?: number
   assignee: TaskAssignee
@@ -386,7 +389,7 @@ const isItemOverdue = (item: any) => {
               <!-- Header (Title & Actions) -->
             <div class="flex justify-between items-start gap-2">
               <!-- Title -->
-              <h3 class="text-main dark:text-gray-200 text-[15px] leading-snug flex-1">
+              <h3 class="text-[15px] leading-snug flex-1" :class="item.status === 'done' ? 'text-secondary dark:text-gray-500 line-through' : 'text-main dark:text-gray-200'">
                 {{ item.title }}
               </h3>
               
@@ -428,10 +431,10 @@ const isItemOverdue = (item: any) => {
                  </div>
                  <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
                     <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                      <div v-if="item.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                      <div v-if="item.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                     </div>
                     <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
-                    <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
+                    <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': item.status === 'done' }">{{ item.reference }}</span>
                  </div>
                </div>
 
@@ -443,6 +446,14 @@ const isItemOverdue = (item: any) => {
                   <div v-if="item.subtasksTotal && item.subtasksTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:check-square-offset" class="text-sm" />
                     <span class="text-xs font-medium">{{ item.subtasksCompleted }}/{{ item.subtasksTotal }}</span>
+                  </div>
+                  <div v-if="item.checklistsTotal && item.checklistsTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:list-checks" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.checklistsCompleted }}/{{ item.checklistsTotal }}</span>
+                  </div>
+                  <div v-if="item.attachmentsCount && item.attachmentsCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:paperclip" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.attachmentsCount }}</span>
                   </div>
                   <div v-if="item.commentairesCount && item.commentairesCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:chat-teardrop-text" class="text-sm" />

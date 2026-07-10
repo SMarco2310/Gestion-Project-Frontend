@@ -21,9 +21,9 @@ const { commentaires, getCommentaires } = useCommentaire()
 const { activeOrganization } = useOrganizations()
 
 const kanbanColumns = computed(() => {
-  return activeOrganization.value?.kanban_columns?.length 
+  return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
     ? activeOrganization.value.kanban_columns 
-    : ['À faire', 'En cours', 'Terminé']
+    : ['Inbox']
 })
 
 const doneStatus = computed(() => kanbanColumns.value[kanbanColumns.value.length - 1])

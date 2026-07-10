@@ -14,9 +14,9 @@ const { activeOrganization, updateKanbanColumns } = useOrganizations()
 const { addToast } = useToast()
 
 const kanbanColumns = computed(() => {
-  return activeOrganization.value?.kanban_columns?.length 
+  return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
     ? activeOrganization.value.kanban_columns 
-    : ['À faire', 'En cours', 'Terminé']
+    : ['Inbox']
 })
 
 const localColumns = ref<{name: string}[]>([])
@@ -103,9 +103,7 @@ const handleCloseTaskModal = () => {
 const handleTaskMoved = async (taskId: string, newColumn: string) => {
   try {
     const payload: any = { board_column: newColumn }
-    if (newColumn.toLowerCase() === 'terminé' || newColumn.toLowerCase() === 'done') {
-      payload.status = 'terminé'
-    }
+    // Status is no longer automatically tied to columns. It remains independent (done/not done).
     await updateTask(taskId, payload)
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de déplacer la tâche.' })
@@ -116,7 +114,7 @@ const handleTaskMoved = async (taskId: string, newColumn: string) => {
 const handleToggleStatus = async (taskId: string) => {
   const task = tasks.value.find((t: any) => String(t.id) === String(taskId))
   if (!task) return
-  const newStatus = task.status === 'terminé' ? 'à faire' : 'terminé'
+  const newStatus = task.status === 'done' ? 'not done' : 'done'
   try {
     await updateTask(taskId, { status: newStatus })
   } catch (error) {
@@ -130,10 +128,6 @@ const kanbanColors = computed(() => {
 
 const handleRenameColumn = async (oldName: string, newName: string) => {
   if (!activeOrganization.value) return
-  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(oldName.toLowerCase())) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de renommer une colonne système.' })
-    return
-  }
   if (kanbanColumns.value.includes(newName)) {
     addToast({ type: 'error', title: 'Erreur', message: 'Ce nom de colonne existe déjà.' })
     return
@@ -177,20 +171,24 @@ const handleAddColumn = async () => {
   }
 }
 
+const isConfirmModalOpen = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const columnToDelete = ref('')
+
 const handleDeleteColumn = async (colName: string) => {
   if (!activeOrganization.value) return
-  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(colName.toLowerCase())) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer une colonne système.' })
-    return
-  }
-  if (kanbanColumns.value.length <= 1) {
-    addToast({ type: 'warning', title: 'Action impossible', message: 'Vous ne pouvez pas supprimer la dernière colonne.' })
-    return
-  }
   
-  if (!confirm(`Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ? Toutes les tâches qu'elle contient seront déplacées vers la première colonne.`)) {
-    return
-  }
+  columnToDelete.value = colName
+  confirmModalTitle.value = 'Supprimer la colonne'
+  confirmModalMessage.value = `Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ?\n\nToutes les tâches qu'elle contient seront déplacées vers la première colonne (si existante).`
+  isConfirmModalOpen.value = true
+}
+
+const executeDeleteColumn = async () => {
+  const colName = columnToDelete.value
+  isConfirmModalOpen.value = false
+  if (!colName || !activeOrganization.value) return
   
   const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0] || ''
   const newColumns = kanbanColumns.value.filter(c => c !== colName)
@@ -240,11 +238,14 @@ const mapTaskToBoardItem = (task: any) => ({
   reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',
   issueTypeColorClass: 'text-emerald-600',
-  statusIcon: 'ph:check',
-  statusColorClass: 'text-emerald-500',
+  statusIcon: task.status === 'done' ? 'ph:check-circle-fill' : 'ph:circle',
+  statusColorClass: task.status === 'done' ? 'text-emerald-500' : 'text-gray-400',
   commentairesCount: task.commentaires_count || 0,
+  attachmentsCount: task.attachments ? task.attachments.length : 0,
+  checklistsTotal: task.checklists ? task.checklists.reduce((acc: number, cl: any) => acc + cl.items.length, 0) : 0,
+  checklistsCompleted: task.checklists ? task.checklists.reduce((acc: number, cl: any) => acc + cl.items.filter((item: any) => item.is_done).length, 0) : 0,
   subtasksTotal: task.sub_tasks ? task.sub_tasks.length : 0,
-  subtasksCompleted: task.sub_tasks ? task.sub_tasks.filter((st: any) => st.status === 'terminé').length : 0,
+  subtasksCompleted: task.sub_tasks ? task.sub_tasks.filter((st: any) => st.status === 'done').length : 0,
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
     initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
@@ -349,7 +350,7 @@ const syncBoardItems = () => {
     newBoardItems[col] = []
   })
 
-  const firstCol = kanbanColumns.value[0] || 'À faire'
+  const firstCol = kanbanColumns.value[0] || 'Inbox'
 
   filteredTasks.value.forEach((task) => {
     // If the task has a board_column, place it there. Otherwise fallback to its status.
@@ -458,6 +459,15 @@ onMounted(async () => {
       :is-open="isCreateTaskModalOpen"
       :create-task="handleCreateTaskSubmit"
       @close="isCreateTaskModalOpen = false"
+    />
+    <!-- Confirm Modal -->
+    <ConfirmModal
+      :is-open="isConfirmModalOpen"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      confirm-text="Supprimer la colonne"
+      @close="isConfirmModalOpen = false"
+      @confirm="executeDeleteColumn"
     />
   </div>
 </template>

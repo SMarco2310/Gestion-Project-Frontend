@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const route = useRoute()
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'project-deleted'])
 
 const close = () => {
   if (isEditing.value) {
@@ -231,16 +231,24 @@ const cancelEdit = () => {
 
 const { deleteProjet } = useProjets()
 
-const handleDelete = async () => {
+const isDeleteModalOpen = ref(false)
+
+const handleDelete = () => {
   if (!props.projectId) return
-  if (confirm('Voulez-vous vraiment supprimer ce projet ?')) {
-    try {
-      await deleteProjet(props.projectId)
-      addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
-      close()
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
-    }
+  isDeleteModalOpen.value = true
+}
+
+const executeDeleteProject = async () => {
+  isDeleteModalOpen.value = false
+  if (!props.projectId) return
+  
+  try {
+    await deleteProjet(props.projectId)
+    addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
+    emit('project-deleted')
+    close()
+  } catch (e) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
   }
 }
 
@@ -621,23 +629,15 @@ const updateStatus = async (status: string) => {
         </div>
       </div>
     </Transition>
+    
+    <!-- Delete Project Modal -->
+    <DeleteProjectModal
+      :is-open="isDeleteModalOpen"
+      :project-name="projectTitle"
+      @close="isDeleteModalOpen = false"
+      @confirm="executeDeleteProject"
+    />
       </div>
     </Teleport>
   </ClientOnly>
 </template>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3f3f46;
-  border-radius: 20px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-}
-</style>

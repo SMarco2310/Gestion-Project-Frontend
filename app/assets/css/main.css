@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 20px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+
+  /* Dark mode scrollbar support */
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: #3f3f46;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #52525b;
+  }
+}
+
 @layer utilities {
   .neo-emboss {
     /* For Primary Buttons - creates a raised, pillowy look */

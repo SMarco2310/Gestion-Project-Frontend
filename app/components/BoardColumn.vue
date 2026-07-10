@@ -235,13 +235,13 @@ const isItemOverdue = (item: any) => {
 </script>
 
 <template>
-  <div :class="[
+  <div v-bind="$attrs" :class="[
     'flex flex-col shrink-0 snap-center md:shrink-0 md:snap-align-none bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none max-h-full transition-all duration-300',
     isCollapsed ? 'w-14 md:w-14 h-full' : 'w-[85vw] md:w-[340px] h-fit'
   ]" :style="color ? { backgroundColor: color, borderColor: color } : {}">
     <!-- Header -->
-    <div :class="['px-4 flex items-center group/header', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
-      <div v-show="!isCollapsed" :class="['column-drag-handle cursor-grab active:cursor-grabbing p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
+    <div :class="['px-4 flex items-center group/header column-drag-handle cursor-grab active:cursor-grabbing', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
+      <div v-show="!isCollapsed" :class="['p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
          <Icon name="ph:dots-six-vertical" class="text-lg" />
       </div>
       
@@ -413,7 +413,7 @@ const isItemOverdue = (item: any) => {
 
             <!-- Tags -->
             <div v-if="item.tags && item.tags.length > 0" class="flex flex-wrap items-start gap-1.5">
-               <div v-for="tag in item.tags" :key="tag.id || tag.label" :style="{ backgroundColor: (tag.colorHex || '#9CA3AF') + '20', color: tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
+               <div v-for="tag in item.tags" :key="tag.id || tag.label" :style="{ backgroundColor: (tag.colorHex || '#9CA3AF') + '33', color: tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
                   {{ tag.label }}
                </div>
             </div>
@@ -504,20 +504,3 @@ const isItemOverdue = (item: any) => {
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-/* Scrollbar styling for a cleaner look */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3f3f46;
-  border-radius: 20px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-}
-</style>

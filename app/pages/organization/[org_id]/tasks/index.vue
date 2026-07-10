@@ -384,15 +384,15 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
-    <div class="py-2">
+    <header class="flex flex-col lg:flex-row lg:justify-between w-full flex-shrink-0">
+    <div class="py-2 lg:py-6">
       <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
-      <p class="text-secondary dark:text-gray-400 py-3 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
+      <p class="text-secondary dark:text-gray-400 py-2 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
     </div>
-    <div id="search-bar" class="py-4 md:py-10 flex flex-row justify-between md:justify-end items-center gap-2 md:gap-4 w-full">
+    <div id="search-bar" class="py-4 lg:py-6 flex flex-row justify-between lg:justify-end items-center gap-2 md:gap-4 w-full lg:w-auto">
             <div class="relative flex items-center flex-1 md:flex-none">
                 <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
+                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-64 lg:w-96">
             </div>
             <FilterDropdown 
               :showProjects="true" 
@@ -443,7 +443,7 @@ onMounted(async () => {
             <Icon name="ph:plus" class="text-xl" />
             Ajouter une colonne
           </button>
-        </div>
+        </div>  
       </template>
     </draggable>
     <!-- Task Modal -->

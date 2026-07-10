@@ -82,9 +82,22 @@ const handleCloseSideSheet = () => {
 
 import { useToast } from '~/composables/useToast'
 
-const handleDeleteProject = async (projectId: number | string) => {
+const isDeleteModalOpen = ref(false)
+const projectToDelete = ref<any>(null)
+
+const confirmDeleteProjectModal = (projectId: number | string) => {
+  const p = projets.value?.find((x: any) => x.id === projectId)
+  if (p) {
+    projectToDelete.value = p
+    isDeleteModalOpen.value = true
+  }
+}
+
+const executeDeleteProject = async () => {
+  if (!projectToDelete.value) return
+  isDeleteModalOpen.value = false
   try {
-    await deleteProjet(projectId)
+    await deleteProjet(projectToDelete.value.id)
     await getProjets() // Refresh the list after deletion
     const { addToast } = useToast()
     addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
@@ -235,7 +248,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
           :metrics="getProjectMetrics(p.id)"
           :users="getProjectUsers(p)"
           @cardClick="handleProjectClick"
-          @delete="handleDeleteProject"
+          @delete="confirmDeleteProjectModal"
           @edit="handleEditProject"
           @archive="handleArchiveProject"
           @unarchive="handleUnarchiveProject"
@@ -282,7 +295,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
             :metrics="getProjectMetrics(p.id)"
             :users="getProjectUsers(p)"
             @cardClick="handleProjectClick"
-            @delete="handleDeleteProject"
+            @delete="confirmDeleteProjectModal"
             @edit="handleEditProject"
             @archive="handleArchiveProject"
             @unarchive="handleUnarchiveProject"
@@ -320,6 +333,15 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
       :project-id="selectedProjectId"
       :start-in-edit-mode="sideSheetEditMode"
       @close="handleCloseSideSheet"
+      @project-deleted="getProjets"
+    />
+
+    <!-- Delete Project Modal -->
+    <DeleteProjectModal
+      :is-open="isDeleteModalOpen"
+      :project-name="projectToDelete?.name || ''"
+      @close="isDeleteModalOpen = false"
+      @confirm="executeDeleteProject"
     />
   </div>
 </template>

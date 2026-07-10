@@ -81,10 +81,7 @@ const formatDate = (dateString: string) => {
 
 const handleDelete = () => {
   isDropdownOpen.value = false
-
-  if (typeof window !== 'undefined' && window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
-    emit('delete', props.id)
-  }
+  emit('delete', props.id)
 }
 
 const handleEdit = () => {

@@ -30,6 +30,10 @@ const { addToast } = useToast()
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 
+const config = useRuntimeConfig()
+const backendBaseUrl = config.public.apiBase ? config.public.apiBase.replace(/\/api\/?$/, '') : 'http://localhost:8000'
+const storageBaseUrl = `${backendBaseUrl}/storage/`
+
 const activeTab = ref('comments')
 const isDetailsOpen = ref(true)
 
@@ -201,8 +205,12 @@ const handleFileUpload = async (event: Event) => {
       const updatedTask = await uploadBanner(props.taskId, file)
       taskBannerImage.value = updatedTask.banner_image || ''
       addToast({ type: 'success', title: 'Couverture modifiée', message: 'L\'image a été ajoutée avec succès.' })
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+    } catch (e: any) {
+      if (e.status === 413 || e.response?.status === 413) {
+        addToast({ type: 'error', title: 'Image trop volumineuse', message: 'La taille de l\'image dépasse la limite autorisée.' })
+      } else {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+      }
     }
   }
 }
@@ -300,6 +308,15 @@ const formatDisplayDate = (dateStr: string) => {
   if (isNaN(date.getTime())) return 'Aucune'
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
+
+const isOverdue = computed(() => {
+  if (!taskDueDate.value || taskDueDate.value === 'Aucune') return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(taskDueDate.value)
+  dueDate.setHours(0, 0, 0, 0)
+  return dueDate < today
+})
 
 const kanbanColumns = computed(() => {
   return activeOrganization.value?.kanban_columns?.length 
@@ -655,8 +672,12 @@ const handleAttachmentUploadForm = async (event: Event) => {
       const attachment = await uploadAttachment(props.taskId, file)
       taskAttachments.value.push(attachment)
       addToast({ type: 'success', title: 'Fichier ajouté', message: 'Le fichier a été ajouté avec succès.' })
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger le fichier.' })
+    } catch (e: any) {
+      if (e.status === 413 || e.response?.status === 413) {
+        addToast({ type: 'error', title: 'Fichier trop volumineux', message: 'La taille du fichier dépasse la limite autorisée.' })
+      } else {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger le fichier.' })
+      }
     }
   }
 }
@@ -843,9 +864,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                         <span class="text-secondary dark:text-gray-400">Non assigné</span>
                       </li>
                       <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(member)">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
-                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
-                          <span v-else>{{ member.initials }}</span>
+                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `${backendBaseUrl}${member.profile_picture}`" class="w-full h-full object-cover" />
+                          <div v-else class="w-full h-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-blue-600" :class="member.color">{{ member.initials }}</div>
                         </div> 
                         {{ member.name }}
                       </li>
@@ -932,12 +953,12 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
 
                 <!-- Date -->
-                <div class="relative flex items-center bg-gray-100 dark:bg-[#2D2D2F] rounded-md hover:brightness-105 transition-colors">
-                  <div class="px-3 py-1.5 flex items-center gap-1.5 text-gray-700 dark:text-gray-300 font-bold text-xs">
+                <div :class="['relative flex items-center rounded-md hover:brightness-105 transition-colors', isOverdue && !isEditing ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-[#2D2D2F]']">
+                  <div :class="['px-3 py-1.5 flex items-center gap-1.5 font-bold text-xs', isOverdue && !isEditing ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">
                     <Icon name="heroicons:calendar" class="w-3.5 h-3.5" /> Échéance:
                   </div>
                   <input v-if="isEditing" v-model="editDueDate" type="date" :max="projectEndDate" class="bg-transparent border-none focus:ring-0 text-xs font-bold text-main dark:text-gray-300 cursor-pointer pr-2" />
-                  <span v-else class="text-xs font-bold text-main dark:text-gray-300 pr-3">{{ formatDisplayDate(taskDueDate) }}</span>
+                  <span v-else :class="['text-xs font-bold pr-3', isOverdue ? 'text-red-600 dark:text-red-400' : 'text-main dark:text-gray-300']">{{ formatDisplayDate(taskDueDate) }}</span>
                 </div>
               </div>
 
@@ -1034,11 +1055,11 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <div v-if="taskAttachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div v-for="attachment in taskAttachments" :key="attachment.id" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 group relative">
                     <div class="w-10 h-10 rounded bg-white dark:bg-[#2D2D2F] flex items-center justify-center shrink-0 border border-gray-200 dark:border-gray-700">
-                      <img v-if="attachment.mime_type?.startsWith('image/')" :src="attachment.file_path" class="w-full h-full object-cover rounded" />
+                      <img v-if="attachment.mime_type?.startsWith('image/')" :src="attachment.file_path.startsWith('http') ? attachment.file_path : `${storageBaseUrl}${attachment.file_path.replace(/^\//, '')}`" class="w-full h-full object-cover rounded" />
                       <Icon v-else name="ph:file" class="w-5 h-5 text-secondary" />
                     </div>
                     <div class="flex flex-col flex-1 overflow-hidden">
-                      <a :href="attachment.file_path" target="_blank" class="text-sm font-bold text-main dark:text-gray-200 truncate hover:underline" :title="attachment.file_name">{{ attachment.file_name }}</a>
+                      <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `${storageBaseUrl}${attachment.file_path.replace(/^\//, '')}`" target="_blank" class="text-sm font-bold text-main dark:text-gray-200 truncate hover:underline" :title="attachment.file_name">{{ attachment.file_name }}</a>
                       <span class="text-[10px] text-secondary font-medium uppercase tracking-wider">{{ new Date(attachment.created_at).toLocaleDateString() }}</span>
                     </div>
                     <button @click="handleDeleteAttachmentFile(attachment.id)" class="absolute right-2 top-2 p-1.5 bg-white dark:bg-[#2D2D2F] border border-gray-200 dark:border-gray-700 rounded-md text-secondary opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all shadow-sm">
@@ -1111,10 +1132,10 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
                     <ul class="p-1 overflow-y-auto custom-scrollbar">
                       <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
-                        <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
-                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
-                          <span v-else>{{ user.initials }}</span>
-                        </div> 
+                        <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `${backendBaseUrl}${user.profile_picture}`" class="w-full h-full object-cover" />
+                          <div v-else class="w-full h-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm border border-blue-600" :class="user.color">{{ user.initials }}</div>
+                        </div>
                         <span class="truncate">{{ user.name }}</span>
                       </li>
                       <li v-if="filteredMentionUsers.length === 0" class="px-2 py-1.5 text-xs text-secondary text-center italic">

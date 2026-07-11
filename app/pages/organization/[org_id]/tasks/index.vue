@@ -38,16 +38,15 @@ const handleColumnReorder = async () => {
   const oldColumns = [...activeOrganization.value.kanban_columns || []]
   
   // Optmistic UI update
-  activeOrganization.value = {
-    ...activeOrganization.value,
-    kanban_columns: newColumns
-  }
+  activeOrganization.value.kanban_columns = newColumns
   
   try {
     await updateKanbanColumns(activeOrganization.value.id, newColumns)
   } catch (e) {
     // Revert on error
-    activeOrganization.value.kanban_columns = oldColumns
+    if (activeOrganization.value) {
+      activeOrganization.value.kanban_columns = oldColumns
+    }
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
   }
 }
@@ -241,11 +240,6 @@ const mapTaskToBoardItem = (task: any) => ({
   statusIcon: task.status === 'done' ? 'ph:check-circle-fill' : 'ph:circle',
   statusColorClass: task.status === 'done' ? 'text-emerald-500' : 'text-gray-400',
   commentairesCount: task.commentaires_count || 0,
-  attachmentsCount: task.attachments ? task.attachments.length : 0,
-  checklistsTotal: task.checklists ? task.checklists.reduce((acc: number, cl: any) => acc + cl.items.length, 0) : 0,
-  checklistsCompleted: task.checklists ? task.checklists.reduce((acc: number, cl: any) => acc + cl.items.filter((item: any) => item.is_done).length, 0) : 0,
-  subtasksTotal: task.sub_tasks ? task.sub_tasks.length : 0,
-  subtasksCompleted: task.sub_tasks ? task.sub_tasks.filter((st: any) => st.status === 'done').length : 0,
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
     initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
@@ -413,29 +407,32 @@ onMounted(async () => {
     <!-- Kanban Board Columns -->
     <draggable 
       v-model="localColumns"
-      @change="handleColumnReorder"
+      @end="handleColumnReorder"
       item-key="name"
       class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
       handle=".column-drag-handle"
       ghost-class="opacity-40"
       :animation="200"
+      draggable=".board-column"
     >
       <template #item="{ element: col }">
-        <BoardColumn 
-          :title="col.name" 
-          :color="kanbanColors[col.name]"
-          v-model:items="boardItems[col.name]" 
-          :allowCreate="true"
-          :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
-          @taskClick="handleTaskClick"
-          @editTask="handleEditTask"
-          @deleteTask="handleDeleteTask"
-          @taskMoved="handleTaskMoved($event, col.name)"
-          @rename="handleRenameColumn(col.name, $event)"
-          @deleteColumn="handleDeleteColumn(col.name)"
-          @toggleStatus="handleToggleStatus"
-          @updateColor="handleUpdateColumnColor(col.name, $event)"
-        />
+        <div class="board-column h-full flex shrink-0 snap-center md:snap-align-none">
+          <BoardColumn 
+            :title="col.name" 
+            :color="kanbanColors[col.name]"
+            v-model:items="boardItems[col.name]" 
+            :allowCreate="true"
+            :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
+            @taskClick="handleTaskClick"
+            @editTask="handleEditTask"
+            @deleteTask="handleDeleteTask"
+            @taskMoved="handleTaskMoved($event, col.name)"
+            @rename="handleRenameColumn(col.name, $event)"
+            @deleteColumn="handleDeleteColumn(col.name)"
+            @toggleStatus="handleToggleStatus"
+            @updateColor="handleUpdateColumnColor(col.name, $event)"
+          />
+        </div>
       </template>
       <template #footer>
         <!-- Add Column Button -->

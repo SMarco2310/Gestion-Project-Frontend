@@ -140,8 +140,8 @@ const bodyThemeClasses = computed(() => {
             <div class="absolute top-0 left-0 h-6 w-[55%] rounded-tl-2xl rounded-tr-[24px] transition-colors duration-300 z-0" :class="tabThemeClasses"></div>
             
             <!-- Paper inside (z-10) -->
-            <div v-if="props.metrics.totalTasks > 0" class="absolute top-1 left-4 right-4 h-6 bg-white dark:bg-[#222226] rounded-t-xl shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1)] border border-black/5 dark:border-white/5 z-10 transition-transform duration-300 group-hover:-translate-y-2.5">
-                <div class="w-16 h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-1.5 ml-3"></div>
+            <div v-if="props.metrics.totalTasks > 0" class="absolute top-1 left-4 right-4 h-6 bg-white rounded-t-xl shadow-[inset_0_-2px_4px_rgba(0,0,0,0.1)] z-10 transition-transform duration-300 group-hover:-translate-y-2.5">
+                <div class="w-16 h-1 bg-gray-200 rounded-full mt-1.5 ml-3"></div>
             </div>
 
             <!-- Folder Body (z-20) -->

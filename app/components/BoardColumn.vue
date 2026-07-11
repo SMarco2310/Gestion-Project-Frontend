@@ -26,12 +26,12 @@ export interface Task {
   status: string
   statusIcon?: string
   statusColorClass?: string
-  commentairesCount?: number
-  attachmentsCount?: number
-  checklistsTotal?: number
-  checklistsCompleted?: number
-  subtasksTotal?: number
-  subtasksCompleted?: number
+  commentairesCount?: number | 0
+  attachmentsCount?: number | 0
+  checklistsTotal?: number | 0
+  checklistsCompleted?: number | 0
+  subtasksTotal?: number | 0
+  subtasksCompleted?: number | 0
   assignee: TaskAssignee
   bannerImage?: string
   projetName?: string | null
@@ -52,10 +52,7 @@ const activeDropdownId = ref<string | null>(null)
 const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus', 'updateColor'])
 
 const isCollapsed = ref(false)
-const isLockedColumn = computed(() => {
-  const t = props.title.toLowerCase()
-  return ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(t)
-})
+const isLockedColumn = computed(() => false)
 
 const isEditingTitle = ref(false)
 const editedTitle = ref(props.title)
@@ -76,7 +73,8 @@ const onChange = (evt: any) => {
 const isCreating = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
-const newTaskProject = ref('')
+const 
+newTaskProject = ref('')
 const newTaskAssignee = ref<any>(null)
 const isAssigneeDropdownOpen = ref(false)
 
@@ -163,13 +161,8 @@ const submitNewTask = async () => {
   }
   
   try {
-    const isSystemColumn = ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(props.title.toLowerCase())
-    let initialStatus = 'à faire'
-    
-    if (isSystemColumn) {
-      if (['en cours', 'in progress'].includes(props.title.toLowerCase())) initialStatus = 'en cours'
-      else if (['terminé', 'done'].includes(props.title.toLowerCase())) initialStatus = 'terminé'
-    }
+    const isSystemColumn = ['terminé', 'done'].includes(props.title.toLowerCase())
+    let initialStatus = isSystemColumn ? 'done' : 'not done'
 
     await createTask({
       title: newTaskTitle.value.trim(),
@@ -227,7 +220,7 @@ onUnmounted(() => {
 })
 
 const isItemOverdue = (item: any) => {
-  if (item.status === 'terminé' || !item.dueDate) return false
+  if (!item.dueDate || item.dueDate === 'Aucune') return false
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const dueDate = new Date(item.dueDate)
@@ -372,10 +365,11 @@ const isItemOverdue = (item: any) => {
         drag-class="cursor-grabbing"
         :animation="200"
         @change="onChange"
+        draggable=".task-card"
       >
         <template #item="{ element: item }">
           <div 
-            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
+            class="task-card neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
             :class="isItemOverdue(item) ? 'ring-1 ring-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : ''"
             @click="emit('taskClick', item.id)"
           >

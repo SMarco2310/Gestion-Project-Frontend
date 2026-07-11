@@ -13,11 +13,11 @@ interface Tache {
   projet_id?: number | string | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
-  commentaires_count?: number
+  commentaires_count?: number | 0
   due_date?: string
   created_at?: string
   updated_at?: string
-  banner_image?: string
+  banner_image?: string | null
   assignee_id?: string | number | null
   assignee?: any | null
   checklists?: any[]
@@ -53,7 +53,7 @@ export default function useTasks() {
     title: task.title ?? task.name ?? 'Sans titre',
     reference_code: task.reference_code ?? '',
     description: task.description ?? '',
-    status: task.status ?? TaskStatus.TO_DO,
+    status: task.status ?? TaskStatus.NOT_DONE,
     board_column: task.board_column ?? null,
     priority: task.priority ?? TaskPriority.MEDIUM,
     tag_ids: task.tags ? task.tags.map((t: any) => t.id) : (task.tag_ids ?? []),

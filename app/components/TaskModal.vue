@@ -497,13 +497,23 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
 }
 
 const toggleSubtaskStatus = async (sub: any) => {
-  const newStatus = sub.status === 'done' ? 'not done' : 'done'
+  if (sub._isUpdating) return
+  sub._isUpdating = true
+
+  const oldStatus = sub.status
+  const newStatus = oldStatus === 'done' ? 'not done' : 'done'
+  
+  // Optimistic update
+  sub.status = newStatus
+
   try {
     await updateTask(sub.id, { status: newStatus })
-    sub.status = newStatus
     addToast({ title: 'Sous-tâche mise à jour', message: 'Le statut de la sous-tâche a été modifié.', type: 'success' })
   } catch (err) {
+    sub.status = oldStatus // Revert on error
     addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  } finally {
+    sub._isUpdating = false
   }
 }
 
@@ -638,12 +648,22 @@ const handleAddChecklistItem = async (checklistId: string | number) => {
 }
 
 const toggleChecklistItem = async (item: any) => {
+  if (item._isUpdating) return
+  item._isUpdating = true
+
+  const oldStatus = item.is_done
+  const newStatus = !oldStatus
+
+  // Optimistic update
+  item.is_done = newStatus
+
   try {
-    const newStatus = !item.is_done
     await updateChecklistItem(item.id, { is_done: newStatus })
-    item.is_done = newStatus
   } catch (err) {
+    item.is_done = oldStatus // Revert on error
     addToast({ title: 'Erreur', message: 'Impossible de modifier l\'état.', type: 'error' })
+  } finally {
+    item._isUpdating = false
   }
 }
 

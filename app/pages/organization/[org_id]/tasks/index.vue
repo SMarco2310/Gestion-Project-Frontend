@@ -51,13 +51,23 @@ const handleColumnReorder = async () => {
   }
 }
 
-const boardItems = ref<Record<string, any[]>>({})
+const boardItems = ref<Record<string, any[]>>({'Inbox': []})
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
 const taskModalEditMode = ref(false)
 
 const isCreateTaskModalOpen = ref(false)
+
+const handleSidebarCreateTask = async (payload: any) => {
+  try {
+    await createTask(payload)
+    await getTasks()
+    addToast({ type: 'success', title: 'Tâche créée', message: 'La tâche a été ajoutée à la boîte de réception.' })
+  } catch (e) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer la tâche.' })
+  }
+}
 
 const handleCreateTaskSubmit = async (payload: any) => {
   try {
@@ -343,15 +353,19 @@ const syncBoardItems = () => {
   kanbanColumns.value.forEach((col: string) => {
     newBoardItems[col] = []
   })
+  
+  if (!newBoardItems['Inbox']) {
+    newBoardItems['Inbox'] = []
+  }
 
-  const firstCol = kanbanColumns.value[0] || 'Inbox'
+  const firstCol = kanbanColumns.value.includes('Inbox') ? 'Inbox' : (kanbanColumns.value[0] || 'Inbox')
 
   filteredTasks.value.forEach((task) => {
     // If the task has a board_column, place it there. Otherwise fallback to its status.
     let targetCol = task.board_column || task.status
     
     // If the target column doesn't exist on the board anymore, push it to the first column
-    if (!kanbanColumns.value.includes(targetCol)) {
+    if (!kanbanColumns.value.includes(targetCol) && targetCol !== 'Inbox') {
       targetCol = firstCol
     }
     
@@ -404,17 +418,29 @@ onMounted(async () => {
             </button>
         </div>
   </header>
-    <!-- Kanban Board Columns -->
-    <draggable 
-      v-model="localColumns"
-      @end="handleColumnReorder"
-      item-key="name"
-      class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
-      handle=".column-drag-handle"
-      ghost-class="opacity-40"
-      :animation="200"
-      draggable=".board-column"
-    >
+    <!-- Main Board Area -->
+    <div class="flex flex-1 min-h-0 pb-4 gap-4 md:gap-6 overflow-hidden">
+      <!-- Inbox Sidebar -->
+      <TaskInboxSidebar 
+        v-if="boardItems['Inbox']"
+        v-model:items="boardItems['Inbox']"
+        @createTask="handleSidebarCreateTask"
+        @taskClick="handleTaskClick"
+        @taskMoved="handleTaskMoved($event, 'Inbox')"
+        @toggleStatus="handleToggleStatus"
+        class="shrink-0"
+      />
+      <!-- Kanban Board Columns -->
+      <draggable 
+        v-model="localColumns"
+        @end="handleColumnReorder"
+        item-key="name"
+        class="flex gap-4 md:gap-6 flex-1 min-w-0 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
+        handle=".column-drag-handle"
+        ghost-class="opacity-40"
+        :animation="200"
+        draggable=".board-column"
+      >
       <template #item="{ element: col }">
         <div class="board-column h-full flex shrink-0 snap-center md:snap-align-none">
           <BoardColumn 
@@ -444,6 +470,7 @@ onMounted(async () => {
         </div>  
       </template>
     </draggable>
+    </div>
     <!-- Task Modal -->
     <TaskModal 
       :isOpen="isTaskModalOpen" 

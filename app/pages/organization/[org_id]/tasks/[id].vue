@@ -17,14 +17,14 @@ const route = useRoute()
 const router = useRouter()
 
 
-const close = () => {
+const goBack = () => {
   router.push(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks`)
 }
 
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
 const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
 const { getProjet } = useProjets()
-const { tags, getTags } = useTags()
+const { tags, getTags, createTag, updateTag: apiUpdateTag } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
 const { activeOrganization } = useOrganizations()
@@ -157,17 +157,49 @@ const cancelEdit = () => {
 
 
 
-const handleDelete = async () => {
+const isConfirmModalOpen = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingDeleteAction = ref<(() => void) | null>(null)
+
+const handleDelete = () => {
   if (!(route.params.id as string)) return
-  if (confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
-    try {
-      await deleteTask((route.params.id as string))
-      addToast({ type: 'success', title: 'Tâche supprimée', message: 'La tâche a été supprimée avec succès.' })
-      close()
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
-    }
+  
+  confirmModalTitle.value = 'Supprimer la tâche'
+  confirmModalMessage.value = 'Voulez-vous vraiment supprimer cette tâche ?'
+  
+  pendingDeleteAction.value = () => {
+    isConfirmModalOpen.value = false
+    const taskId = route.params.id as string
+    
+    let isCancelled = false
+    
+    const timeoutId = setTimeout(async () => {
+      if (isCancelled) return
+      try {
+        await deleteTask(taskId)
+      } catch (e) {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+      }
+    }, 5000)
+
+    addToast({
+      type: 'success',
+      title: 'Tâche supprimée',
+      message: 'La suppression sera définitive dans 5 secondes.',
+      duration: 5000,
+      action: {
+        label: 'Annuler',
+        onClick: () => {
+          isCancelled = true
+          clearTimeout(timeoutId)
+          addToast({ type: 'info', title: 'Annulé', message: 'La suppression a été annulée.' })
+        }
+      }
+    })
+    goBack()
   }
+  isConfirmModalOpen.value = true
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -207,6 +239,49 @@ const removeBanner = async () => {
 
 
 const isTagDropdownOpen = ref(false)
+
+const labelSearchQuery = ref('')
+const filteredLabels = computed(() => {
+  if (!labelSearchQuery.value) return tags.value
+  const q = labelSearchQuery.value.toLowerCase()
+  return tags.value.filter(t => t.name.toLowerCase().includes(q))
+})
+
+const isCreatingLabel = ref(false)
+const editingLabelId = ref<number | string | null>(null)
+const labelFormName = ref('')
+const labelFormColor = ref('#10B981')
+const defaultColors = ['#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#3B82F6', '#64748B', '#06B6D4', '#EAB308']
+
+const openCreateLabel = () => {
+    isCreatingLabel.value = true
+    editingLabelId.value = null
+    labelFormName.value = ''
+    labelFormColor.value = defaultColors[0] || '#10B981'
+}
+
+const openEditLabel = (label: any) => {
+    isCreatingLabel.value = true
+    editingLabelId.value = label.id
+    labelFormName.value = label.name
+    labelFormColor.value = label.color || defaultColors[0]
+}
+
+const saveLabelForm = async () => {
+    if (!labelFormName.value.trim()) return
+    try {
+        if (editingLabelId.value) {
+            await apiUpdateTag(editingLabelId.value, { name: labelFormName.value, color: labelFormColor.value })
+            addToast({ title: 'Étiquette modifiée', message: 'L\'étiquette a été mise à jour.', type: 'success' })
+        } else {
+            await createTag({ name: labelFormName.value, color: labelFormColor.value })
+            addToast({ title: 'Étiquette créée', message: 'La nouvelle étiquette a été ajoutée.', type: 'success' })
+        }
+        isCreatingLabel.value = false
+    } catch (e) {
+        addToast({ title: 'Erreur', message: 'Impossible de sauvegarder l\'étiquette.', type: 'error' })
+    }
+}
 const isStatusDropdownOpen = ref(false)
 const isPriorityDropdownOpen = ref(false)
 
@@ -270,6 +345,15 @@ const filteredMentionUsers = computed(() => {
   if (!mentionSearchQuery.value) return orgMembers.value
   const q = mentionSearchQuery.value.toLowerCase()
   return orgMembers.value.filter(u => u.name.toLowerCase().includes(q))
+})
+
+const isOverdue = computed(() => {
+  if (!taskDueDate.value || taskDueDate.value === 'Aucune') return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(taskDueDate.value)
+  dueDate.setHours(0, 0, 0, 0)
+  return dueDate < today
 })
 
 const handleCommentInput = () => {
@@ -370,9 +454,9 @@ const statusConfig = computed(() => {
     }
   })
   
-  if (taskStatus.value && !config[taskStatus.value]) {
-    config[taskStatus.value] = {
-      label: taskStatus.value.toUpperCase(),
+  if (taskBoardColumn.value && !config[taskBoardColumn.value]) {
+    config[taskBoardColumn.value] = {
+      label: taskBoardColumn.value.toUpperCase(),
       colorClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
     }
   }
@@ -386,12 +470,12 @@ const priorityConfig: Record<string, { label: string; colorClass: string; icon: 
   'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
-const updateStatus = async (newStatus: string) => {
+const toggleTaskStatus = async () => {
   if (!(route.params.id as string)) return
+  const newStatus = taskStatus.value === 'done' ? 'not done' : 'done'
   try {
     await updateTask((route.params.id as string), { status: newStatus })
     taskStatus.value = newStatus
-    isStatusDropdownOpen.value = false
     addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
@@ -561,19 +645,13 @@ watch(() => (route.params.id as string), async (newTaskId) => {
     resetState()
     await setTask(newTaskId)
     fetchOrgMembers()
+    getTags()
     await getCommentaires(newTaskId)
-    if (false) {
+    if (route.query.edit === 'true') {
       startEditing()
     }
   }
 }, { immediate: true })
-
-watch(() => true, (newIsOpen) => {
-  if (newIsOpen && false) {
-    startEditing()
-    fetchOrgMembers()
-  }
-})
 </script>
 
 <template>
@@ -581,6 +659,12 @@ watch(() => true, (newIsOpen) => {
       <!-- Header -->
           <header class="flex items-center justify-between px-6 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
             <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
+              <button @click="goBack" class="flex items-center gap-1.5 p-1.5 mr-1 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Retour">
+                <Icon name="heroicons:arrow-left" class="w-5 h-5" />
+                <span class="text-sm font-medium hidden sm:inline">Retour</span>
+              </button>
+              <div class="w-px h-5 bg-black/10 dark:bg-white/10 mr-1 hidden sm:block"></div>
+              
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
               <NuxtLink v-if="taskProjetId" :to="`/organization/${route.params.org_id || activeOrganization?.id}/projects/${taskProjetId}`" class="hover:underline cursor-pointer">{{ taskProjetReference }}</NuxtLink>
               <span v-if="taskProjetId">/</span>
@@ -593,8 +677,6 @@ watch(() => true, (newIsOpen) => {
               <button v-if="!isEditing" @click="handleDelete" class="p-1.5 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer"><Icon name="heroicons:trash" class="w-5 h-5" /></button>
               <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
               <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs sm:text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> <span class="hidden sm:inline">Annuler</span></button>
-              <div class="hidden sm:block w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
-              <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
             </div>
           </header>
 
@@ -629,30 +711,24 @@ watch(() => true, (newIsOpen) => {
               
               <!-- Quick Actions Row -->
               <div class="flex flex-wrap gap-2 mb-8 items-center">
-                <!-- Status -->
-                <div class="relative">
-                  <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors', statusConfig[taskStatus]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300']" :style="statusConfig[taskStatus]?.style">
-                    {{ statusConfig[taskStatus]?.label || taskStatus }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
-                  </button>
-                  <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isStatusDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
-                    <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]" :style="config.style">
-                      {{ config.label }}
-                      <Icon v-if="taskStatus === key" name="heroicons:check" class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                <!-- Status Toggle -->
+                <button @click="toggleTaskStatus" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', taskStatus === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']">
+                  <Icon :name="taskStatus === 'done' ? 'ph:check-circle-fill' : 'ph:circle'" class="w-4 h-4" />
+                  {{ taskStatus === 'done' ? 'Terminé' : 'Pas terminé' }}
+                </button>
 
-                <!-- Column -->
+                <!-- Status/Column -->
                 <div class="relative">
-                  <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105">
-                    {{ taskBoardColumn || 'À faire' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
+                  <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', statusConfig[taskBoardColumn]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']" :style="statusConfig[taskBoardColumn]?.style">
+                    {{ statusConfig[taskBoardColumn]?.label || taskBoardColumn || 'À FAIRE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
                   </button>
                   <div v-if="isBoardColumnDropdownOpen" @click="isBoardColumnDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isBoardColumnDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-48 overflow-y-auto custom-scrollbar">
-                    <button @click="updateBoardColumn(col as string)" v-for="col in kanbanColumns" :key="col" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskBoardColumn === col ? 'bg-canvas dark:bg-gray-700' : 'hover:bg-canvas dark:hover:bg-gray-800']">
-                      {{ col }}
-                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4" />
+                  <div v-if="isBoardColumnDropdownOpen" class="absolute left-0 top-full mt-1 w-56 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                    <button @click="updateBoardColumn(col as string)" v-for="col in kanbanColumns" :key="col" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center justify-between text-sm transition-colors">
+                      <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
+                        {{ statusConfig[col]?.label || col }}
+                      </span>
+                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4 text-primary dark:text-blue-500" />
                     </button>
                   </div>
                 </div>
@@ -695,11 +771,57 @@ watch(() => true, (newIsOpen) => {
                     <span v-if="taskTags.length > 0" class="ml-1 px-1.5 py-0.5 rounded-full bg-gray-300 dark:bg-gray-700 text-[10px]">{{ taskTags.length }}</span>
                   </button>
                   <div v-if="isTagDropdownOpen" @click="isTagDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-60 overflow-y-auto custom-scrollbar">
-                    <button @click="toggleTag(tag)" v-for="tag in tags" :key="tag.id" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskTagIds.includes(tag.id) ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']" :style="{ color: tag.color || '#9CA3AF' }">
-                      {{ tag.name }}
-                      <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4" />
-                    </button>
+                  <div v-if="isTagDropdownOpen" class="absolute left-0 top-full mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
+                    <div class="p-3 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+                      <button v-if="isCreatingLabel" @click="isCreatingLabel = false" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                        <Icon name="heroicons:chevron-left" class="w-4 h-4 text-secondary" />
+                      </button>
+                      <p class="text-sm font-bold text-main dark:text-gray-200 flex-1 text-center">{{ isCreatingLabel ? (editingLabelId ? 'Modifier l\'étiquette' : 'Créer une étiquette') : 'Étiquettes' }}</p>
+                      <button @click="isTagDropdownOpen = false" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                        <Icon name="heroicons:x-mark" class="w-4 h-4 text-secondary" />
+                      </button>
+                    </div>
+                    <div v-if="!isCreatingLabel" class="flex flex-col">
+                      <div class="p-2">
+                        <input v-model="labelSearchQuery" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" placeholder="Rechercher une étiquette..." />
+                      </div>
+                      <div class="max-h-60 overflow-y-auto px-2 pb-2 custom-scrollbar flex flex-col gap-1">
+                        <div v-for="tag in filteredLabels" :key="tag.id" class="flex items-center gap-2 group/label">
+                          <button @click="toggleTag(tag)" class="flex-1 flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left font-bold text-xs uppercase" :style="{ backgroundColor: (tag.color || '#10B981') + '33', color: tag.color || '#10B981' }">
+                            <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4" />
+                            <span v-else class="w-4"></span>
+                            <span class="flex-1 truncate">{{ tag.name }}</span>
+                          </button>
+                          <button v-if="!tag.is_default" @click.stop="openEditLabel(tag)" class="p-1.5 rounded hover:bg-gray-200 dark:hover:bg-gray-800 text-secondary transition-colors" title="Modifier">
+                            <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <div class="p-2 border-t border-form-border dark:border-gray-800">
+                        <button @click="openCreateLabel" class="w-full py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-xs font-bold text-main dark:text-gray-300 transition-colors">
+                          Créer une étiquette
+                        </button>
+                      </div>
+                    </div>
+                    <div v-else class="p-3 flex flex-col gap-4">
+                      <div class="w-full py-2 px-3 rounded font-bold text-xs uppercase flex items-center gap-2 shadow-sm" :style="{ backgroundColor: labelFormColor + '33', color: labelFormColor }"><span class="w-4"></span> {{ labelFormName || 'APERÇU' }}</div>
+                      <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-secondary dark:text-gray-500">Titre</label>
+                        <input v-model="labelFormName" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" />
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <label class="text-xs font-bold text-secondary dark:text-gray-500">Couleur</label>
+                        <div class="grid grid-cols-4 gap-1.5">
+                          <button v-for="color in defaultColors" :key="color" @click="labelFormColor = color" class="h-8 rounded transition-all flex items-center justify-center hover:brightness-110" :style="{ backgroundColor: color }">
+                            <Icon v-if="labelFormColor === color" name="heroicons:check" class="w-4 h-4 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex gap-2 mt-2">
+                        <button @click="isCreatingLabel = false" class="flex-1 py-1.5 rounded bg-gray-200 dark:bg-gray-800 text-main dark:text-gray-300 text-xs font-bold transition-colors">Annuler</button>
+                        <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-blue-500 text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -721,12 +843,12 @@ watch(() => true, (newIsOpen) => {
                 </div>
 
                 <!-- Date -->
-                <div class="relative flex items-center bg-gray-100 dark:bg-[#2D2D2F] rounded-md hover:brightness-105 transition-colors">
-                  <div class="px-3 py-1.5 flex items-center gap-1.5 text-gray-700 dark:text-gray-300 font-bold text-xs">
+                 <div :class="['relative flex items-center rounded-md hover:brightness-105 transition-colors', isOverdue && !isEditing ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-[#2D2D2F]']">
+                  <div :class="['px-3 py-1.5 flex items-center gap-1.5 font-bold text-xs', isOverdue && !isEditing ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">
                     <Icon name="heroicons:calendar" class="w-3.5 h-3.5" /> Échéance:
                   </div>
                   <input v-if="isEditing" v-model="editDueDate" type="date" :max="projectEndDate" class="bg-transparent border-none focus:ring-0 text-xs font-bold text-main dark:text-gray-300 cursor-pointer pr-2" />
-                  <span v-else class="text-xs font-bold text-main dark:text-gray-300 pr-3">{{ formatDisplayDate(taskDueDate) }}</span>
+                  <span v-else :class="['text-xs font-bold pr-3', isOverdue ? 'text-red-600 dark:text-red-400' : 'text-main dark:text-gray-300']">{{ formatDisplayDate(taskDueDate) }}</span>
                 </div>
               </div>
 
@@ -757,9 +879,9 @@ watch(() => true, (newIsOpen) => {
                   <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer">
                     <div class="flex items-center gap-3 overflow-hidden">
                       <div class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center">
-                        <div v-if="sub.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                       </div>
-                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'terminé'}">{{ sub.title }}</span>
+                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'done'}">{{ sub.title }}</span>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
                       <span class="text-xs font-bold px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-secondary dark:text-gray-400 uppercase">{{ sub.reference_code }}</span>
@@ -788,7 +910,7 @@ watch(() => true, (newIsOpen) => {
                   <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-blue-500 rounded-lg p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none shadow-sm transition-colors" rows="3" placeholder="Écrivez un commentaire..."></textarea>
                   
                   <!-- Mention Dropdown -->
-                  <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
+                  <div v-if="showMentionDropdown" class="absolute top-full mt-1 left-0 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
                     <ul class="p-1 overflow-y-auto custom-scrollbar">
                       <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
                         <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
@@ -856,6 +978,15 @@ watch(() => true, (newIsOpen) => {
         :projet-id="taskProjetId"
         :create-task="handleCreateSubtaskSubmit"
         @close="isCreateSubtaskModalOpen = false"
+      />
+      
+      <ConfirmModal
+        :is-open="isConfirmModalOpen"
+        :title="confirmModalTitle"
+        :message="confirmModalMessage"
+        confirm-text="Supprimer"
+        @close="isConfirmModalOpen = false"
+        @confirm="pendingDeleteAction ? pendingDeleteAction() : null"
       />
 </template>
 

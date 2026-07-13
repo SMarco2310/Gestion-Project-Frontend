@@ -12,6 +12,7 @@ import { useToast } from '~/composables/useToast'
 const { tasks, getTasks, deleteTask, updateTask, createTask } = useTasks()
 const { activeOrganization, updateKanbanColumns } = useOrganizations()
 const { addToast } = useToast()
+const route = useRoute()
 
 const kanbanColumns = computed(() => {
   return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
@@ -53,10 +54,7 @@ const handleColumnReorder = async () => {
 
 const boardItems = ref<Record<string, any[]>>({'Inbox': []})
 
-const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
-const taskModalEditMode = ref(false)
-
 const isCreateTaskModalOpen = ref(false)
 
 const handleSidebarCreateTask = async (payload: any) => {
@@ -81,32 +79,52 @@ const handleCreateTaskSubmit = async (payload: any) => {
 }
 
 const handleTaskClick = (taskId: string) => {
-  selectedTaskId.value = taskId
-  taskModalEditMode.value = false
-  isTaskModalOpen.value = true
+  navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}`)
 }
 
 const handleEditTask = (taskId: string) => {
-  selectedTaskId.value = taskId
-  taskModalEditMode.value = true
-  isTaskModalOpen.value = true
+  navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}?edit=true`)
 }
 
-const handleDeleteTask = async (taskId: string) => {
-  if (confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
-    try {
-      await deleteTask(taskId)
-      addToast({ type: 'success', title: 'Tâche supprimée', message: 'La tâche a été supprimée avec succès.' })
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
-    }
+const handleDeleteTask = (taskId: string) => {
+  confirmModalTitle.value = 'Supprimer la tâche'
+  confirmModalMessage.value = 'Voulez-vous vraiment supprimer cette tâche ?'
+  confirmModalConfirmText.value = 'Supprimer la tâche'
+  
+  pendingDeleteAction.value = async () => {
+    isConfirmModalOpen.value = false
+    
+    const previousTasks = [...tasks.value]
+    tasks.value = tasks.value.filter(t => String(t.id) !== String(taskId))
+    
+    let isCancelled = false
+    
+    const timeoutId = setTimeout(async () => {
+      if (isCancelled) return
+      try {
+        await deleteTask(taskId)
+      } catch (e) {
+        tasks.value = previousTasks
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+      }
+    }, 5000)
+
+    addToast({
+      type: 'success',
+      title: 'Tâche supprimée',
+      message: 'La suppression sera définitive dans 5 secondes.',
+      duration: 5000,
+      action: {
+        label: 'Annuler',
+        onClick: () => {
+          isCancelled = true
+          clearTimeout(timeoutId)
+          tasks.value = previousTasks
+        }
+      }
+    })
   }
-}
-
-const handleCloseTaskModal = () => {
-  isTaskModalOpen.value = false
-  selectedTaskId.value = null
-  taskModalEditMode.value = false
+  isConfirmModalOpen.value = true
 }
 
 const handleTaskMoved = async (taskId: string, newColumn: string) => {
@@ -185,12 +203,23 @@ const confirmModalTitle = ref('')
 const confirmModalMessage = ref('')
 const columnToDelete = ref('')
 
+const pendingDeleteAction = ref<(() => void) | null>(null)
+const confirmModalConfirmText = ref('Supprimer')
+
 const handleDeleteColumn = async (colName: string) => {
   if (!activeOrganization.value) return
+  
+  if (kanbanColumns.value.length <= 1) {
+    addToast({ type: 'warning', title: 'Action impossible', message: 'Impossible de supprimer la dernière colonne.' })
+    return
+  }
   
   columnToDelete.value = colName
   confirmModalTitle.value = 'Supprimer la colonne'
   confirmModalMessage.value = `Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ?\n\nToutes les tâches qu'elle contient seront déplacées vers la première colonne (si existante).`
+  confirmModalConfirmText.value = 'Supprimer la colonne'
+  
+  pendingDeleteAction.value = executeDeleteColumn
   isConfirmModalOpen.value = true
 }
 
@@ -483,13 +512,6 @@ onMounted(async () => {
       </template>
     </draggable>
     </div>
-    <!-- Task Modal -->
-    <TaskModal 
-      :isOpen="isTaskModalOpen" 
-      :task-id="selectedTaskId" 
-      :startInEditMode="taskModalEditMode"
-      @close="handleCloseTaskModal" 
-    />
     <!-- Create Task Modal -->
     <CreateTaskModal
       :is-open="isCreateTaskModalOpen"
@@ -501,9 +523,9 @@ onMounted(async () => {
       :is-open="isConfirmModalOpen"
       :title="confirmModalTitle"
       :message="confirmModalMessage"
-      confirm-text="Supprimer la colonne"
+      :confirm-text="confirmModalConfirmText"
       @close="isConfirmModalOpen = false"
-      @confirm="executeDeleteColumn"
+      @confirm="pendingDeleteAction ? pendingDeleteAction() : null"
     />
   </div>
 </template>

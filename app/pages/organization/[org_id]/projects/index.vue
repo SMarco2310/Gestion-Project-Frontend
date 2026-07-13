@@ -21,9 +21,9 @@ await Promise.all([
 const getProjectMetrics = (projectId: number | string) => {
   const projectTasks = tasks.value.filter(t => String(t.projet_id) === String(projectId))
   const totalTasks = projectTasks.length
-  const doneTasks = projectTasks.filter(t => t.status === 'terminé').length
-  const inProgressTasks = projectTasks.filter(t => t.status === 'en cours').length
-  const todoTasks = projectTasks.filter(t => t.status === 'à faire').length
+  const doneTasks = projectTasks.filter(t => t.status === 'done').length
+  const todoTasks = projectTasks.filter(t => t.status !== 'done').length
+  const inProgressTasks = totalTasks - doneTasks - todoTasks // Which is 0 now since it's just done/not done, but kept for signature compatibility
   const tasksProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
 
   return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }

@@ -8,6 +8,10 @@ export interface Toast {
   message?: string
   type: ToastType
   duration?: number
+  action?: {
+    label: string
+    onClick: () => void
+  }
 }
 
 // 1. Global state using Vue's ref OUTSIDE the composable function 

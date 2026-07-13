@@ -219,6 +219,19 @@ const upcomingTasks = computed(() => {
     .slice(0, 4)
 })
 
+const projectTaskStats = computed(() => {
+  return projets.value.map((project) => {
+    const projectTasks = tasks.value.filter((task) => String(task.projet_id) === String(project.id))
+    const total = projectTasks.length
+    const done = projectTasks.filter((task) => isDone(task.status)).length
+    return {
+      name: project.reference_code || project.name.substring(0, 8),
+      Total: total,
+      Complété: done
+    }
+  })
+})
+
 const recentCommentsData = computed(() => {
   return commentaires.value
     .filter(c => c.created_at)
@@ -266,6 +279,11 @@ onMounted(async () => {
         </section>
     <br>
     <section>
+        <!-- Stats Cards with only numbers -->
+        <CardDashboard :cards="cards" />
+    </section>
+    <br>
+    <section>
         <DashboardAnalytics 
           :totalUsers="totalUsersCount"
           :activeProjects="activeProjectsCount"
@@ -274,16 +292,13 @@ onMounted(async () => {
         />
     </section>
     <br>
-    <section>
-        <!-- Stats Cards with only numbers -->
-        <CardDashboard :cards="cards" />
-    </section>
-    <br>
+    
     <section>
         <!-- Stats Cards with graphs -->
         <CardV2Dashboard
           :totalIssues="createdCount"
           :statusMetrics="statusMetrics"
+          :projectTaskStats="projectTaskStats"
           :priorities="priorities"
           :epics="epics"
           :upcomingTasks="upcomingTasks"

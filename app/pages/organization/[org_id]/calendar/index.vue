@@ -203,11 +203,11 @@ const calendarOptions = computed(() => ({
   eventClick: (clickInfo: any) => {
     const type = clickInfo.event.extendedProps.type
     if (type === 'task') {
-      selectedTaskId.value = clickInfo.event.id.replace('t-', '')
-      isTaskModalOpen.value = true
+      const taskId = clickInfo.event.id.replace('t-', '')
+      navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}`)
     } else if (type === 'project') {
-      selectedProjectId.value = clickInfo.event.id.replace('p-', '')
-      isProjectSheetOpen.value = true
+      const projectId = clickInfo.event.id.replace('p-', '')
+      navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/projects/${projectId}`)
     }
   },
   drop: async (info: any) => {
@@ -399,7 +399,7 @@ const calendarOptions = computed(() => ({
                    'bg-gray-100 dark:bg-gray-800/40 text-gray-900 dark:text-gray-100': arg.event.backgroundColor === 'rgba(59, 130, 246, 0.1)'
                  }"
             >
-              <div v-if="arg.event.extendedProps.status === 'terminé'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
+              <div v-if="arg.event.extendedProps.status === 'done'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
               <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
               <div v-else class="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0 border border-gray-500"></div>
               <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
@@ -429,7 +429,7 @@ const calendarOptions = computed(() => ({
               
               <div class="mt-auto pt-2" v-if="arg.event.extendedProps.status">
                 <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-black/30 rounded-full text-[9px] font-bold uppercase tracking-wider">
-                  <Icon name="heroicons:check-circle" class="w-3 h-3 text-emerald-500" v-if="arg.event.extendedProps.status === 'terminé'" />
+                  <Icon name="heroicons:check-circle" class="w-3 h-3 text-emerald-500" v-if="arg.event.extendedProps.status === 'done'" />
                   <Icon name="heroicons:clock" class="w-3 h-3 text-blue-500" v-else-if="arg.event.extendedProps.status === 'en cours'" />
                   <Icon name="heroicons:minus-circle" class="w-3 h-3 text-gray-400" v-else />
                   {{ arg.event.extendedProps.status }}
@@ -451,18 +451,6 @@ const calendarOptions = computed(() => ({
       :isOpen="isCreateProjectModalOpen" 
       @close="isCreateProjectModalOpen = false" 
       @created="getProjets"
-    />
-    <TaskModal 
-      :isOpen="isTaskModalOpen" 
-      :taskId="selectedTaskId" 
-      @close="isTaskModalOpen = false" 
-      @updated="getTasks"
-    />
-    <ProjectModal
-      :isOpen="isProjectSheetOpen"
-      :projectId="selectedProjectId"
-      @close="isProjectSheetOpen = false"
-      @updated="getProjets"
     />
   </div>
 </template>

@@ -45,6 +45,14 @@ const getColorClass = (type: string) => {
           <div class="flex-1 min-w-0">
             <h4 class="text-sm font-bold text-main dark:text-gray-200">{{ toast.title }}</h4>
             <p v-if="toast.message" class="text-xs text-secondary dark:text-gray-400 mt-1">{{ toast.message }}</p>
+            <div v-if="toast.action" class="mt-2.5">
+              <button 
+                @click="toast.action.onClick(); removeToast(toast.id)"
+                class="px-3 py-1.5 text-xs font-bold bg-white/40 hover:bg-white/60 dark:bg-black/20 dark:hover:bg-black/40 rounded transition-colors"
+              >
+                {{ toast.action.label }}
+              </button>
+            </div>
           </div>
           <button @click="removeToast(toast.id)" class="shrink-0 p-1 rounded-md hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer">
             <Icon name="heroicons:x-mark" class="w-4 h-4 text-main dark:text-gray-400" />

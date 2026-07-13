@@ -76,17 +76,55 @@ const updateMemberRole = async () => {
   }
 }
 
-const removeTeamMember = async (memberId: number) => {
+const isConfirmModalOpen = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingDeleteAction = ref<(() => void) | null>(null)
+
+const removeTeamMember = (memberId: number) => {
   if (!activeOrganization.value) return;
-  try {
-    const orgId = activeOrganization.value.id;
-    await $api(`/organizations/${orgId}/teams/${teamId}/members/${memberId}`, { method: 'DELETE' });
-    teamMembers.value = teamMembers.value.filter((m: any) => m.id !== memberId);
-    addToast({ type: 'success', title: 'Succès', message: 'Membre retiré de l\'équipe.' });
-  } catch (err) {
-    console.error('Error removing member', err);
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de retirer le membre.' });
+  
+  const member = teamMembers.value.find((m: any) => m.id === memberId)
+  
+  confirmModalTitle.value = 'Retirer le membre'
+  confirmModalMessage.value = `Voulez-vous vraiment retirer ${member?.name || 'ce membre'} de l'équipe ?`
+  
+  pendingDeleteAction.value = () => {
+    isConfirmModalOpen.value = false
+    
+    const previousMembers = [...teamMembers.value]
+    teamMembers.value = teamMembers.value.filter((m: any) => m.id !== memberId)
+    
+    let isCancelled = false
+    const orgId = activeOrganization.value!.id;
+    
+    const timeoutId = setTimeout(async () => {
+      if (isCancelled) return
+      try {
+        await $api(`/organizations/${orgId}/teams/${teamId}/members/${memberId}`, { method: 'DELETE' });
+      } catch (err) {
+        teamMembers.value = previousMembers
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de retirer le membre.' });
+      }
+    }, 5000)
+
+    addToast({
+      type: 'success',
+      title: 'Membre retiré',
+      message: 'Le retrait sera définitif dans 5 secondes.',
+      duration: 5000,
+      action: {
+        label: 'Annuler',
+        onClick: () => {
+          isCancelled = true
+          clearTimeout(timeoutId)
+          teamMembers.value = previousMembers
+          addToast({ type: 'info', title: 'Annulé', message: 'Le retrait a été annulé.' })
+        }
+      }
+    })
   }
+  isConfirmModalOpen.value = true
 }
 
 
@@ -392,5 +430,15 @@ const handleInviteNew = async () => {
         </div>
       </div>
     </div>
+    
+    <!-- Confirm Modal -->
+    <ConfirmModal
+      :is-open="isConfirmModalOpen"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      confirm-text="Retirer"
+      @close="isConfirmModalOpen = false"
+      @confirm="pendingDeleteAction ? pendingDeleteAction() : null"
+    />
   </div>
 </template>

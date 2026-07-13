@@ -67,18 +67,49 @@ const toggleDropdown = (id: number) => {
 
 const { deleteTeam } = useTeams()
 
-const handleDeleteTeam = async (teamId: number) => {
+const isDeleteModalOpen = ref(false)
+const teamToDelete = ref<number | null>(null)
+
+const confirmDeleteTeam = (teamId: number) => {
   activeDropdownId.value = null
-  if (!activeOrganization.value) return
-  if (!confirm('Voulez-vous vraiment supprimer cette équipe ? Toutes ses données seront perdues.')) return
+  teamToDelete.value = teamId
+  isDeleteModalOpen.value = true
+}
+
+const executeDeleteTeam = () => {
+  if (!teamToDelete.value || !activeOrganization.value) return
+  const teamId = teamToDelete.value
+  isDeleteModalOpen.value = false
   
-  try {
-    await deleteTeam(activeOrganization.value.id, teamId)
-    addToast({ type: 'success', title: 'Succès', message: 'Équipe supprimée.' })
-    await fetchTeams()
-  } catch (error) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'équipe.' })
-  }
+  const previousTeams = [...teams.value]
+  teams.value = teams.value.filter(t => t.id !== teamId)
+  
+  let isCancelled = false
+  
+  const timeoutId = setTimeout(async () => {
+    if (isCancelled) return
+    try {
+      await deleteTeam(activeOrganization.value!.id, teamId)
+    } catch (err) {
+      teams.value = previousTeams
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'équipe.' })
+    }
+  }, 5000)
+
+  addToast({
+    type: 'success',
+    title: 'Équipe supprimée',
+    message: 'La suppression sera définitive dans 5 secondes.',
+    duration: 5000,
+    action: {
+      label: 'Annuler',
+      onClick: () => {
+        isCancelled = true
+        clearTimeout(timeoutId)
+        teams.value = previousTeams
+      }
+    }
+  })
 }
 
 </script>
@@ -120,7 +151,7 @@ const handleDeleteTeam = async (teamId: number) => {
               <button @click.stop="activeDropdownId = null; navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                 <Icon name="heroicons:pencil" class="w-4 h-4" /> Gérer
               </button>
-              <button @click.stop="handleDeleteTeam(team.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
+              <button @click.stop="confirmDeleteTeam(team.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
                 <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
               </button>
             </div>
@@ -192,6 +223,14 @@ const handleDeleteTeam = async (teamId: number) => {
         </div>
       </div>
     </div>
+
+    <ConfirmModal
+      :is-open="isDeleteModalOpen"
+      title="Supprimer l'équipe"
+      message="Voulez-vous vraiment supprimer cette équipe ? Toutes ses données seront perdues."
+      @close="isDeleteModalOpen = false"
+      @confirm="executeDeleteTeam"
+    />
 
   </div>
 </template>

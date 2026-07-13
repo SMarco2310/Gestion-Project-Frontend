@@ -8,6 +8,7 @@ const items = defineModel<any[]>('items', { default: () => [] })
 const emit = defineEmits(['createTask', 'taskClick', 'taskMoved', 'toggleStatus'])
 
 const isCreating = ref(false)
+const isCollapsed = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
 const newTaskProject = ref('')
@@ -103,20 +104,35 @@ const onChange = (evt: any) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full w-[340px] bg-[#16233B] rounded-xl border border-white/5 overflow-hidden shadow-lg">
+  <div :class="[
+    'flex flex-col h-full bg-[#16233B] rounded-xl border border-white/5 overflow-hidden shadow-lg transition-all duration-300 shrink-0',
+    isCollapsed ? 'w-14' : 'w-[340px]'
+  ]">
     <!-- Header -->
-    <div class="flex items-center justify-between p-4 text-white shrink-0">
-      <div class="flex items-center gap-2">
+    <div :class="['flex items-center text-white shrink-0 group/header', isCollapsed ? 'flex-col py-4 h-full' : 'justify-between p-4']">
+      
+      <div v-if="!isCollapsed" class="flex items-center gap-2">
         <Icon name="ph:tray" class="text-xl text-gray-300" />
         <h2 class="text-lg font-semibold tracking-wide">Inbox</h2>
       </div>
-      <div class="flex items-center gap-2">
-        <!-- Optional: Future actions can go here -->
+
+      <div v-else class="flex flex-col items-center gap-4 mt-2">
+        <Icon name="ph:tray" class="text-xl text-gray-300" />
+        <h2 class="text-sm font-semibold tracking-wide whitespace-nowrap rotate-180 uppercase" style="writing-mode: vertical-rl;">INBOX</h2>
+        <span v-if="items.length > 0" class="text-[10px] font-bold px-1.5 py-0.5 rounded flex items-center justify-center min-w-[20px] shrink-0 bg-white/20 text-white mt-2">
+          {{ items.length }}
+        </span>
+      </div>
+
+      <div :class="['flex items-center gap-2', isCollapsed ? 'mt-auto mb-2' : '']">
+        <button @click="isCollapsed = !isCollapsed" :class="['p-1.5 rounded transition-colors', isCollapsed ? '' : 'opacity-0 group-hover/header:opacity-100', 'text-gray-400 hover:text-white hover:bg-white/10']" :title="isCollapsed ? 'Développer' : 'Réduire'">
+          <Icon :name="isCollapsed ? 'ph:arrows-out-line-horizontal' : 'ph:arrows-in-line-horizontal'" class="w-4 h-4" />
+        </button>
       </div>
     </div>
 
     <!-- Content -->
-    <div class="flex-1 flex flex-col px-4 pb-4 overflow-y-auto custom-scrollbar gap-2">
+    <div v-show="!isCollapsed" class="flex-1 flex flex-col px-4 pb-4 overflow-y-auto custom-scrollbar gap-2">
       <!-- Create Button -->
       <div v-if="!isCreating" class="mb-2">
         <button @click.stop="isCreating = true" class="flex items-center gap-2 transition-colors text-sm font-medium w-full text-left text-gray-300 hover:text-white hover:bg-white/10 rounded-lg p-2 -ml-2">
@@ -210,8 +226,7 @@ const onChange = (evt: any) => {
         <template #item="{ element: task }">
           <div 
             @click="emit('taskClick', task.id)"
-            class="inbox-task-card bg-[#24334E] rounded-md px-3 py-2.5 flex items-center gap-3 border border-white/5 cursor-pointer hover:bg-[#2A3C5C] transition-colors"
-          >
+class="inbox-task-card task-card neo-card group flex flex-row gap-2.5 px-4 py-3.5 bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] border border-black/5 dark:border-white/5 rounded-xl overflow-hidden cursor-pointer hover:brightness-105 transition-all"          >
             <div 
               @click.stop="emit('toggleStatus', task.id)"
               class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-colors"

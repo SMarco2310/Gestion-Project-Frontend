@@ -492,7 +492,7 @@ const isItemOverdue = (item: any) => {
             <Icon name="ph:x" class="w-3.5 h-3.5" />
           </button>
         </div>
-        <div class="grid grid-cols-5 gap-1.5">
+        <div class="grid grid-cols-5 gap-1.5 mb-3">
           <button 
             v-for="c in predefinedColors" 
             :key="c.name"
@@ -504,6 +504,19 @@ const isItemOverdue = (item: any) => {
           >
             <Icon v-if="color === c.hex || (!color && c.hex === '')" name="ph:check-bold" class="w-4 h-4 text-white" :class="c.hex === '' ? 'text-[#172B4D] dark:text-[#B6C2CF]' : ''" />
           </button>
+        </div>
+        
+        <div class="flex items-center gap-2 border-t border-gray-100 dark:border-gray-700 pt-3">
+          <span class="text-xs font-medium text-secondary dark:text-[#B6C2CF] flex-1">Personnalisée</span>
+          <div class="relative w-8 h-8 rounded overflow-hidden shadow-sm border border-gray-200 dark:border-gray-600 focus-within:ring-2 focus-within:ring-primary cursor-pointer transition-shadow">
+            <input 
+              type="color" 
+              :value="color || '#ffffff'" 
+              @change="(e) => { $emit('updateColor', (e.target as HTMLInputElement).value); isColorPickerOpen = false }"
+              class="absolute -inset-2 w-12 h-12 cursor-pointer bg-transparent border-none" 
+              title="Choisir une couleur"
+            />
+          </div>
         </div>
       </div>
     </div>

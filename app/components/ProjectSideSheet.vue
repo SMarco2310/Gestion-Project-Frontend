@@ -27,9 +27,59 @@ const close = () => {
   }
 }
 
-const { getProjet, updateProjet } = useProjets()
+const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment } = useProjets()
 const { getTasks } = useTasks()
 const { addToast } = useToast()
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const isUploading = ref(false)
+const projectAttachments = ref<any[]>([])
+
+const triggerFileInput = () => {
+  if (fileInput.value) fileInput.value.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files || target.files.length === 0) return
+  
+  const file = target.files[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) {
+    addToast({ title: 'Fichier trop lourd', message: 'La taille maximum est de 10Mo.', type: 'error' })
+    return
+  }
+  
+  isUploading.value = true
+  try {
+    const res = await uploadProjectAttachment(props.projectId, file)
+    if (res.success && res.attachment) {
+      projectAttachments.value.push(res.attachment)
+      addToast({ title: 'Fichier ajouté', message: 'Le document a été joint au projet.', type: 'success' })
+    }
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de joindre le fichier.', type: 'error' })
+  } finally {
+    isUploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+const deleteAttachment = async (attachment: any) => {
+  try {
+    await deleteProjectAttachment(attachment.id)
+    projectAttachments.value = projectAttachments.value.filter(a => a.id !== attachment.id)
+    addToast({ title: 'Fichier supprimé', message: 'Le document a été retiré.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de supprimer le document.', type: 'error' })
+  }
+}
+
+const getFileIcon = (mimeType: string) => {
+  if (mimeType?.startsWith('image/')) return 'heroicons:photo'
+  if (mimeType?.includes('pdf')) return 'heroicons:document-text'
+  return 'heroicons:document'
+}
 
 const isEditing = ref(false)
 const projectTitle = ref('')
@@ -163,6 +213,8 @@ const fetchProject = async (id: number | string | null) => {
       }
       assignedMembers.value = members
       
+      projectAttachments.value = (projet as any).attachments || []
+      
       // The API returns the status as defined in ProjectStatus (e.g. 'à faire', 'en cours', 'terminé')
       if ((projet as any).status) projectStatus.value = (projet as any).status
     }
@@ -172,8 +224,8 @@ const fetchProject = async (id: number | string | null) => {
     if (tasksData) {
       projectTasks.value = tasksData
       totalTasks.value = tasksData.length
-      todoTasks.value = tasksData.filter((t: any) => t.status === 'à faire').length
-      doneTasks.value = tasksData.filter((t: any) => t.status === 'terminé').length
+      todoTasks.value = tasksData.filter((t: any) => t.status !== 'done').length
+      doneTasks.value = tasksData.filter((t: any) => t.status === 'done').length
       inProgressTasks.value = totalTasks.value - todoTasks.value - doneTasks.value
       
       if (totalTasks.value > 0) {
@@ -229,7 +281,7 @@ const cancelEdit = () => {
   isEditing.value = false
 }
 
-const { deleteProjet } = useProjets()
+
 
 const isDeleteModalOpen = ref(false)
 
@@ -459,85 +511,6 @@ const updateStatus = async (status: string) => {
             </div>
           </div>
 
-          <!-- Équipe du projet -->
-          <div class="mb-8">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
-              <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-primary dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
-                  <Icon name="heroicons:plus" class="w-4 h-4" />
-                  Ajouter
-                </button>
-                
-                <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                <div v-if="isAddDropdownOpen" class="absolute right-0 top-10 mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[300px] overflow-hidden">
-                  <div class="p-2 border-b border-form-border dark:border-gray-800 shrink-0">
-                    <input v-model="assignSearchQuery" type="text" placeholder="Rechercher..." class="w-full bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 rounded px-3 py-2 text-sm text-main dark:text-white focus:outline-none focus:ring-1 focus:ring-primary" />
-                  </div>
-                  <div class="overflow-y-auto custom-scrollbar flex-1 p-1">
-                    <div v-if="filteredAssignees.teams.length > 0">
-                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipes</div>
-                      <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
-                        <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                          <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
-                        </div>
-                        <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
-                      </button>
-                    </div>
-                    <div v-if="filteredAssignees.members.length > 0" :class="{'mt-2 pt-2 border-t border-form-border dark:border-gray-800': filteredAssignees.teams.length > 0}">
-                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Membres</div>
-                      <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
-                        <div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[10px] shrink-0">
-                          {{ member.name.charAt(0) }}
-                        </div>
-                        <div class="flex flex-col truncate">
-                          <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ member.name }}</span>
-                        </div>
-                      </button>
-                    </div>
-                    <div v-if="filteredAssignees.teams.length === 0 && filteredAssignees.members.length === 0" class="p-4 text-center text-xs text-secondary dark:text-gray-500">
-                      Aucun résultat trouvé
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex flex-col gap-3">
-              <!-- Assigned Teams -->
-              <div v-if="assignedTeams.length > 0" class="flex flex-wrap gap-2 mb-2">
-                  <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm font-medium">
-                    <Icon name="heroicons:user-group" class="w-4 h-4" />
-                    {{ team.name }}
-                    <button @click="removeTeam(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-1">
-                      <Icon name="heroicons:x-mark" class="w-4 h-4" />
-                    </button>
-                  </div>
-              </div>
-              
-              <!-- Assigned Members -->
-              <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
-                <div class="flex items-center gap-3 cursor-pointer" @click="navigateTo(`/profile/${member.id}`)">
-                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
-                      <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
-                      <span v-else>{{ member.name.substring(0, 2).toUpperCase() }}</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-sm font-bold text-main dark:text-gray-200 group-hover:text-primary transition-colors">{{ member.name }}</span>
-                        <span class="text-xs text-secondary dark:text-gray-500">{{ member.role || 'Membre' }}</span>
-                    </div>
-                </div>
-                <button @click.stop="removeMember(member)" class="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                  <Icon name="heroicons:x-mark" class="w-5 h-5" />
-                </button>
-              </div>
-              
-              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic mt-2">
-                Aucun membre ou équipe assigné.
-              </div>
-            </div>
-          </div>
-
           <!-- Tasks List -->
           <div class="mb-8">
             <h3 class="text-sm font-bold text-main dark:text-gray-200 mb-4">Tâches du projet</h3>
@@ -585,6 +558,118 @@ const updateStatus = async (status: string) => {
               Aucune tâche dans ce projet.
             </div>
           </div>
+          <!-- Attachments -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-main dark:text-gray-200">Pièces jointes</h3>
+              <button @click="triggerFileInput" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
+                <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                <Icon v-else name="heroicons:plus" class="w-3 h-3" /> 
+                {{ isUploading ? 'Ajout...' : 'Ajouter' }}
+              </button>
+              <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
+            </div>
+            
+            <div v-if="projectAttachments.length > 0" class="flex flex-col gap-2">
+              <div v-for="attachment in projectAttachments" :key="attachment.id" class="group flex items-center justify-between p-3 bg-white dark:bg-[#222224] rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm transition-colors hover:border-primary/30">
+                <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `http://localhost:8000/storage/${attachment.file_path}`" target="_blank" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
+                  <div class="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Icon :name="getFileIcon(attachment.mime_type)" class="w-5 h-5" />
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-sm font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ attachment.file_name }}</span>
+                    <span class="text-xs text-secondary dark:text-gray-500">{{ Math.round(attachment.size / 1024) }} KB</span>
+                  </div>
+                </a>
+                <button v-if="canEdit" @click.stop="deleteAttachment(attachment)" class="p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                  <Icon name="heroicons:trash" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div v-else class="text-sm text-secondary dark:text-gray-500 p-4 border border-dashed border-form-border dark:border-gray-800 rounded-lg text-center bg-canvas dark:bg-transparent">
+              <Icon name="heroicons:paper-clip" class="w-6 h-6 mx-auto mb-2 opacity-40" />
+              Aucune pièce jointe
+            </div>
+          </div>
+          <!-- Équipe du projet -->
+          <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
+              <div class="relative">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-primary dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
+                  <Icon name="heroicons:plus" class="w-4 h-4" />
+                  Ajouter
+                </button>
+                
+                <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                <div v-if="isAddDropdownOpen" class="absolute right-0 top-10 mt-1 w-64 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[300px] overflow-hidden">
+                  <div class="p-2 border-b border-form-border dark:border-gray-800 shrink-0">
+                    <input v-model="assignSearchQuery" type="text" placeholder="Rechercher..." class="w-full bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 rounded px-3 py-2 text-sm text-main dark:text-white focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div class="overflow-y-auto custom-scrollbar flex-1 p-1">
+                    <div v-if="filteredAssignees.teams.length > 0">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipes</div>
+                      <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
+                        <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                          <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
+                        </div>
+                        <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.members.length > 0" :class="{'mt-2 pt-2 border-t border-form-border dark:border-gray-800': filteredAssignees.teams.length > 0}">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Membres</div>
+                      <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
+                        <div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[10px] shrink-0">
+                          {{ member.name.charAt(0) }}
+                        </div>
+                        <div class="flex flex-col truncate">
+                          <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ member.name }}</span>
+                        </div>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.teams.length === 0 && filteredAssignees.members.length === 0" class="p-4 text-center text-xs text-secondary dark:text-gray-500">
+                      Aucun résultat trouvé
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            
+            <div class="flex flex-col gap-3">
+              <!-- Assigned Teams -->
+              <div v-if="assignedTeams.length > 0" class="flex flex-wrap gap-2 mb-2">
+                  <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-sm font-medium">
+                    <Icon name="heroicons:user-group" class="w-4 h-4" />
+                    {{ team.name }}
+                    <button @click="removeTeam(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-1">
+                      <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                    </button>
+                  </div>
+              </div>
+              
+              <!-- Assigned Members -->
+              <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
+                <div class="flex items-center gap-3 cursor-pointer" @click="navigateTo(`/profile/${member.id}`)">
+                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
+                      <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                      <span v-else>{{ member.name.substring(0, 2).toUpperCase() }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-main dark:text-gray-200 group-hover:text-primary transition-colors">{{ member.name }}</span>
+                        <span class="text-xs text-secondary dark:text-gray-500">{{ member.role || 'Membre' }}</span>
+                    </div>
+                </div>
+                <button @click.stop="removeMember(member)" class="p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
+                  <Icon name="heroicons:x-mark" class="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-sm text-secondary dark:text-gray-500 italic mt-2">
+                Aucun membre ou équipe assigné.
+              </div>
+            </div>
+          </div>          
           
           <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex justify-start items-center gap-8 pb-4">
             <div class="flex flex-col gap-1">

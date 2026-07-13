@@ -157,6 +157,36 @@ export default function useProjets() {
         }
     }
 
+    const uploadProjectAttachment = async (projectId: string | number, file: File) => {
+        try {
+            const { $api } = useNuxtApp()
+            const formData = new FormData()
+            formData.append('file', file)
+            
+            const data = await $api<any>(`/projets/${projectId}/attachments`, {
+                method: 'POST',
+                body: formData
+            })
+            return data
+        } catch (error: any) {
+            console.error('Upload Attachment Error:', error)
+            throw error
+        }
+    }
+
+    const deleteProjectAttachment = async (attachmentId: string) => {
+        try {
+            const { $api } = useNuxtApp()
+            const data = await $api<any>(`/projets/attachments/${attachmentId}`, {
+                method: 'DELETE'
+            })
+            return data
+        } catch (error: any) {
+            console.error('Delete Attachment Error:', error)
+            throw error
+        }
+    }
+
     return {
         projets,
         getProjet,
@@ -164,7 +194,9 @@ export default function useProjets() {
         createProjet,
         updateProjet,
         deleteProjet,
-        archiveProjet
+        archiveProjet,
+        uploadProjectAttachment,
+        deleteProjectAttachment
     }
 
 }

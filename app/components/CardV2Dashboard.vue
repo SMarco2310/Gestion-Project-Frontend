@@ -7,6 +7,7 @@ const orgId = computed(() => route.params.org_id)
 const props = defineProps<{
   totalIssues: number
   statusMetrics: Array<{ label: string; percentage: string; colorClass: string; colorCode: string; rawPercent: number }>
+  projectTaskStats?: Array<{ name: string; Total: number; Complété: number }>
   priorities: Array<{ label: string; count: number; icon: string; iconColor: string; barColor: string; percent: number }>
   epics: Array<{ reference_code: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
   upcomingTasks?: Array<any>
@@ -54,43 +55,45 @@ const priorityCategories = {
 }
 
 const xFormatterPriority = (i: number) => priorityData.value[i]?.name || ''
+
+const projectTaskCategories = {
+  Total: {
+    name: 'Total',
+    color: '#9CA3AF'
+  },
+  Complété: {
+    name: 'Complété',
+    color: '#10B981'
+  }
+}
+
+const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-      <!-- Status Overview -->
+      <!-- Project Tasks Overview -->
       <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px]">
-        <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-6">Status Overview</h3>
+        <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-2">Tâches par Projet</h3>
         
-        <div class="flex-1 flex flex-col items-center justify-center gap-8">
-          <!-- Donut Chart -->
-          <!-- Donut Chart -->
-          <div class="w-32 h-32 relative flex-shrink-0">
-            <ClientOnly>
-              <DonutChart
-                :data="donutData"
-                :categories="donutCategories"
-                :showAnimation="true"
-                :hideLegend="true"
-                :height="128"
-                class="w-full h-full"
-              />
-            </ClientOnly>
-            <!-- Inner circle absolute -->
-            <div class="absolute inset-0 m-auto w-20 h-20 bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-full flex flex-col items-center justify-center shadow-[inset_1px_1px_3px_rgba(0,0,0,0.1)] dark:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] pointer-events-none">
-              <span class="text-2xl font-bold text-main dark:text-white leading-tight">{{ totalIssues }}</span>
-              <span class="text-[10px] text-secondary dark:text-gray-400">Total</span>
+        <div class="flex-1 w-full relative">
+          <ClientOnly>
+            <BarChart
+              v-if="projectTaskStats && projectTaskStats.length > 0"
+              :data="projectTaskStats"
+              xAxis="name"
+              :yAxis="['Total', 'Complété']"
+              :categories="projectTaskCategories"
+              :xFormatter="xFormatterProject"
+              :height="220"
+              :hideLegend="false"
+              class="w-full h-full"
+            />
+            <div v-else class="flex items-center justify-center h-full text-secondary">
+              Aucun projet
             </div>
-          </div>
-
-          <!-- Legend -->
-          <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 w-full px-2">
-            <div v-for="metric in statusMetrics" :key="metric.label" class="flex items-center gap-1.5">
-              <div :class="['w-2.5 h-2.5 rounded-full shrink-0', metric.colorClass]"></div>
-              <span class="text-[11px] whitespace-nowrap text-secondary dark:text-gray-400">{{ metric.percentage }} {{ metric.label }}</span>
-            </div>
-          </div>
+          </ClientOnly>
         </div>
       </div>
 
@@ -153,7 +156,7 @@ const xFormatterPriority = (i: number) => priorityData.value[i]?.name || ''
     </div>
 
     <!-- Second Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+    <div class="w-full max-w-[50%]">
       <!-- Upcoming Deadlines -->
       <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[320px]">
         <div class="flex items-center justify-between mb-6">
@@ -186,40 +189,6 @@ const xFormatterPriority = (i: number) => priorityData.value[i]?.name || ''
           <div v-if="!upcomingTasks || upcomingTasks.length === 0" class="flex flex-col items-center justify-center h-full text-secondary">
             <Icon name="ph:check-circle" class="w-8 h-8 mb-2 opacity-50" />
             <span class="text-sm">Aucune tâche urgente</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[320px]">
-        <div class="flex items-center justify-between mb-6">
-          <h3 class="text-sm font-semibold text-main dark:text-gray-200 flex items-center gap-2">
-            <Icon name="ph:chat-circle" class="w-4 h-4 text-blue-400" />
-            Derniers Commentaires
-          </h3>
-        </div>
-
-        <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
-          <div 
-            v-for="comment in recentComments" 
-            :key="comment.id"
-            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 border border-black/5 dark:border-white/5 flex gap-3 cursor-pointer hover:border-blue-400/50 transition-colors"
-            @click="navigateTo(`/organization/${orgId}/tasks/${comment.taskId}`)"
-          >
-            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
-              {{ comment.author.charAt(0).toUpperCase() }}
-            </div>
-            <div class="flex flex-col min-w-0">
-              <div class="flex items-center gap-2 mb-0.5">
-                <span class="text-xs font-bold text-main dark:text-gray-200">{{ comment.author }}</span>
-                <span class="text-[10px] text-secondary">{{ comment.time }}</span>
-              </div>
-              <p class="text-sm text-secondary dark:text-gray-400 line-clamp-2" v-html="comment.content"></p>
-            </div>
-          </div>
-          <div v-if="!recentComments || recentComments.length === 0" class="flex flex-col items-center justify-center h-full text-secondary">
-            <Icon name="ph:chats" class="w-8 h-8 mb-2 opacity-50" />
-            <span class="text-sm">Aucune activité récente</span>
           </div>
         </div>
       </div>

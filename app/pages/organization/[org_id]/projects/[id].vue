@@ -17,9 +17,59 @@ const { isOwner, user } = useAuth()
 const { getTeams } = useTeams()
 const { activeOrganization, getMembers } = useOrganizations()
 
-const { getProjet, updateProjet, deleteProjet } = useProjets()
+const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment } = useProjets()
 const { getTasks } = useTasks()
 const { addToast } = useToast()
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const isUploading = ref(false)
+const projectAttachments = ref<any[]>([])
+
+const triggerFileInput = () => {
+  if (fileInput.value) fileInput.value.click()
+}
+
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (!target.files || target.files.length === 0) return
+  
+  const file = target.files[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) {
+    addToast({ title: 'Fichier trop lourd', message: 'La taille maximum est de 10Mo.', type: 'error' })
+    return
+  }
+  
+  isUploading.value = true
+  try {
+    const res = await uploadProjectAttachment(projectId, file)
+    if (res.success && res.attachment) {
+      projectAttachments.value.push(res.attachment)
+      addToast({ title: 'Fichier ajouté', message: 'Le document a été joint au projet.', type: 'success' })
+    }
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de joindre le fichier.', type: 'error' })
+  } finally {
+    isUploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
+const deleteAttachment = async (attachment: any) => {
+  try {
+    await deleteProjectAttachment(attachment.id)
+    projectAttachments.value = projectAttachments.value.filter(a => a.id !== attachment.id)
+    addToast({ title: 'Fichier supprimé', message: 'Le document a été retiré.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de supprimer le document.', type: 'error' })
+  }
+}
+
+const getFileIcon = (mimeType: string) => {
+  if (mimeType?.startsWith('image/')) return 'heroicons:photo'
+  if (mimeType?.includes('pdf')) return 'heroicons:document-text'
+  return 'heroicons:document'
+}
 
 const goBack = () => {
   navigateTo(`/organization/${route.params.org_id}/projects`)
@@ -166,6 +216,8 @@ const fetchProject = async (id: number | string | null) => {
       }
       assignedMembers.value = members
       
+      projectAttachments.value = (projet as any).attachments || []
+      
       if ((projet as any).status) projectStatus.value = (projet as any).status
     }
     
@@ -174,8 +226,8 @@ const fetchProject = async (id: number | string | null) => {
     if (tasksData) {
       projectTasks.value = tasksData
       totalTasks.value = tasksData.length
-      todoTasks.value = tasksData.filter((t: any) => t.status === 'à faire').length
-      doneTasks.value = tasksData.filter((t: any) => t.status === 'done' || t.status === 'terminé').length
+      todoTasks.value = tasksData.filter((t: any) => t.status !== 'done').length
+      doneTasks.value = tasksData.filter((t: any) => t.status === 'done').length
       inProgressTasks.value = totalTasks.value - todoTasks.value - doneTasks.value
       
       if (totalTasks.value > 0) {
@@ -318,7 +370,11 @@ onMounted(async () => {
     <div class="w-full flex flex-col h-full relative">
       <!-- Header -->
       <header class="flex items-start justify-between px-6 lg:px-8 pt-6 lg:pt-8 pb-4 shrink-0 z-10 border-b border-form-border dark:border-gray-800">
-        <div class="flex items-start gap-4">
+        <div class="flex items-center gap-4">
+          <button @click="goBack" class="flex items-center gap-1.5 p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors" title="Retour">
+            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
+            <span class="text-sm font-medium hidden sm:inline">Retour</span>
+          </button>
           <div class="w-10 h-10 rounded-lg bg-gradient-to-b from-blue-400 to-blue-500 neo-emboss flex items-center justify-center text-white shrink-0 shadow-sm mt-1">
             <Icon name="heroicons:briefcase" class="w-5 h-5" />
           </div>
@@ -340,11 +396,6 @@ onMounted(async () => {
           </button>
           <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-xs font-bold hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
           <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs font-bold"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /> Annuler</button>
-          <div class="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-1"></div>
-          <button @click="goBack" class="flex items-center gap-1.5 p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors">
-            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
-            <span class="text-sm font-medium hidden sm:inline">Retour</span>
-          </button>
         </div>
       </header>
 
@@ -583,6 +634,39 @@ onMounted(async () => {
               <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-xs text-secondary dark:text-gray-500 italic p-3 border border-dashed border-gray-200 dark:border-gray-800 rounded-lg text-center bg-white dark:bg-transparent">
                 Aucun membre assigné
               </div>
+            </div>
+          </div>
+          <!-- Attachments -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="block text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Pièces jointes</span>
+              <button @click="triggerFileInput" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
+                <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                <Icon v-else name="heroicons:plus" class="w-3 h-3" /> 
+                {{ isUploading ? 'Ajout...' : 'Ajouter' }}
+              </button>
+              <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
+            </div>
+            
+            <div v-if="projectAttachments.length > 0" class="flex flex-col gap-2">
+              <div v-for="attachment in projectAttachments" :key="attachment.id" class="group flex items-center justify-between p-2 bg-white dark:bg-[#222224] rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm transition-colors hover:border-primary/30">
+                <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `http://localhost:8000/storage/${attachment.file_path}`" target="_blank" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
+                  <div class="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Icon :name="getFileIcon(attachment.mime_type)" class="w-4 h-4" />
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ attachment.file_name }}</span>
+                    <span class="text-[10px] text-secondary dark:text-gray-500">{{ Math.round(attachment.size / 1024) }} KB</span>
+                  </div>
+                </a>
+                <button v-if="canEdit" @click.stop="deleteAttachment(attachment)" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                  <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div v-else class="text-xs text-secondary dark:text-gray-500 italic p-4 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center bg-white dark:bg-transparent flex flex-col items-center gap-2">
+              <Icon name="heroicons:paper-clip" class="w-6 h-6 opacity-40" />
+              Aucune pièce jointe
             </div>
           </div>
 

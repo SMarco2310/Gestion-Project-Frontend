@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const route = useRoute()
+
 const props = defineProps<{
   totalUsers: number
   activeProjects: number
@@ -131,7 +133,7 @@ const recentTasks = computed(() => {
       <div 
         v-for="(stat, index) in topStats" 
         :key="index"
-        class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 flex flex-col justify-between"
+        class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors"
       >
         <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">{{ stat.title }}</h3>
         <div class="text-3xl font-medium text-main dark:text-white tracking-tight">{{ stat.value }}</div>
@@ -142,7 +144,7 @@ const recentTasks = computed(() => {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
       <!-- Monthly Line Chart Card -->
-      <div class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 flex flex-col h-[350px]">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors">
         <div class="flex items-center justify-between mb-8">
           <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ MENSUELLE</h3>
           <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">{{ currentYear }}</span>
@@ -162,7 +164,7 @@ const recentTasks = computed(() => {
       </div>
 
       <!-- Daily Line Chart Card -->
-      <div class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800 flex flex-col h-[350px]">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors">
         <div class="flex items-center justify-between mb-8">
           <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ QUOTIDIENNE</h3>
           <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">14 Jours</span>
@@ -183,7 +185,7 @@ const recentTasks = computed(() => {
     </div>
 
     <!-- Bottom Row: Recent Tasks -->
-    <div class="bg-white dark:bg-[#2A2A2D] rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] border border-gray-100 dark:border-gray-800">
+    <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">TÂCHES RÉCENTES</h3>
         <div class="flex items-center">
@@ -200,8 +202,9 @@ const recentTasks = computed(() => {
         <div 
           v-for="(task, idx) in recentTasks" 
           :key="task.id"
-          class="flex items-center justify-between py-4"
+          class="flex items-center justify-between py-4 px-2 cursor-pointer rounded-lg hover:bg-gray-50 dark:hover:bg-[#323235] transition-colors -mx-2"
           :class="{ 'border-b border-gray-50 dark:border-gray-800/50': idx !== recentTasks.length - 1 }"
+          @click="navigateTo(`/organization/${route.params.org_id}/tasks/${task.id}`)"
         >
           <div class="flex items-center gap-4">
             <div class="w-5 h-5 rounded-full border-2 border-gray-100 dark:border-gray-700"></div>

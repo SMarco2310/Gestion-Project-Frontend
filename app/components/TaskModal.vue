@@ -177,17 +177,49 @@ const cancelEdit = () => {
 
 
 
-const handleDelete = async () => {
+const isConfirmModalOpen = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingDeleteAction = ref<(() => void) | null>(null)
+
+const handleDelete = () => {
   if (!props.taskId) return
-  if (confirm('Voulez-vous vraiment supprimer cette tâche ?')) {
-    try {
-      await deleteTask(props.taskId)
-      addToast({ type: 'success', title: 'Tâche supprimée', message: 'La tâche a été supprimée avec succès.' })
-      close()
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
-    }
+  
+  confirmModalTitle.value = 'Supprimer la tâche'
+  confirmModalMessage.value = 'Voulez-vous vraiment supprimer cette tâche ?'
+  
+  pendingDeleteAction.value = () => {
+    isConfirmModalOpen.value = false
+    const currentTaskId = props.taskId as string
+    
+    let isCancelled = false
+    
+    const timeoutId = setTimeout(async () => {
+      if (isCancelled) return
+      try {
+        await deleteTask(currentTaskId)
+      } catch (e) {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la tâche.' })
+      }
+    }, 5000)
+
+    addToast({
+      type: 'success',
+      title: 'Tâche supprimée',
+      message: 'La suppression sera définitive dans 5 secondes.',
+      duration: 5000,
+      action: {
+        label: 'Annuler',
+        onClick: () => {
+          isCancelled = true
+          clearTimeout(timeoutId)
+          addToast({ type: 'info', title: 'Annulé', message: 'La suppression a été annulée.' })
+        }
+      }
+    })
+    close()
   }
+  isConfirmModalOpen.value = true
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -1149,7 +1181,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-blue-500 rounded-lg p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none shadow-sm transition-colors" rows="3" placeholder="Écrivez un commentaire..."></textarea>
                   
                   <!-- Mention Dropdown -->
-                  <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
+                  <div v-if="showMentionDropdown" class="absolute top-full mt-1 left-0 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
                     <ul class="p-1 overflow-y-auto custom-scrollbar">
                       <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
                         <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
@@ -1221,6 +1253,15 @@ watch(() => props.isOpen, (newIsOpen) => {
         :projet-id="taskProjetId"
         :create-task="handleCreateSubtaskSubmit"
         @close="isCreateSubtaskModalOpen = false"
+      />
+      
+      <ConfirmModal
+        :is-open="isConfirmModalOpen"
+        :title="confirmModalTitle"
+        :message="confirmModalMessage"
+        confirm-text="Supprimer"
+        @close="isConfirmModalOpen = false"
+        @confirm="pendingDeleteAction ? pendingDeleteAction() : null"
       />
     </Teleport>
   </ClientOnly>

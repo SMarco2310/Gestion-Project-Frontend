@@ -23,9 +23,8 @@ const props = defineProps({
   ]},
   projectOptions: { type: Array as PropType<FilterOption[]>, default: () => [] },
   statusOptions: { type: Array as PropType<FilterOption[]>, default: () => [
-    { id: 'à faire', label: 'À faire' },
-    { id: 'en cours', label: 'En cours' },
-    { id: 'terminé', label: 'Terminé' }
+    { id: 'not done', label: 'En cours' },
+    { id: 'done', label: 'Terminé' }
   ]},
   showTags: { type: Boolean, default: false },
   tagOptions: { type: Array as PropType<FilterOption[]>, default: () => [

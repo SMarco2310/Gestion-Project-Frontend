@@ -194,29 +194,11 @@ const bodyThemeClasses = computed(() => {
                     <!-- Tasks Progress -->
                     <div class="flex flex-col gap-1.5">
                         <div class="flex justify-between items-center">
-                            <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Progression des tâches</span>
+                            <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Tâches accomplies</span>
                             <span class="text-white/90 text-xs font-mono tracking-tight font-bold drop-shadow-sm">{{ props.metrics.tasksProgress }}%</span>
                         </div>
                         <div class="w-full h-1.5 bg-black/20 rounded-full overflow-hidden shadow-inner backdrop-blur-sm">
                             <div class="h-full bg-white transition-all duration-500 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" :style="{ width: `${props.metrics.tasksProgress}%` }"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tickets Progress -->
-                    <div class="flex flex-col gap-1.5">
-                        <span class="text-white/80 text-xs font-mono tracking-tight drop-shadow-sm">Progression des tickets</span>
-                        <div class="flex h-1.5 w-full rounded-full overflow-hidden bg-black/20 shadow-inner">
-                            <template v-if="props.metrics.totalTasks > 0">
-                                <div class="bg-white/30 h-full transition-all duration-500" :style="{ width: `${(props.metrics.todoTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.todoTasks > 0"></div>
-                                <div class="bg-white/60 h-full transition-all duration-500" :class="{'border-l border-black/10': props.metrics.todoTasks > 0}" :style="{ width: `${(props.metrics.inProgressTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.inProgressTasks > 0"></div>
-                                <div class="bg-white h-full transition-all duration-500 shadow-[0_0_4px_rgba(255,255,255,0.5)]" :class="{'border-l border-black/10': props.metrics.todoTasks > 0 || props.metrics.inProgressTasks > 0}" :style="{ width: `${(props.metrics.doneTasks / props.metrics.totalTasks) * 100}%` }" v-if="props.metrics.doneTasks > 0"></div>
-                            </template>
-                        </div>
-                        
-                        <div class="flex justify-between text-[10px] font-semibold text-white/80 pt-1 font-mono tracking-tight drop-shadow-sm">
-                            <span>{{ props.metrics.todoTasks }} À faire</span>
-                            <span>{{ props.metrics.inProgressTasks }} En cours</span>
-                            <span>{{ props.metrics.doneTasks }} Terminés</span>
                         </div>
                     </div>
                 </div>

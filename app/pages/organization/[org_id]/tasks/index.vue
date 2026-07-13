@@ -300,16 +300,23 @@ const tagOptions = computed(() => {
   return Array.from(uniqueTags.values())
 })
 
+const statusOptions = [
+  { id: 'not done', label: 'En cours' },
+  { id: 'done', label: 'Terminé' }
+]
+
 const filterText = ref('')
 const selectedProjects = ref<(string | number)[]>([])
 const selectedPriorities = ref<(string | number)[]>([])
 const selectedTags = ref<(string | number)[]>([])
+const selectedStatuses = ref<(string | number)[]>([])
 const selectedDateSort = ref('recent')
 
 const handleFilterUpdate = (filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags?: (string | number)[], dateSort?: string }) => {
   selectedProjects.value = filters.projects
   selectedPriorities.value = filters.priorities
   selectedTags.value = filters.tags || []
+  selectedStatuses.value = filters.statuses || []
   selectedDateSort.value = filters.dateSort || 'recent'
 }
 
@@ -324,8 +331,12 @@ const filteredTasks = computed(() => {
     result = result.filter(t => t.priority != null && selectedPriorities.value.includes(t.priority))
   }
 
+  if (selectedStatuses.value.length > 0) {
+    result = result.filter(t => t.status != null && selectedStatuses.value.includes(t.status))
+  }
+
   if (selectedTags.value.length > 0) {
-    result = result.filter(t => t.tags && t.tags.some((tag: any) => selectedTags.value.includes(tag.name || tag)))
+    result = result.filter(t => t.tags && t.tags.some((tag: any) => selectedTags.value.includes(String(tag.name || tag).toLowerCase())))
   }
 
   if (filterText.value) {
@@ -405,10 +416,11 @@ onMounted(async () => {
             </div>
             <FilterDropdown 
               :showProjects="true" 
-              :showStatus="false" 
+              :showStatus="true" 
               :showTags="true"
               :projectOptions="projectOptions"
               :tagOptions="tagOptions"
+              :statusOptions="statusOptions"
               @update:filters="handleFilterUpdate"
               class="shrink-0" 
             />

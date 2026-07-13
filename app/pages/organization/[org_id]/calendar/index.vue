@@ -105,10 +105,13 @@ const calendarEvents = computed(() => {
     .filter((task: any) => {
       if (!task.due_date) return false
       if (activeFilters.value.priorities.length > 0 && !activeFilters.value.priorities.includes(task.priority)) return false
-      const statusMap: Record<string, string> = { 'TO_DO': 'à faire', 'IN_PROGRESS': 'en cours', 'DONE': 'terminé' }
-      const normalizedStatus = statusMap[task.status] || task.status
-      if (activeFilters.value.statuses.length > 0 && !activeFilters.value.statuses.includes(normalizedStatus)) return false
+      
+      if (activeFilters.value.statuses.length > 0 && !activeFilters.value.statuses.includes(task.status)) return false
+      
       if (activeFilters.value.projects.length > 0 && !activeFilters.value.projects.includes(task.projet_id)) return false
+      
+      if (activeFilters.value.tags.length > 0 && !(task.tags && task.tags.some((tag: any) => activeFilters.value.tags.includes(String(tag.name || tag).toLowerCase())))) return false
+      
       return true
     })
     .map((task: any) => {

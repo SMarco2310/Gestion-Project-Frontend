@@ -81,6 +81,8 @@ const handleNotificationClick = async (notif: any) => {
     navigateTo(`/organization/${targetOrgId}/tasks`)
   } else if (notif.data.projet_id) {
     navigateTo(`/organization/${targetOrgId}/projects`)
+  } else if (notif.data.team_id) {
+    navigateTo(`/organization/${targetOrgId}/team`)
   }
 }
 
@@ -402,10 +404,6 @@ onUnmounted(() => {
                     <Icon name="heroicons:arrow-right-on-rectangle" class="w-5 h-5 transition-transform group-hover:-translate-x-1 shrink-0" />
                     <span class="tracking-wide font-medium" :class="isSidebarCollapsed ? 'md:hidden' : ''">Déconnexion</span>
                 </NuxtLink>
-
-                <button @click="toggleDarkMode" class="hidden md:flex p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors rounded-xl hover:bg-canvas dark:hover:bg-gray-800 justify-center" :title="colorMode.value === 'dark' ? 'Mode clair' : 'Mode sombre'">
-                    <Icon :name="colorMode.value === 'dark' ? 'heroicons:sun' : 'heroicons:moon'" class="w-5 h-5" />
-                </button>
 
                 <button @click="isSidebarCollapsed = !isSidebarCollapsed" class="hidden md:flex p-2 mt-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors rounded-xl hover:bg-canvas dark:hover:bg-gray-800 justify-center">
                     <Icon :name="isSidebarCollapsed ? 'heroicons:chevron-double-right' : 'heroicons:chevron-double-left'" class="w-5 h-5" />

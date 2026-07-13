@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const route = useRoute()
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'project-deleted'])
 
 const close = () => {
   if (isEditing.value) {
@@ -231,16 +231,24 @@ const cancelEdit = () => {
 
 const { deleteProjet } = useProjets()
 
-const handleDelete = async () => {
+const isDeleteModalOpen = ref(false)
+
+const handleDelete = () => {
   if (!props.projectId) return
-  if (confirm('Voulez-vous vraiment supprimer ce projet ?')) {
-    try {
-      await deleteProjet(props.projectId)
-      addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
-      close()
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
-    }
+  isDeleteModalOpen.value = true
+}
+
+const executeDeleteProject = async () => {
+  isDeleteModalOpen.value = false
+  if (!props.projectId) return
+  
+  try {
+    await deleteProjet(props.projectId)
+    addToast({ type: 'success', title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.' })
+    emit('project-deleted')
+    close()
+  } catch (e) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer le projet.' })
   }
 }
 
@@ -441,31 +449,11 @@ const updateStatus = async (status: string) => {
             <div class="flex flex-col gap-4">
               <div>
                 <div class="flex justify-between text-sm mb-1.5 font-medium">
-                  <span class="text-secondary dark:text-gray-400">Tâches accomplies</span>
+                  <span class="text-secondary dark:text-gray-400">Tâches accomplies ({{ doneTasks }}/{{ totalTasks }})</span>
                   <span class="text-main dark:text-gray-200">{{ tasksProgress }}%</span>
                 </div>
                 <div class="w-full h-2 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 rounded-r-lg transition-all duration-500" :style="{ width: `${tasksProgress}%` }"></div>
-                </div>
-              </div>
-              
-              <div>
-                <div class="flex justify-between text-sm mb-1.5 font-medium">
-                  <span class="text-secondary dark:text-gray-400">Tickets</span>
-                  <span class="text-main dark:text-gray-200">{{ totalTasks }} total</span>
-                </div>
-                <div class="flex h-2 w-full gap-1 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
-                  <template v-if="totalTasks > 0">
-                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 h-full rounded-l-full transition-all duration-500" :style="{ width: `${(todoTasks / totalTasks) * 100}%` }" title="À faire"></div>
-                    <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-full transition-all duration-500" :style="{ width: `${(inProgressTasks / totalTasks) * 100}%` }" title="En cours"></div>
-                    <div class="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-r-full transition-all duration-500" :style="{ width: `${(doneTasks / totalTasks) * 100}%` }" title="Terminés"></div>
-                  </template>
-                  <div v-else class="w-full h-full bg-gray-200 dark:bg-gray-800 rounded-full"></div>
-                </div>
-                <div class="flex justify-between text-[11px] font-bold text-secondary dark:text-gray-500 pt-2 uppercase tracking-wider">
-                  <span>{{ todoTasks }} À faire</span>
-                  <span class="text-blue-600 dark:text-blue-400">{{ inProgressTasks }} En cours</span>
-                  <span class="text-emerald-600 dark:text-emerald-500">{{ doneTasks }} Terminés</span>
+                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 transition-all duration-500" :class="{ 'rounded-r-lg': tasksProgress < 100 }" :style="{ width: `${tasksProgress}%` }"></div>
                 </div>
               </div>
             </div>
@@ -564,14 +552,13 @@ const updateStatus = async (status: string) => {
                   <div
                     class="w-2.5 h-2.5 rounded-full shrink-0"
                     :class="{
-                      'bg-orange-400': task.status === 'à faire',
-                      'bg-emerald-500': task.status === 'terminé',
-                      'bg-blue-500': task.status !== 'à faire' && task.status !== 'terminé'
+                      'bg-emerald-500': task.status === 'done' || task.status === 'terminé',
+                      'bg-orange-400': task.status !== 'done' && task.status !== 'terminé'
                     }"
                   ></div>
                   <span
                     class="text-sm text-main dark:text-gray-300 truncate font-medium"
-                    :class="{ 'line-through text-secondary dark:text-gray-500': task.status === 'terminé' }"
+                    :class="{ 'line-through text-secondary dark:text-gray-500': task.status === 'done' || task.status === 'terminé' }"
                   >{{ task.title }}</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -586,11 +573,10 @@ const updateStatus = async (status: string) => {
                   <span
                     class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
                     :class="{
-                      'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': task.status === 'à faire',
-                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'terminé',
-                      'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400': task.status !== 'à faire' && task.status !== 'terminé'
+                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'done' || task.status === 'terminé',
+                      'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': task.status !== 'done' && task.status !== 'terminé'
                     }"
-                  >{{ task.status }}</span>
+                  >{{ task.status === 'done' || task.status === 'terminé' ? 'Terminé' : 'En cours' }}</span>
                   <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>
                 </div>
               </NuxtLink>
@@ -621,23 +607,15 @@ const updateStatus = async (status: string) => {
         </div>
       </div>
     </Transition>
+    
+    <!-- Delete Project Modal -->
+    <DeleteProjectModal
+      :is-open="isDeleteModalOpen"
+      :project-name="projectTitle"
+      @close="isDeleteModalOpen = false"
+      @confirm="executeDeleteProject"
+    />
       </div>
     </Teleport>
   </ClientOnly>
 </template>
-
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3f3f46;
-  border-radius: 20px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-}
-</style>

@@ -22,13 +22,17 @@ const close = () => {
 
 
 const { commentaires, getCommentaires, createCommentaire, updateCommentaire, deleteCommentaire, isLoading: commentsLoading, error: commentsError } = useCommentaire()
-const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner } = useTasks()
+const { getTask, updateTask, getTasks, createTask, deleteTask, uploadBanner, createChecklist, deleteChecklist, createChecklistItem, updateChecklistItem, deleteChecklistItem, uploadAttachment, deleteAttachment } = useTasks()
 const { getProjet } = useProjets()
 const { tags, getTags, createTag, updateTag: apiUpdateTag } = useTags()
 const { user } = useAuth()
 const { addToast } = useToast()
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
+
+const config = useRuntimeConfig()
+const backendBaseUrl = config.public.apiBase ? config.public.apiBase.replace(/\/api\/?$/, '') : 'http://localhost:8000'
+const storageBaseUrl = `${backendBaseUrl}/storage/`
 
 const activeTab = ref('comments')
 const isDetailsOpen = ref(true)
@@ -52,6 +56,8 @@ const taskUpdatedAt = ref('')
 const taskProjetId = ref<string | number>('')
 const taskProjetReference = ref('')
 const taskSubtasks = ref<any[]>([])
+const taskChecklists = ref<any[]>([])
+const taskAttachments = ref<any[]>([])
 const taskBannerImage = ref('')
 
 const isAssigneeDropdownOpen = ref(false)
@@ -127,6 +133,8 @@ const setTask = async (id: string | number | null) => {
       }
       
       taskSubtasks.value = task.sub_tasks || []
+      taskChecklists.value = task.checklists || []
+      taskAttachments.value = task.attachments || []
     }
   } catch (e) {
     console.error(e)
@@ -197,8 +205,12 @@ const handleFileUpload = async (event: Event) => {
       const updatedTask = await uploadBanner(props.taskId, file)
       taskBannerImage.value = updatedTask.banner_image || ''
       addToast({ type: 'success', title: 'Couverture modifiée', message: 'L\'image a été ajoutée avec succès.' })
-    } catch (e) {
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+    } catch (e: any) {
+      if (e.status === 413 || e.response?.status === 413) {
+        addToast({ type: 'error', title: 'Image trop volumineuse', message: 'La taille de l\'image dépasse la limite autorisée.' })
+      } else {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger l\'image.' })
+      }
     }
   }
 }
@@ -219,7 +231,6 @@ const removeBanner = async () => {
 
 
 const isTagDropdownOpen = ref(false)
-const isStatusDropdownOpen = ref(false)
 const isBoardColumnDropdownOpen = ref(false)
 const isPriorityDropdownOpen = ref(false)
 const isCreateSubtaskModalOpen = ref(false)
@@ -298,6 +309,15 @@ const formatDisplayDate = (dateStr: string) => {
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
 
+const isOverdue = computed(() => {
+  if (!taskDueDate.value || taskDueDate.value === 'Aucune') return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const dueDate = new Date(taskDueDate.value)
+  dueDate.setHours(0, 0, 0, 0)
+  return dueDate < today
+})
+
 const kanbanColumns = computed(() => {
   return activeOrganization.value?.kanban_columns?.length 
     ? activeOrganization.value.kanban_columns 
@@ -336,9 +356,9 @@ const statusConfig = computed(() => {
     }
   })
   
-  if (taskStatus.value && !config[taskStatus.value]) {
-    config[taskStatus.value] = {
-      label: taskStatus.value.toUpperCase(),
+  if (taskBoardColumn.value && !config[taskBoardColumn.value]) {
+    config[taskBoardColumn.value] = {
+      label: taskBoardColumn.value.toUpperCase(),
       colorClass: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
     }
   }
@@ -352,27 +372,28 @@ const priorityConfig: Record<string, { label: string; colorClass: string; icon: 
   'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
-const updateStatus = async (newStatus: string) => {
-  if (!props.taskId) return
-  try {
-    await updateTask(props.taskId, { status: newStatus })
-    taskStatus.value = newStatus
-    isStatusDropdownOpen.value = false
-    addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
-  } catch (err) {
-    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
-  }
-}
-
 const updateBoardColumn = async (newColumn: string) => {
   if (!props.taskId) return
   try {
-    await updateTask(props.taskId, { board_column: newColumn })
+    const payload: any = { board_column: newColumn }
+    await updateTask(props.taskId, payload)
     taskBoardColumn.value = newColumn
     isBoardColumnDropdownOpen.value = false
     addToast({ title: 'Colonne modifiée', message: 'La colonne de la tâche a été mise à jour.', type: 'success' })
   } catch (err) {
     addToast({ title: 'Erreur', message: 'Impossible de modifier la colonne.', type: 'error' })
+  }
+}
+
+const toggleTaskStatus = async () => {
+  if (!props.taskId) return
+  const newStatus = taskStatus.value === 'done' ? 'not done' : 'done'
+  try {
+    await updateTask(props.taskId, { status: newStatus })
+    taskStatus.value = newStatus
+    addToast({ title: 'Statut modifié', message: 'Le statut de la tâche a été mis à jour.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
   }
 }
 
@@ -476,13 +497,23 @@ const handleCreateSubtaskSubmit = async (payload: any) => {
 }
 
 const toggleSubtaskStatus = async (sub: any) => {
-  const newStatus = sub.status === 'terminé' ? 'à faire' : 'terminé'
+  if (sub._isUpdating) return
+  sub._isUpdating = true
+
+  const oldStatus = sub.status
+  const newStatus = oldStatus === 'done' ? 'not done' : 'done'
+  
+  // Optimistic update
+  sub.status = newStatus
+
   try {
     await updateTask(sub.id, { status: newStatus })
-    sub.status = newStatus
     addToast({ title: 'Sous-tâche mise à jour', message: 'Le statut de la sous-tâche a été modifié.', type: 'success' })
   } catch (err) {
+    sub.status = oldStatus // Revert on error
     addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  } finally {
+    sub._isUpdating = false
   }
 }
 
@@ -571,6 +602,119 @@ const handleDeleteComment = async (commentId: string | number) => {
   }
 }
 
+// --- Checklists ---
+const isAddingChecklist = ref(false)
+const newChecklistTitle = ref('')
+
+const handleAddChecklist = async () => {
+  if (!props.taskId || !newChecklistTitle.value.trim()) return
+  try {
+    const checklist = await createChecklist(props.taskId, newChecklistTitle.value.trim())
+    checklist.items = []
+    taskChecklists.value.push(checklist)
+    newChecklistTitle.value = ''
+    isAddingChecklist.value = false
+    addToast({ title: 'Checklist créée', message: 'La checklist a été ajoutée avec succès.', type: 'success' })
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de créer la checklist.', type: 'error' })
+  }
+}
+
+const handleDeleteChecklist = async (checklistId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer cette checklist ?')) {
+    try {
+      await deleteChecklist(checklistId)
+      taskChecklists.value = taskChecklists.value.filter(c => c.id !== checklistId)
+      addToast({ title: 'Checklist supprimée', message: 'La checklist a été supprimée avec succès.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer la checklist.', type: 'error' })
+    }
+  }
+}
+
+const newChecklistItemContent = ref<Record<string, string>>({})
+
+const handleAddChecklistItem = async (checklistId: string | number) => {
+  const content = newChecklistItemContent.value[checklistId]
+  if (!content || !content.trim()) return
+  try {
+    const item = await createChecklistItem(checklistId, content.trim())
+    const checklist = taskChecklists.value.find(c => c.id === checklistId)
+    if (checklist) checklist.items.push(item)
+    newChecklistItemContent.value[checklistId] = ''
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible d\'ajouter l\'élément.', type: 'error' })
+  }
+}
+
+const toggleChecklistItem = async (item: any) => {
+  if (item._isUpdating) return
+  item._isUpdating = true
+
+  const oldStatus = item.is_done
+  const newStatus = !oldStatus
+
+  // Optimistic update
+  item.is_done = newStatus
+
+  try {
+    await updateChecklistItem(item.id, { is_done: newStatus })
+  } catch (err) {
+    item.is_done = oldStatus // Revert on error
+    addToast({ title: 'Erreur', message: 'Impossible de modifier l\'état.', type: 'error' })
+  } finally {
+    item._isUpdating = false
+  }
+}
+
+const handleDeleteChecklistItem = async (checklist: any, itemId: string | number) => {
+  try {
+    await deleteChecklistItem(itemId)
+    checklist.items = checklist.items.filter((i: any) => i.id !== itemId)
+  } catch (err) {
+    addToast({ title: 'Erreur', message: 'Impossible de supprimer l\'élément.', type: 'error' })
+  }
+}
+
+// --- Attachments ---
+const attachmentInput = ref<HTMLInputElement | null>(null)
+
+const triggerAttachmentUpload = () => {
+  attachmentInput.value?.click()
+}
+
+const handleAttachmentUploadForm = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0 && props.taskId) {
+    const file = target.files[0] as File
+    if (!file) return
+    try {
+      const attachment = await uploadAttachment(props.taskId, file)
+      taskAttachments.value.push(attachment)
+      addToast({ type: 'success', title: 'Fichier ajouté', message: 'Le fichier a été ajouté avec succès.' })
+    } catch (e: any) {
+      if (e.status === 413 || e.response?.status === 413) {
+        addToast({ type: 'error', title: 'Fichier trop volumineux', message: 'La taille du fichier dépasse la limite autorisée.' })
+      } else {
+        addToast({ type: 'error', title: 'Erreur', message: 'Impossible de télécharger le fichier.' })
+      }
+    }
+  }
+}
+
+const handleDeleteAttachmentFile = async (attachmentId: string | number) => {
+  if (confirm('Voulez-vous vraiment supprimer ce fichier ?')) {
+    try {
+      await deleteAttachment(attachmentId)
+      taskAttachments.value = taskAttachments.value.filter(a => a.id !== attachmentId)
+      addToast({ title: 'Fichier supprimé', message: 'Le fichier a été supprimé avec succès.', type: 'success' })
+    } catch (err) {
+      addToast({ title: 'Erreur', message: 'Impossible de supprimer le fichier.', type: 'error' })
+    }
+  }
+}
+
+
 const resetState = () => {
   isEditing.value = false
   taskTitle.value = ''
@@ -598,7 +742,6 @@ const resetState = () => {
   editingCommentId.value = null
   editingCommentText.value = ''
   isTagDropdownOpen.value = false
-  isStatusDropdownOpen.value = false
   isBoardColumnDropdownOpen.value = false
   isPriorityDropdownOpen.value = false
   isAssigneeDropdownOpen.value = false
@@ -698,30 +841,24 @@ watch(() => props.isOpen, (newIsOpen) => {
               
               <!-- Quick Actions Row -->
               <div class="flex flex-wrap gap-2 mb-8 items-center">
-                <!-- Status -->
-                <div class="relative">
-                  <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors', statusConfig[taskStatus]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300']" :style="statusConfig[taskStatus]?.style">
-                    {{ statusConfig[taskStatus]?.label || taskStatus }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
-                  </button>
-                  <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isStatusDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1">
-                    <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]" :style="config.style">
-                      {{ config.label }}
-                      <Icon v-if="taskStatus === key" name="heroicons:check" class="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+                <!-- Status Toggle -->
+                <button @click="toggleTaskStatus" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', taskStatus === 'done' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']">
+                  <Icon :name="taskStatus === 'done' ? 'ph:check-circle-fill' : 'ph:circle'" class="w-4 h-4" />
+                  {{ taskStatus === 'done' ? 'Terminé' : 'Pas terminé' }}
+                </button>
 
-                <!-- Column -->
+                <!-- Status/Column -->
                 <div class="relative">
-                  <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105">
-                    {{ taskBoardColumn || 'À faire' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
+                  <button @click="isBoardColumnDropdownOpen = !isBoardColumnDropdownOpen" :class="['flex items-center gap-1.5 px-3 py-1.5 rounded-md font-bold text-xs uppercase transition-colors hover:brightness-105', statusConfig[taskBoardColumn]?.colorClass || 'bg-gray-100 text-gray-700 dark:bg-[#2D2D2F] dark:text-gray-300']" :style="statusConfig[taskBoardColumn]?.style">
+                    {{ statusConfig[taskBoardColumn]?.label || taskBoardColumn || 'À FAIRE' }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
                   </button>
                   <div v-if="isBoardColumnDropdownOpen" @click="isBoardColumnDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                  <div v-if="isBoardColumnDropdownOpen" class="absolute left-0 top-full mt-1 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-48 overflow-y-auto custom-scrollbar">
-                    <button @click="updateBoardColumn(col as string)" v-for="col in kanbanColumns" :key="col" :class="['px-3 py-2 text-xs font-bold rounded text-left transition-colors flex items-center justify-between', taskBoardColumn === col ? 'bg-canvas dark:bg-gray-700' : 'hover:bg-canvas dark:hover:bg-gray-800']">
-                      {{ col }}
-                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4" />
+                  <div v-if="isBoardColumnDropdownOpen" class="absolute left-0 top-full mt-1 w-56 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col p-1 gap-1 max-h-48 overflow-y-auto custom-scrollbar">
+                    <button @click="updateBoardColumn(col as string)" v-for="col in kanbanColumns" :key="col" class="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center justify-between text-sm transition-colors">
+                      <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
+                        {{ statusConfig[col]?.label || col }}
+                      </span>
+                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4 text-primary dark:text-blue-500" />
                     </button>
                   </div>
                 </div>
@@ -747,9 +884,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                         <span class="text-secondary dark:text-gray-400">Non assigné</span>
                       </li>
                       <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(member)">
-                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white overflow-hidden" :class="member.profile_picture ? '' : member.color">
-                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
-                          <span v-else>{{ member.initials }}</span>
+                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `${backendBaseUrl}${member.profile_picture}`" class="w-full h-full object-cover" />
+                          <div v-else class="w-full h-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-blue-600" :class="member.color">{{ member.initials }}</div>
                         </div> 
                         {{ member.name }}
                       </li>
@@ -780,8 +917,8 @@ watch(() => props.isOpen, (newIsOpen) => {
                       </div>
                       <div class="max-h-60 overflow-y-auto px-2 pb-2 custom-scrollbar flex flex-col gap-1">
                         <div v-for="tag in filteredLabels" :key="tag.id" class="flex items-center gap-2 group/label">
-                          <button @click="toggleTag(tag)" class="flex-1 flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left font-bold text-xs uppercase" :style="{ backgroundColor: tag.color || '#10B981', color: '#FFFFFF' }">
-                            <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4 text-white" />
+                          <button @click="toggleTag(tag)" class="flex-1 flex items-center gap-2 px-2 py-1.5 rounded transition-colors text-left font-bold text-xs uppercase" :style="{ backgroundColor: (tag.color || '#10B981') + '33', color: tag.color || '#10B981' }">
+                            <Icon v-if="taskTagIds.includes(tag.id)" name="heroicons:check" class="w-4 h-4" />
                             <span v-else class="w-4"></span>
                             <span class="flex-1 truncate">{{ tag.name }}</span>
                           </button>
@@ -797,7 +934,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       </div>
                     </div>
                     <div v-else class="p-3 flex flex-col gap-4">
-                      <div class="w-full py-2 px-3 rounded font-bold text-xs uppercase text-white flex items-center gap-2 shadow-sm" :style="{ backgroundColor: labelFormColor }"><span class="w-4"></span> {{ labelFormName || 'APERÇU' }}</div>
+                      <div class="w-full py-2 px-3 rounded font-bold text-xs uppercase flex items-center gap-2 shadow-sm" :style="{ backgroundColor: labelFormColor + '33', color: labelFormColor }"><span class="w-4"></span> {{ labelFormName || 'APERÇU' }}</div>
                       <div class="flex flex-col gap-1">
                         <label class="text-xs font-bold text-secondary dark:text-gray-500">Titre</label>
                         <input v-model="labelFormName" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" />
@@ -836,18 +973,18 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
 
                 <!-- Date -->
-                <div class="relative flex items-center bg-gray-100 dark:bg-[#2D2D2F] rounded-md hover:brightness-105 transition-colors">
-                  <div class="px-3 py-1.5 flex items-center gap-1.5 text-gray-700 dark:text-gray-300 font-bold text-xs">
+                <div :class="['relative flex items-center rounded-md hover:brightness-105 transition-colors', isOverdue && !isEditing ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-[#2D2D2F]']">
+                  <div :class="['px-3 py-1.5 flex items-center gap-1.5 font-bold text-xs', isOverdue && !isEditing ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-300']">
                     <Icon name="heroicons:calendar" class="w-3.5 h-3.5" /> Échéance:
                   </div>
                   <input v-if="isEditing" v-model="editDueDate" type="date" :max="projectEndDate" class="bg-transparent border-none focus:ring-0 text-xs font-bold text-main dark:text-gray-300 cursor-pointer pr-2" />
-                  <span v-else class="text-xs font-bold text-main dark:text-gray-300 pr-3">{{ formatDisplayDate(taskDueDate) }}</span>
+                  <span v-else :class="['text-xs font-bold pr-3', isOverdue ? 'text-red-600 dark:text-red-400' : 'text-main dark:text-gray-300']">{{ formatDisplayDate(taskDueDate) }}</span>
                 </div>
               </div>
 
               <!-- Display selected labels if any -->
               <div v-if="taskTags.length > 0" class="flex flex-wrap gap-1.5 mb-6">
-                <span v-for="tag in taskTags" :key="tag.id" class="px-2 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '20', color: tag.color || '#9CA3AF' }">
+                <span v-for="tag in taskTags" :key="tag.id" class="px-2 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '33', color: tag.color || '#9CA3AF' }">
                   {{ tag.name }}
                 </span>
               </div>
@@ -865,12 +1002,99 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
                 <RichTextEditor v-else v-model="editDescription" class="w-full shadow-inner" />
               </div>
+              <!-- Checklists -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 text-main dark:text-gray-200">
+                    <Icon name="ph:list-checks" class="w-5 h-5" />
+                    <h3 class="text-base font-bold">Checklists</h3>
+                  </div>
+                  <div v-if="!isAddingChecklist" @click="isAddingChecklist = true" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm cursor-pointer">
+                    Ajouter
+                  </div>
+                </div>
+                
+                <div v-if="isAddingChecklist" class="mb-4 bg-gray-50 dark:bg-[#1A1A1D] p-3 rounded-lg border border-form-border dark:border-gray-800 flex flex-col gap-2">
+                  <input v-model="newChecklistTitle" type="text" placeholder="Titre de la checklist..." class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:border-primary" @keydown.enter="handleAddChecklist" />
+                  <div class="flex gap-2 justify-end">
+                    <button @click="isAddingChecklist = false" class="px-3 py-1.5 rounded text-secondary dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Annuler</button>
+                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded bg-blue-500 text-white text-xs font-bold shadow-sm hover:bg-blue-600 transition-colors">Enregistrer</button>
+                  </div>
+                </div>
+
+                <div v-if="taskChecklists.length > 0" class="flex flex-col gap-4">
+                  <div v-for="checklist in taskChecklists" :key="checklist.id" class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center group/checklist">
+                      <h4 class="font-bold text-sm text-main dark:text-gray-300">{{ checklist.title }}</h4>
+                      <button @click="handleDeleteChecklist(checklist.id)" class="text-secondary opacity-0 group-hover/checklist:opacity-100 hover:text-red-500 transition-all p-1">
+                        <Icon name="heroicons:trash" class="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <!-- Progress bar -->
+                    <div v-if="checklist.items && checklist.items.length > 0" class="flex items-center gap-3 mb-2">
+                      <span class="text-[10px] font-bold text-secondary">{{ Math.round((checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100) }}%</span>
+                      <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                      <div v-for="item in checklist.items" :key="item.id" class="flex items-center gap-3 group/item p-1 -mx-1 rounded hover:bg-gray-100 dark:hover:bg-[#1A1A1D] transition-colors">
+                        <div @click="toggleChecklistItem(item)" class="w-4 h-4 rounded border-2 border-secondary dark:border-gray-500 flex items-center justify-center cursor-pointer hover:border-primary transition-colors bg-white dark:bg-[#222224]">
+                          <Icon v-if="item.is_done" name="heroicons:check" class="w-3 h-3 text-primary dark:text-blue-500" />
+                        </div>
+                        <span class="text-sm flex-1 text-main dark:text-gray-300" :class="{'line-through text-secondary dark:text-gray-500': item.is_done}">{{ item.content }}</span>
+                        <button @click="handleDeleteChecklistItem(checklist, item.id)" class="text-secondary opacity-0 group-hover/item:opacity-100 hover:text-red-500 transition-all p-1">
+                          <Icon name="heroicons:x-mark" class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <input v-model="newChecklistItemContent[checklist.id]" type="text" placeholder="Ajouter un élément..." class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-1.5 text-main dark:text-gray-200 placeholder-gray-400" @keydown.enter="handleAddChecklistItem(checklist.id)" />
+                      <button v-if="newChecklistItemContent[checklist.id]?.trim()" @click="handleAddChecklistItem(checklist.id)" class="px-2 py-1 bg-gray-200 dark:bg-gray-800 text-xs font-bold rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">Ajouter</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attachments -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2 text-main dark:text-gray-200">
+                    <Icon name="ph:paperclip" class="w-5 h-5" />
+                    <h3 class="text-base font-bold">Pièces jointes</h3>
+                  </div>
+                  <button @click="triggerAttachmentUpload" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm">
+                    Ajouter
+                  </button>
+                </div>
+                
+                <input type="file" ref="attachmentInput" class="hidden" @change="handleAttachmentUploadForm" />
+                
+                <div v-if="taskAttachments.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div v-for="attachment in taskAttachments" :key="attachment.id" class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 group relative">
+                    <div class="w-10 h-10 rounded bg-white dark:bg-[#2D2D2F] flex items-center justify-center shrink-0 border border-gray-200 dark:border-gray-700">
+                      <img v-if="attachment.mime_type?.startsWith('image/')" :src="attachment.file_path.startsWith('http') ? attachment.file_path : `${storageBaseUrl}${attachment.file_path.replace(/^\//, '')}`" class="w-full h-full object-cover rounded" />
+                      <Icon v-else name="ph:file" class="w-5 h-5 text-secondary" />
+                    </div>
+                    <div class="flex flex-col flex-1 overflow-hidden">
+                      <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `${storageBaseUrl}${attachment.file_path.replace(/^\//, '')}`" target="_blank" class="text-sm font-bold text-main dark:text-gray-200 truncate hover:underline" :title="attachment.file_name">{{ attachment.file_name }}</a>
+                      <span class="text-[10px] text-secondary font-medium uppercase tracking-wider">{{ new Date(attachment.created_at).toLocaleDateString() }}</span>
+                    </div>
+                    <button @click="handleDeleteAttachmentFile(attachment.id)" class="absolute right-2 top-2 p-1.5 bg-white dark:bg-[#2D2D2F] border border-gray-200 dark:border-gray-700 rounded-md text-secondary opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all shadow-sm">
+                      <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
 
               <!-- Sous-tâches -->
               <div class="mb-8">
                 <div class="flex items-center justify-between mb-3">
                   <div class="flex items-center gap-2 text-main dark:text-gray-200">
-                    <Icon name="heroicons:check-square" class="w-5 h-5" />
+                    <Icon name="ph:check-square-offset" class="w-5 h-5" />
                     <h3 class="text-base font-bold">Sous-tâches</h3>
                   </div>
                   <button @click="isCreateSubtaskModalOpen = true" class="px-3 py-1.5 bg-canvas dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-main dark:text-gray-300 rounded transition-colors text-xs font-bold shadow-sm">
@@ -880,9 +1104,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                 
                 <!-- Progress bar -->
                 <div v-if="taskSubtasks.length > 0" class="flex items-center gap-3 mb-4">
-                  <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'terminé').length / taskSubtasks.length) * 100) }}%</span>
+                  <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100) }}%</span>
                   <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'terminé').length / taskSubtasks.length) * 100}%` }"></div>
+                    <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
                   </div>
                 </div>
 
@@ -890,9 +1114,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-white dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
                     <div class="flex items-center gap-3 overflow-hidden">
                       <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                        <div v-if="sub.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                       </div>
-                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'terminé'}">{{ sub.title }}</span>
+                      <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'done'}">{{ sub.title }}</span>
                     </div>
                   </div>
                 </div>
@@ -928,10 +1152,10 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-if="showMentionDropdown" class="absolute bottom-full left-0 mb-1 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
                     <ul class="p-1 overflow-y-auto custom-scrollbar">
                       <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
-                        <div :class="['w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white overflow-hidden', user.profile_picture ? '' : user.color]">
-                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`" class="w-full h-full object-cover" />
-                          <span v-else>{{ user.initials }}</span>
-                        </div> 
+                        <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
+                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `${backendBaseUrl}${user.profile_picture}`" class="w-full h-full object-cover" />
+                          <div v-else class="w-full h-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm border border-blue-600" :class="user.color">{{ user.initials }}</div>
+                        </div>
                         <span class="truncate">{{ user.name }}</span>
                       </li>
                       <li v-if="filteredMentionUsers.length === 0" class="px-2 py-1.5 text-xs text-secondary text-center italic">
@@ -1002,18 +1226,3 @@ watch(() => props.isOpen, (newIsOpen) => {
   </ClientOnly>
 </template>
 
-<style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3f3f46;
-  border-radius: 20px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-}
-</style>

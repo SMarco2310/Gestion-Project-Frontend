@@ -26,9 +26,12 @@ export interface Task {
   status: string
   statusIcon?: string
   statusColorClass?: string
-  commentairesCount?: number
-  subtasksTotal?: number
-  subtasksCompleted?: number
+  commentairesCount?: number | 0
+  attachmentsCount?: number | 0
+  checklistsTotal?: number | 0
+  checklistsCompleted?: number | 0
+  subtasksTotal?: number | 0
+  subtasksCompleted?: number | 0
   assignee: TaskAssignee
   bannerImage?: string
   projetName?: string | null
@@ -49,10 +52,7 @@ const activeDropdownId = ref<string | null>(null)
 const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus', 'updateColor'])
 
 const isCollapsed = ref(false)
-const isLockedColumn = computed(() => {
-  const t = props.title.toLowerCase()
-  return ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(t)
-})
+const isLockedColumn = computed(() => false)
 
 const isEditingTitle = ref(false)
 const editedTitle = ref(props.title)
@@ -73,7 +73,8 @@ const onChange = (evt: any) => {
 const isCreating = ref(false)
 const newTaskTitle = ref('')
 const newTaskDueDate = ref('')
-const newTaskProject = ref('')
+const 
+newTaskProject = ref('')
 const newTaskAssignee = ref<any>(null)
 const isAssigneeDropdownOpen = ref(false)
 
@@ -160,13 +161,8 @@ const submitNewTask = async () => {
   }
   
   try {
-    const isSystemColumn = ['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(props.title.toLowerCase())
-    let initialStatus = 'à faire'
-    
-    if (isSystemColumn) {
-      if (['en cours', 'in progress'].includes(props.title.toLowerCase())) initialStatus = 'en cours'
-      else if (['terminé', 'done'].includes(props.title.toLowerCase())) initialStatus = 'terminé'
-    }
+    const isSystemColumn = ['terminé', 'done'].includes(props.title.toLowerCase())
+    let initialStatus = isSystemColumn ? 'done' : 'not done'
 
     await createTask({
       title: newTaskTitle.value.trim(),
@@ -224,7 +220,7 @@ onUnmounted(() => {
 })
 
 const isItemOverdue = (item: any) => {
-  if (item.status === 'terminé' || !item.dueDate) return false
+  if (!item.dueDate || item.dueDate === 'Aucune') return false
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const dueDate = new Date(item.dueDate)
@@ -235,13 +231,13 @@ const isItemOverdue = (item: any) => {
 </script>
 
 <template>
-  <div :class="[
+  <div v-bind="$attrs" :class="[
     'flex flex-col shrink-0 snap-center md:shrink-0 md:snap-align-none bg-canvas dark:bg-[#161618] border border-form-border dark:border-[#2A2A2D] rounded-lg overflow-hidden shadow-md shadow-shadow-color dark:shadow-none max-h-full transition-all duration-300',
     isCollapsed ? 'w-14 md:w-14 h-full' : 'w-[85vw] md:w-[340px] h-fit'
   ]" :style="color ? { backgroundColor: color, borderColor: color } : {}">
     <!-- Header -->
-    <div :class="['px-4 flex items-center group/header', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
-      <div v-show="!isCollapsed" :class="['column-drag-handle cursor-grab active:cursor-grabbing p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
+    <div :class="['px-4 flex items-center group/header column-drag-handle cursor-grab active:cursor-grabbing', isCollapsed ? 'flex-col gap-4 py-6 h-full' : 'gap-3 py-4']">
+      <div v-show="!isCollapsed" :class="['p-1 -ml-2 rounded', color ? 'text-white/70 hover:text-white hover:bg-black/10' : 'text-secondary hover:text-main dark:text-gray-500 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800']">
          <Icon name="ph:dots-six-vertical" class="text-lg" />
       </div>
       
@@ -369,10 +365,11 @@ const isItemOverdue = (item: any) => {
         drag-class="cursor-grabbing"
         :animation="200"
         @change="onChange"
+        draggable=".task-card"
       >
         <template #item="{ element: item }">
           <div 
-            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
+            class="task-card neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
             :class="isItemOverdue(item) ? 'ring-1 ring-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : ''"
             @click="emit('taskClick', item.id)"
           >
@@ -386,7 +383,7 @@ const isItemOverdue = (item: any) => {
               <!-- Header (Title & Actions) -->
             <div class="flex justify-between items-start gap-2">
               <!-- Title -->
-              <h3 class="text-main dark:text-gray-200 text-[15px] leading-snug flex-1">
+              <h3 class="text-[15px] leading-snug flex-1" :class="item.status === 'done' ? 'text-secondary dark:text-gray-500 line-through' : 'text-main dark:text-gray-200'">
                 {{ item.title }}
               </h3>
               
@@ -413,7 +410,7 @@ const isItemOverdue = (item: any) => {
 
             <!-- Tags -->
             <div v-if="item.tags && item.tags.length > 0" class="flex flex-wrap items-start gap-1.5">
-               <div v-for="tag in item.tags" :key="tag.id || tag.label" :style="{ backgroundColor: (tag.colorHex || '#9CA3AF') + '20', color: tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
+               <div v-for="tag in item.tags" :key="tag.id || tag.label" :style="{ backgroundColor: (tag.colorHex || '#9CA3AF') + '33', color: tag.colorHex || '#9CA3AF' }" class="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider neo-badge">
                   {{ tag.label }}
                </div>
             </div>
@@ -428,10 +425,10 @@ const isItemOverdue = (item: any) => {
                  </div>
                  <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
                     <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                      <div v-if="item.status === 'terminé'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                      <div v-if="item.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
                     </div>
                     <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
-                    <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': isDone }">{{ item.reference }}</span>
+                    <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': item.status === 'done' }">{{ item.reference }}</span>
                  </div>
                </div>
 
@@ -443,6 +440,14 @@ const isItemOverdue = (item: any) => {
                   <div v-if="item.subtasksTotal && item.subtasksTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:check-square-offset" class="text-sm" />
                     <span class="text-xs font-medium">{{ item.subtasksCompleted }}/{{ item.subtasksTotal }}</span>
+                  </div>
+                  <div v-if="item.checklistsTotal && item.checklistsTotal > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:list-checks" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.checklistsCompleted }}/{{ item.checklistsTotal }}</span>
+                  </div>
+                  <div v-if="item.attachmentsCount && item.attachmentsCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
+                    <Icon name="ph:paperclip" class="text-sm" />
+                    <span class="text-xs font-medium">{{ item.attachmentsCount }}</span>
                   </div>
                   <div v-if="item.commentairesCount && item.commentairesCount > 0" class="flex items-center gap-1 text-secondary dark:text-gray-400">
                     <Icon name="ph:chat-teardrop-text" class="text-sm" />
@@ -504,20 +509,3 @@ const isItemOverdue = (item: any) => {
     </div>
   </Teleport>
 </template>
-
-<style scoped>
-/* Scrollbar styling for a cleaner look */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #3f3f46;
-  border-radius: 20px;
-}
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background-color: #52525b;
-}
-</style>

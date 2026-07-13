@@ -8,6 +8,8 @@ import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
 import CreateTaskModal from '~/components/CreateTaskModal.vue'
 import CreateProjectModal from '~/components/CreateProjectModal.vue'
+import TaskModal from '~/components/TaskModal.vue'
+import ProjectModal from '~/components/ProjectModal.vue'
 
 definePageMeta({
   layout: 'custom',
@@ -49,6 +51,12 @@ const currentViewLabel = computed(() => {
 const isCreateTaskModalOpen = ref(false)
 const isCreateProjectModalOpen = ref(false)
 const isAddEventDropdownOpen = ref(false)
+
+const isTaskModalOpen = ref(false)
+const selectedTaskId = ref<string | null>(null)
+
+const isProjectSheetOpen = ref(false)
+const selectedProjectId = ref<string | null>(null)
 
 const openCreateTask = () => {
   isAddEventDropdownOpen.value = false
@@ -97,10 +105,13 @@ const calendarEvents = computed(() => {
     .filter((task: any) => {
       if (!task.due_date) return false
       if (activeFilters.value.priorities.length > 0 && !activeFilters.value.priorities.includes(task.priority)) return false
-      const statusMap: Record<string, string> = { 'TO_DO': 'à faire', 'IN_PROGRESS': 'en cours', 'DONE': 'terminé' }
-      const normalizedStatus = statusMap[task.status] || task.status
-      if (activeFilters.value.statuses.length > 0 && !activeFilters.value.statuses.includes(normalizedStatus)) return false
+      
+      if (activeFilters.value.statuses.length > 0 && !activeFilters.value.statuses.includes(task.status)) return false
+      
       if (activeFilters.value.projects.length > 0 && !activeFilters.value.projects.includes(task.projet_id)) return false
+      
+      if (activeFilters.value.tags.length > 0 && !(task.tags && task.tags.some((tag: any) => activeFilters.value.tags.includes(String(tag.name || tag).toLowerCase())))) return false
+      
       return true
     })
     .map((task: any) => {
@@ -137,10 +148,9 @@ const calendarEvents = computed(() => {
       start: projet.start_date,
       end: endDate.toISOString().split('T')[0],
       allDay: true,
-      display: 'background',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)', // Light blue background
-      borderColor: 'rgba(59, 130, 246, 0.2)',
-      textColor: '#3b82f6',
+      backgroundColor: '#8b5cf6', // Violet color for projects
+      borderColor: '#7c3aed',
+      textColor: '#ffffff',
       extendedProps: {
         type: 'project',
         description: projet.description
@@ -191,8 +201,14 @@ const calendarOptions = computed(() => ({
     currentTitle.value = arg.view.title
   },
   eventClick: (clickInfo: any) => {
-    // In a real app, open the task side sheet
-    console.log('Event clicked:', clickInfo.event)
+    const type = clickInfo.event.extendedProps.type
+    if (type === 'task') {
+      selectedTaskId.value = clickInfo.event.id.replace('t-', '')
+      isTaskModalOpen.value = true
+    } else if (type === 'project') {
+      selectedProjectId.value = clickInfo.event.id.replace('p-', '')
+      isProjectSheetOpen.value = true
+    }
   },
   drop: async (info: any) => {
     const taskId = info.draggedEl.dataset.taskId
@@ -213,7 +229,7 @@ const calendarOptions = computed(() => ({
 </script>
 
 <template>
-  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4">
+  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4 max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8">
     <header class="pb-4 flex justify-between items-center">
       <div class="py-2 pb-5">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Planning</h1>
@@ -338,7 +354,7 @@ const calendarOptions = computed(() => ({
           </div>
         </div>
 
-        <FullCalendar ref="calendarRef" class="flex-1 h-full " :options="calendarOptions">
+        <FullCalendar ref="calendarRef" class="flex-1 h-full w-full" :options="calendarOptions">
           <template v-slot:dayHeaderContent="arg">
             <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
@@ -365,9 +381,12 @@ const calendarOptions = computed(() => ({
           </template>
 
           <template v-slot:eventContent="arg">
-            <!-- Background Project Event -->
-            <div v-if="arg.event.display === 'background'" class="w-full h-full opacity-50">
-              <!-- Empty to prevent overlapping text with tasks on the same day -->
+            <!-- Project Event -->
+            <div v-if="arg.event.extendedProps.type === 'project'" class="w-full h-full min-h-[22px] px-1.5 py-0.5 flex items-center rounded-md overflow-hidden shadow-sm" :style="{ backgroundColor: arg.event.backgroundColor, color: arg.event.textColor }">
+              <template v-if="arg.isStart">
+                <Icon name="heroicons:briefcase" class="w-3.5 h-3.5 mr-1.5 opacity-90 shrink-0" />
+                <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
+              </template>
             </div>
 
             <!-- Month View Task Event -->
@@ -433,6 +452,18 @@ const calendarOptions = computed(() => ({
       @close="isCreateProjectModalOpen = false" 
       @created="getProjets"
     />
+    <TaskModal 
+      :isOpen="isTaskModalOpen" 
+      :taskId="selectedTaskId" 
+      @close="isTaskModalOpen = false" 
+      @updated="getTasks"
+    />
+    <ProjectModal
+      :isOpen="isProjectSheetOpen"
+      :projectId="selectedProjectId"
+      @close="isProjectSheetOpen = false"
+      @updated="getProjets"
+    />
   </div>
 </template>
 
@@ -459,6 +490,7 @@ const calendarOptions = computed(() => ({
 /* Remove default grid styling */
 .fc-theme-standard .fc-scrollgrid {
   border: none !important;
+  width: 100% !important;
 }
 
 .fc-scrollgrid-section-header > th {

@@ -14,9 +14,9 @@ const { activeOrganization, updateKanbanColumns } = useOrganizations()
 const { addToast } = useToast()
 
 const kanbanColumns = computed(() => {
-  return activeOrganization.value?.kanban_columns?.length 
+  return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
     ? activeOrganization.value.kanban_columns 
-    : ['À faire', 'En cours', 'Terminé']
+    : ['Inbox']
 })
 
 const localColumns = ref<{name: string}[]>([])
@@ -38,27 +38,36 @@ const handleColumnReorder = async () => {
   const oldColumns = [...activeOrganization.value.kanban_columns || []]
   
   // Optmistic UI update
-  activeOrganization.value = {
-    ...activeOrganization.value,
-    kanban_columns: newColumns
-  }
+  activeOrganization.value.kanban_columns = newColumns
   
   try {
     await updateKanbanColumns(activeOrganization.value.id, newColumns)
   } catch (e) {
     // Revert on error
-    activeOrganization.value.kanban_columns = oldColumns
+    if (activeOrganization.value) {
+      activeOrganization.value.kanban_columns = oldColumns
+    }
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
   }
 }
 
-const boardItems = ref<Record<string, any[]>>({})
+const boardItems = ref<Record<string, any[]>>({'Inbox': []})
 
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
 const taskModalEditMode = ref(false)
 
 const isCreateTaskModalOpen = ref(false)
+
+const handleSidebarCreateTask = async (payload: any) => {
+  try {
+    await createTask(payload)
+    await getTasks()
+    addToast({ type: 'success', title: 'Tâche créée', message: 'La tâche a été ajoutée à la boîte de réception.' })
+  } catch (e) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de créer la tâche.' })
+  }
+}
 
 const handleCreateTaskSubmit = async (payload: any) => {
   try {
@@ -103,9 +112,7 @@ const handleCloseTaskModal = () => {
 const handleTaskMoved = async (taskId: string, newColumn: string) => {
   try {
     const payload: any = { board_column: newColumn }
-    if (newColumn.toLowerCase() === 'terminé' || newColumn.toLowerCase() === 'done') {
-      payload.status = 'terminé'
-    }
+    // Status is no longer automatically tied to columns. It remains independent (done/not done).
     await updateTask(taskId, payload)
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de déplacer la tâche.' })
@@ -116,7 +123,7 @@ const handleTaskMoved = async (taskId: string, newColumn: string) => {
 const handleToggleStatus = async (taskId: string) => {
   const task = tasks.value.find((t: any) => String(t.id) === String(taskId))
   if (!task) return
-  const newStatus = task.status === 'terminé' ? 'à faire' : 'terminé'
+  const newStatus = task.status === 'done' ? 'not done' : 'done'
   try {
     await updateTask(taskId, { status: newStatus })
   } catch (error) {
@@ -130,10 +137,6 @@ const kanbanColors = computed(() => {
 
 const handleRenameColumn = async (oldName: string, newName: string) => {
   if (!activeOrganization.value) return
-  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(oldName.toLowerCase())) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de renommer une colonne système.' })
-    return
-  }
   if (kanbanColumns.value.includes(newName)) {
     addToast({ type: 'error', title: 'Erreur', message: 'Ce nom de colonne existe déjà.' })
     return
@@ -177,20 +180,24 @@ const handleAddColumn = async () => {
   }
 }
 
+const isConfirmModalOpen = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const columnToDelete = ref('')
+
 const handleDeleteColumn = async (colName: string) => {
   if (!activeOrganization.value) return
-  if (['à faire', 'to do', 'en cours', 'in progress', 'terminé', 'done'].includes(colName.toLowerCase())) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer une colonne système.' })
-    return
-  }
-  if (kanbanColumns.value.length <= 1) {
-    addToast({ type: 'warning', title: 'Action impossible', message: 'Vous ne pouvez pas supprimer la dernière colonne.' })
-    return
-  }
   
-  if (!confirm(`Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ? Toutes les tâches qu'elle contient seront déplacées vers la première colonne.`)) {
-    return
-  }
+  columnToDelete.value = colName
+  confirmModalTitle.value = 'Supprimer la colonne'
+  confirmModalMessage.value = `Êtes-vous sûr de vouloir supprimer la colonne "${colName}" ?\n\nToutes les tâches qu'elle contient seront déplacées vers la première colonne (si existante).`
+  isConfirmModalOpen.value = true
+}
+
+const executeDeleteColumn = async () => {
+  const colName = columnToDelete.value
+  isConfirmModalOpen.value = false
+  if (!colName || !activeOrganization.value) return
   
   const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0] || ''
   const newColumns = kanbanColumns.value.filter(c => c !== colName)
@@ -240,11 +247,9 @@ const mapTaskToBoardItem = (task: any) => ({
   reference: task.reference_code || `T-${String(task.id).padStart(2, '0')}`,
   issueTypeIcon: 'ph:bookmark-simple-fill',
   issueTypeColorClass: 'text-emerald-600',
-  statusIcon: 'ph:check',
-  statusColorClass: 'text-emerald-500',
+  statusIcon: task.status === 'done' ? 'ph:check-circle-fill' : 'ph:circle',
+  statusColorClass: task.status === 'done' ? 'text-emerald-500' : 'text-gray-400',
   commentairesCount: task.commentaires_count || 0,
-  subtasksTotal: task.sub_tasks ? task.sub_tasks.length : 0,
-  subtasksCompleted: task.sub_tasks ? task.sub_tasks.filter((st: any) => st.status === 'terminé').length : 0,
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
     initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
@@ -295,16 +300,23 @@ const tagOptions = computed(() => {
   return Array.from(uniqueTags.values())
 })
 
+const statusOptions = [
+  { id: 'not done', label: 'En cours' },
+  { id: 'done', label: 'Terminé' }
+]
+
 const filterText = ref('')
 const selectedProjects = ref<(string | number)[]>([])
 const selectedPriorities = ref<(string | number)[]>([])
 const selectedTags = ref<(string | number)[]>([])
+const selectedStatuses = ref<(string | number)[]>([])
 const selectedDateSort = ref('recent')
 
 const handleFilterUpdate = (filters: { priorities: (string | number)[], projects: (string | number)[], statuses: (string | number)[], tags?: (string | number)[], dateSort?: string }) => {
   selectedProjects.value = filters.projects
   selectedPriorities.value = filters.priorities
   selectedTags.value = filters.tags || []
+  selectedStatuses.value = filters.statuses || []
   selectedDateSort.value = filters.dateSort || 'recent'
 }
 
@@ -319,8 +331,12 @@ const filteredTasks = computed(() => {
     result = result.filter(t => t.priority != null && selectedPriorities.value.includes(t.priority))
   }
 
+  if (selectedStatuses.value.length > 0) {
+    result = result.filter(t => t.status != null && selectedStatuses.value.includes(t.status))
+  }
+
   if (selectedTags.value.length > 0) {
-    result = result.filter(t => t.tags && t.tags.some((tag: any) => selectedTags.value.includes(tag.name || tag)))
+    result = result.filter(t => t.tags && t.tags.some((tag: any) => selectedTags.value.includes(String(tag.name || tag).toLowerCase())))
   }
 
   if (filterText.value) {
@@ -348,15 +364,19 @@ const syncBoardItems = () => {
   kanbanColumns.value.forEach((col: string) => {
     newBoardItems[col] = []
   })
+  
+  if (!newBoardItems['Inbox']) {
+    newBoardItems['Inbox'] = []
+  }
 
-  const firstCol = kanbanColumns.value[0] || 'À faire'
+  const firstCol = kanbanColumns.value.includes('Inbox') ? 'Inbox' : (kanbanColumns.value[0] || 'Inbox')
 
   filteredTasks.value.forEach((task) => {
     // If the task has a board_column, place it there. Otherwise fallback to its status.
     let targetCol = task.board_column || task.status
     
     // If the target column doesn't exist on the board anymore, push it to the first column
-    if (!kanbanColumns.value.includes(targetCol)) {
+    if (!kanbanColumns.value.includes(targetCol) && targetCol !== 'Inbox') {
       targetCol = firstCol
     }
     
@@ -384,22 +404,23 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
-    <div class="py-2">
+    <header class="flex flex-col lg:flex-row lg:justify-between w-full flex-shrink-0">
+    <div class="py-2 lg:py-6">
       <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
-      <p class="text-secondary dark:text-gray-400 py-3 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
+      <p class="text-secondary dark:text-gray-400 py-2 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
     </div>
-    <div id="search-bar" class="py-4 md:py-10 flex flex-row justify-between md:justify-end items-center gap-2 md:gap-4 w-full">
+    <div id="search-bar" class="py-4 lg:py-6 flex flex-row justify-between lg:justify-end items-center gap-2 md:gap-4 w-full lg:w-auto">
             <div class="relative flex items-center flex-1 md:flex-none">
                 <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-96">
+                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-64 lg:w-96">
             </div>
             <FilterDropdown 
               :showProjects="true" 
-              :showStatus="false" 
+              :showStatus="true" 
               :showTags="true"
               :projectOptions="projectOptions"
               :tagOptions="tagOptions"
+              :statusOptions="statusOptions"
               @update:filters="handleFilterUpdate"
               class="shrink-0" 
             />
@@ -409,32 +430,47 @@ onMounted(async () => {
             </button>
         </div>
   </header>
-    <!-- Kanban Board Columns -->
-    <draggable 
-      v-model="localColumns"
-      @change="handleColumnReorder"
-      item-key="name"
-      class="flex gap-4 md:gap-6 flex-1 min-h-0 pb-4 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
-      handle=".column-drag-handle"
-      ghost-class="opacity-40"
-      :animation="200"
-    >
+    <!-- Main Board Area -->
+    <div class="flex flex-1 min-h-0 pb-4 gap-4 md:gap-6 overflow-hidden">
+      <!-- Inbox Sidebar -->
+      <TaskInboxSidebar 
+        v-if="boardItems['Inbox']"
+        v-model:items="boardItems['Inbox']"
+        @createTask="handleSidebarCreateTask"
+        @taskClick="handleTaskClick"
+        @taskMoved="handleTaskMoved($event, 'Inbox')"
+        @toggleStatus="handleToggleStatus"
+        class="shrink-0"
+      />
+      <!-- Kanban Board Columns -->
+      <draggable 
+        v-model="localColumns"
+        @end="handleColumnReorder"
+        item-key="name"
+        class="flex gap-4 md:gap-6 flex-1 min-w-0 overflow-x-auto scroll-smooth flex-nowrap custom-scrollbar"
+        handle=".column-drag-handle"
+        ghost-class="opacity-40"
+        :animation="200"
+        draggable=".board-column"
+      >
       <template #item="{ element: col }">
-        <BoardColumn 
-          :title="col.name" 
-          :color="kanbanColors[col.name]"
-          v-model:items="boardItems[col.name]" 
-          :allowCreate="true"
-          :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
-          @taskClick="handleTaskClick"
-          @editTask="handleEditTask"
-          @deleteTask="handleDeleteTask"
-          @taskMoved="handleTaskMoved($event, col.name)"
-          @rename="handleRenameColumn(col.name, $event)"
-          @deleteColumn="handleDeleteColumn(col.name)"
-          @toggleStatus="handleToggleStatus"
-          @updateColor="handleUpdateColumnColor(col.name, $event)"
-        />
+        <div class="board-column h-full flex shrink-0 snap-center md:snap-align-none">
+          <BoardColumn 
+            :title="col.name" 
+            :color="kanbanColors[col.name]"
+            v-model:items="boardItems[col.name]" 
+            :allowCreate="true"
+            :isDone="col.name.toLowerCase() === 'terminé' || col.name.toLowerCase() === 'done'"
+            @taskClick="handleTaskClick"
+            @editTask="handleEditTask"
+            @deleteTask="handleDeleteTask"
+            @taskMoved="handleTaskMoved($event, col.name)"
+            @rename="handleRenameColumn(col.name, $event)"
+            @deleteColumn="handleDeleteColumn(col.name)"
+            @toggleStatus="handleToggleStatus"
+            @updateColor="handleUpdateColumnColor(col.name, $event)"
+          />
+        </div>
       </template>
       <template #footer>
         <!-- Add Column Button -->
@@ -443,9 +479,10 @@ onMounted(async () => {
             <Icon name="ph:plus" class="text-xl" />
             Ajouter une colonne
           </button>
-        </div>
+        </div>  
       </template>
     </draggable>
+    </div>
     <!-- Task Modal -->
     <TaskModal 
       :isOpen="isTaskModalOpen" 
@@ -458,6 +495,15 @@ onMounted(async () => {
       :is-open="isCreateTaskModalOpen"
       :create-task="handleCreateTaskSubmit"
       @close="isCreateTaskModalOpen = false"
+    />
+    <!-- Confirm Modal -->
+    <ConfirmModal
+      :is-open="isConfirmModalOpen"
+      :title="confirmModalTitle"
+      :message="confirmModalMessage"
+      confirm-text="Supprimer la colonne"
+      @close="isConfirmModalOpen = false"
+      @confirm="executeDeleteColumn"
     />
   </div>
 </template>

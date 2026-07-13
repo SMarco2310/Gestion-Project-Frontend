@@ -5,9 +5,8 @@ export enum ProjectStatus {
 }
 
 export enum TaskStatus {
-  TO_DO = 'à faire',
-  IN_PROGRESS = 'en cours',
-  DONE = 'terminé',
+  NOT_DONE = 'not done',
+  DONE = 'done',
 }
 
 export enum TaskPriority {

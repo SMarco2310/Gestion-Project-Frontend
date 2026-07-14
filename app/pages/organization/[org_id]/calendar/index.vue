@@ -6,6 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid'
 import interactionPlugin, { Draggable } from '@fullcalendar/interaction'
 import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
+import useOrganizations from '~/composables/useOrganizations'
 import CreateTaskModal from '~/components/CreateTaskModal.vue'
 import CreateProjectModal from '~/components/CreateProjectModal.vue'
 import TaskModal from '~/components/TaskModal.vue'
@@ -15,8 +16,10 @@ definePageMeta({
   layout: 'custom',
 })
 
+const route = useRoute()
 const { tasks, getTasks, updateTask } = useTasks()
 const { projets, getProjets } = useProjets()
+const { activeOrganization } = useOrganizations()
 
 const calendarRef = ref<any>(null)
 let draggableInstance: any = null

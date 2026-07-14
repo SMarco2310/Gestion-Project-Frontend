@@ -11,6 +11,7 @@ interface Tache {
   tag_ids?: number[] | null
   tags?: any[] | null
   projet_id?: number | string | null
+  projet?: any | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
   commentaires_count?: number | 0

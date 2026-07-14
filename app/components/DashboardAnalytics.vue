@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 
 const route = useRoute()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
 
 const props = defineProps<{
   totalUsers: number
@@ -9,6 +11,8 @@ const props = defineProps<{
   tasks: any[]
   kanbanColumns: string[]
 }>()
+
+const emit = defineEmits(['taskClick'])
 
 const topStats = computed(() => [
   { title: 'TOTAL USERS', value: props.totalUsers.toString(), trendColor: 'text-blue-500' },
@@ -108,8 +112,7 @@ const recentTasks = computed(() => {
       }
       
       const user = t.user || t.assignee
-      const name = user?.name || 'Unassigned'
-      const initials = name !== 'Unassigned' ? name.substring(0, 2).toUpperCase() : '?'
+      const initials = (user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || '?';
       
       const userColors = ['bg-blue-500', 'bg-indigo-600', 'bg-[#00A3CB]', 'bg-purple-500', 'bg-emerald-500']
       
@@ -120,7 +123,8 @@ const recentTasks = computed(() => {
         statusBg,
         statusText,
         userInitials: initials,
-        userBg: userColors[idx % userColors.length]
+        userBg: userColors[idx % userColors.length],
+        user: user
       }
     })
 })
@@ -190,8 +194,8 @@ const recentTasks = computed(() => {
         <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">TÂCHES RÉCENTES</h3>
         <div class="flex items-center">
           <div class="flex -space-x-2 mr-3">
-             <div v-for="(task, idx) in recentTasks" :key="idx" :class="['w-7 h-7 rounded-full text-[9px] font-bold text-white flex items-center justify-center border-2 border-white dark:border-[#2A2A2D]', task.userBg]">
-                {{ task.userInitials }}
+             <div v-for="(task, idx) in recentTasks" :key="idx" :class="['w-7 h-7 rounded-full text-[9px] font-bold text-white flex items-center justify-center border-2 border-white dark:border-[#2A2A2D] overflow-hidden shrink-0', task.userBg]">
+                <img :src="task.user?.profile_picture ? (task.user.profile_picture.startsWith('http') ? task.user.profile_picture : apiBase.replace('/api', '') + task.user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(task.user?.last_name || '').charAt(0).toUpperCase() + (task.user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="User Avatar" class="w-full h-full object-cover" />
              </div>
           </div>
           <span class="text-xs font-bold text-gray-400">{{ props.tasks.length > 3 ? '+' + (props.tasks.length - 3) : '' }}</span>
@@ -204,7 +208,7 @@ const recentTasks = computed(() => {
           :key="task.id"
           class="flex items-center justify-between py-4 px-2 cursor-pointer rounded-lg hover:bg-gray-50 dark:hover:bg-[#323235] transition-colors -mx-2"
           :class="{ 'border-b border-gray-50 dark:border-gray-800/50': idx !== recentTasks.length - 1 }"
-          @click="navigateTo(`/organization/${route.params.org_id}/tasks/${task.id}`)"
+          @click="emit('taskClick', String(task.id))"
         >
           <div class="flex items-center gap-4">
             <div class="w-5 h-5 rounded-full border-2 border-gray-100 dark:border-gray-700"></div>
@@ -214,8 +218,8 @@ const recentTasks = computed(() => {
             <span :class="['text-[10px] font-bold px-3 py-1 rounded-md tracking-wider', task.statusBg, task.statusText]">
               {{ task.status }}
             </span>
-            <div :class="['w-7 h-7 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-sm', task.userBg]">
-              {{ task.userInitials }}
+            <div :class="['w-7 h-7 rounded-full text-[9px] font-bold text-white flex items-center justify-center shadow-sm overflow-hidden shrink-0', task.userBg]">
+              <img :src="task.user?.profile_picture ? (task.user.profile_picture.startsWith('http') ? task.user.profile_picture : apiBase.replace('/api', '') + task.user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(task.user?.last_name || '').charAt(0).toUpperCase() + (task.user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="User Avatar" class="w-full h-full object-cover" />
             </div>
           </div>
         </div>

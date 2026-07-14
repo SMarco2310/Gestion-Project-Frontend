@@ -72,8 +72,9 @@ const fetchOrgMembers = async () => {
     const members = res.data?.data ?? res.data ?? []
     orgMembers.value = members.map((m: any, i: number) => ({
       id: m.id,
-      name: m.name,
-      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      first_name: m.first_name,
+      last_name: m.last_name,
+      initials: (m.last_name || '?').charAt(0).toUpperCase() + (m.first_name || '').charAt(0).toUpperCase(),
       color: avatarColors[i % avatarColors.length],
       profile_picture: m.profile_picture || null
     }))
@@ -103,19 +104,22 @@ const setTask = async (id: string | number | null) => {
       if (task.assignee) {
         taskAssignee.value = {
           id: task.assignee.id,
-          name: task.assignee.name,
-          initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
+          first_name: task.assignee.first_name,
+          last_name: task.assignee.last_name,
+          initials: (task.assignee.last_name || '?').charAt(0).toUpperCase() + (task.assignee.first_name || '').charAt(0).toUpperCase(),
           color: avatarColors[0],
           profile_picture: task.assignee.profile_picture || null
         }
       } else {
         taskAssignee.value = null
       }
+      taskProjetId.value = task.projet_id || ''
+      taskProjetReference.value = task.projet?.reference_code      
       if (task.projet_id) {
         try {
           const projet = await getProjet(task.projet_id)
           if (projet) {
-            taskProjetReference.value = (projet as any).reference_code || `PROJ-${task.projet_id}`
+            taskProjetReference.value = (projet as any).reference_code || (projet as any).name || `PROJ-${task.projet_id}`
             if ((projet as any).end_date) {
               projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
             } else {
@@ -123,7 +127,6 @@ const setTask = async (id: string | number | null) => {
             }
           } else {
             projectEndDate.value = ''
-            taskProjetReference.value = `PROJ-${task.projet_id}`
           }
         } catch (e) {
           projectEndDate.value = ''
@@ -279,7 +282,7 @@ const mentionCursorPosition = ref(0)
 const filteredMentionUsers = computed(() => {
   if (!mentionSearchQuery.value) return orgMembers.value
   const q = mentionSearchQuery.value.toLowerCase()
-  return orgMembers.value.filter(u => u.name.toLowerCase().includes(q))
+  return orgMembers.value.filter(u => ((u.last_name || '') + ' ' + (u.first_name || '')).toLowerCase().includes(q))
 })
 
 const handleCommentInput = () => {
@@ -302,7 +305,7 @@ const selectMention = (member: any) => {
   const textBeforeMention = commentText.value.substring(0, mentionCursorPosition.value)
   const textAfterCursor = commentText.value.substring(commentTextarea.value?.selectionStart || 0)
   
-  commentText.value = `${textBeforeMention}@${member.name} ${textAfterCursor}`
+  commentText.value = `${textBeforeMention}@${(member.last_name || '') + ' ' + (member.first_name || '').trim()} ${textAfterCursor}`
   
   if (!activeMentions.value.includes(member.id)) {
     activeMentions.value.push(member.id)
@@ -314,7 +317,8 @@ const selectMention = (member: any) => {
   setTimeout(() => {
     if (commentTextarea.value) {
       commentTextarea.value.focus()
-      const newPos = mentionCursorPosition.value + member.name.length + 2
+      const insertedText = (member.last_name || '') + ' ' + (member.first_name || '').trim()
+      const newPos = mentionCursorPosition.value + insertedText.length + 2
       commentTextarea.value.setSelectionRange(newPos, newPos)
     }
   }, 0)
@@ -324,11 +328,15 @@ const renderCommentContent = (content: string) => {
   if (!content) return ''
   let html = content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   
-  const sortedMembers = [...orgMembers.value].sort((a, b) => b.name.length - a.name.length)
+  const sortedMembers = [...orgMembers.value].sort((a, b) => {
+    const lenA = ((a.last_name || '') + ' ' + (a.first_name || '')).length
+    const lenB = ((b.last_name || '') + ' ' + (b.first_name || '')).length
+    return lenB - lenA
+  })
   
   for (const member of sortedMembers) {
-    const regex = new RegExp(`@${member.name}\\b`, 'gi')
-    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.name}</span>`)
+    const regex = new RegExp(`@${member.last_name + ' ' + member.first_name}\\b`, 'gi')
+    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.last_name + ' ' + member.first_name}</span>`)
   }
   
   return html
@@ -558,7 +566,7 @@ const sendComment = async () => {
   // Robustly extract mentions by checking if any @[MemberName] exists in the text
   const extractedMentions = [...activeMentions.value]
   orgMembers.value.forEach(member => {
-    if (commentText.value.includes(`@${member.name}`) && !extractedMentions.includes(member.id)) {
+    if (commentText.value.includes(`@${member.first_name}`) && !extractedMentions.includes(member.id)) {
       extractedMentions.push(member.id)
     }
   })
@@ -793,6 +801,12 @@ watch(() => props.taskId, async (newVal) => {
   }
 }, { immediate: true })
 
+watch(() => activeOrganization.value, (newOrg) => {
+  if (newOrg && props.isOpen) {
+    fetchOrgMembers()
+  }
+}, { immediate: true })
+
 watch(() => props.isOpen, (newIsOpen) => {
   if (newIsOpen) {
     if (props.startInEditMode) {
@@ -899,7 +913,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <div class="relative">
                   <button @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs transition-colors hover:brightness-105">
                     <Icon name="heroicons:user" class="w-3.5 h-3.5" />
-                    <span v-if="taskAssignee" class="truncate max-w-[100px]">{{ taskAssignee.name }}</span>
+                    <span v-if="taskAssignee" class="truncate max-w-[100px]">{{ taskAssignee.last_name + ' ' + taskAssignee.first_name }}</span>
                     <span v-else>Assigner</span>
                   </button>
                   <div v-if="isAssigneeDropdownOpen" @click="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
@@ -916,11 +930,10 @@ watch(() => props.isOpen, (newIsOpen) => {
                         <span class="text-secondary dark:text-gray-400">Non assigné</span>
                       </li>
                       <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(member)">
-                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
-                          <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `${backendBaseUrl}${member.profile_picture}`" class="w-full h-full object-cover" />
-                          <div v-else class="w-full h-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-blue-600" :class="member.color">{{ member.initials }}</div>
+                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                          <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : backendBaseUrl + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
                         </div> 
-                        {{ member.name }}
+                        {{ member.last_name + ' ' + member.first_name }}
                       </li>
                     </ul>
                   </div>
@@ -1159,7 +1172,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               
               <!-- Timestamps under content -->
               <div class="mt-auto pt-8 flex flex-wrap items-center gap-4 text-xs text-secondary dark:text-gray-500">
-                <span class="flex items-center gap-1">Rapporteur: {{ user?.name || 'Moi' }}</span>
+                <span class="flex items-center gap-1">Rapporteur: {{ user?.last_name + ' ' + user?.first_name || 'Moi' }}</span>
                 <span v-if="taskCreatedAt">Créé: {{ new Date(taskCreatedAt).toLocaleDateString() }}</span>
                 <span v-if="taskUpdatedAt">Mis à jour: {{ new Date(taskUpdatedAt).toLocaleDateString() }}</span>
               </div>
@@ -1184,11 +1197,10 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-if="showMentionDropdown" class="absolute top-full mt-1 left-0 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
                     <ul class="p-1 overflow-y-auto custom-scrollbar">
                       <li v-for="user in filteredMentionUsers" :key="user.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="selectMention(user)">
-                        <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700">
-                          <img v-if="user.profile_picture" :src="user.profile_picture.startsWith('http') ? user.profile_picture : `${backendBaseUrl}${user.profile_picture}`" class="w-full h-full object-cover" />
-                          <div v-else class="w-full h-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm border border-blue-600" :class="user.color">{{ user.initials }}</div>
+                        <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                          <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : backendBaseUrl + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
                         </div>
-                        <span class="truncate">{{ user.name }}</span>
+                        <span class="truncate">{{ user.last_name + ' ' + user.first_name }}</span>
                       </li>
                       <li v-if="filteredMentionUsers.length === 0" class="px-2 py-1.5 text-xs text-secondary text-center italic">
                         Aucun membre trouvé
@@ -1207,11 +1219,11 @@ watch(() => props.isOpen, (newIsOpen) => {
               <div v-if="commentaires && commentaires.length > 0" class="flex flex-col gap-5">
                 <div v-for="comment in commentaires" :key="comment.id" class="flex gap-3">
                   <div class="w-8 h-8 rounded-full bg-blue-600 shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm mt-0.5">
-                    {{ (comment as any).user?.name ? (comment as any).user.name.substring(0, 2).toUpperCase() : 'U' }}
+                    {{ ((comment as any).user?.last_name || 'U').charAt(0).toUpperCase() + ((comment as any).user?.first_name || '').charAt(0).toUpperCase() }}
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="flex flex-wrap items-baseline gap-2 mb-1">
-                      <span class="text-sm font-bold text-main dark:text-gray-200">{{ (comment as any).user?.name || 'Utilisateur' }}</span>
+                      <span class="text-sm font-bold text-main dark:text-gray-200">{{ (comment as any).user?.last_name + ' ' + (comment as any).user?.first_name || 'Utilisateur' }}</span>
                       <span class="text-xs text-secondary dark:text-gray-500">{{ comment.created_at ? formatDisplayDate(comment.created_at) : '' }}</span>
                     </div>
                     

@@ -127,6 +127,11 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleGlobalClick)
 })
+
+
+
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase as string;
 </script>
 
 <template>
@@ -138,7 +143,7 @@ onUnmounted(() => {
                 <NuxtLink :to="orgId ? `/organization/${orgId}` : '/'" class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-md shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
                         <template v-if="activeOrganization">
-                            <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                            <img v-if="activeOrganization.logo" :src="apiBase.replace('/api', '') + '/' + activeOrganization.logo" alt="Org Logo" class="w-full h-full object-cover">
                             <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
                         </template>
                         <img v-else src="/assets/logo_app.svg" class="w-full h-full object-contain p-1" alt="Logo">
@@ -205,7 +210,7 @@ onUnmounted(() => {
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <div @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 hover:ring-primary dark:hover:ring-primary overflow-hidden cursor-pointer transition-all">
-                        <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
+                        <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover">
                     </div>
                     <!-- Overlay for closing -->
                     <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
@@ -241,7 +246,7 @@ onUnmounted(() => {
         <!-- Left-Aligned Navigation (Stem of the L) -->
         <aside 
             :class="[
-                'fixed top-0 left-0 h-[100dvh] w-[80vw] max-w-[320px] bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0',
+                'fixed top-0 left-0 h-[100dvh] w-[85vw] max-w-[650px] bg-card dark:bg-[#1D1D1D] border-r border-form-border dark:border-gray-800 z-50 flex flex-col transition-all duration-300 ease-in-out md:translate-x-0',
                 isSidebarCollapsed ? 'md:w-20' : 'md:w-64',
                 isMobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
             ]"
@@ -390,7 +395,7 @@ onUnmounted(() => {
                     <!-- Profile -->
                     <NuxtLink to="/profile" @click="isMobileMenuOpen = false" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 overflow-hidden shrink-0">
-                            <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
+                            <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.first_name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                     </NuxtLink>
                     <!-- Notifications -->

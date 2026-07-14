@@ -587,9 +587,9 @@ onMounted(async () => {
                       <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Membres</div>
                       <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
                         <div class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[9px] shrink-0">
-                          {{ member.name.charAt(0) }}
+                          {{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}
                         </div>
-                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ member.name }}</span>
+                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ member.last_name + ' ' + member.first_name }}</span>
                       </button>
                     </div>
                     <div v-if="filteredAssignees.teams.length === 0 && filteredAssignees.members.length === 0" class="p-3 text-center text-xs text-secondary dark:text-gray-500">
@@ -618,10 +618,10 @@ onMounted(async () => {
                   <div class="flex items-center gap-2.5 cursor-pointer flex-1 overflow-hidden" @click="navigateTo(`/profile/${member.id}`)">
                       <div :class="['w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-[10px] shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
                         <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
-                        <span v-else>{{ member.name.substring(0, 2).toUpperCase() }}</span>
+                        <span v-else>{{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}</span>
                       </div>
                       <div class="flex flex-col truncate">
-                          <span class="text-xs font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ member.name }}</span>
+                          <span class="text-xs font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ member.last_name + ' ' + member.first_name }}</span>
                           <span class="text-[10px] text-secondary dark:text-gray-500 truncate leading-none">{{ member.role || 'Membre' }}</span>
                       </div>
                   </div>

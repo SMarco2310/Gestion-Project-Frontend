@@ -6,6 +6,9 @@ const colorMode = useColorMode()
 const router = useRouter();
 const route = useRoute();
 
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase as string;
+
 const isFromOrg = route.query.source === 'org';
 
 definePageMeta({
@@ -16,13 +19,15 @@ if (!isFromOrg) {
     setPageLayout('custom');
 }
 
-const name = ref(user.value?.name ?? '');
+const firstName = ref(user.value?.first_name ?? '');
+const lastName = ref(user.value?.last_name ?? '');
 const email = ref(user.value?.email ?? '');
 const bio = ref(user.value?.bio ?? '');
 
 watch(() => user.value, (newUser) => {
   if (newUser) {
-    name.value = newUser.name;
+    firstName.value = newUser.first_name;
+    lastName.value = newUser.last_name;
     email.value = newUser.email;
     bio.value = newUser.bio || '';
   }
@@ -33,10 +38,10 @@ const { addToast } = useToast();
 const HandleProfileUpdate = async ()=>{
     
     try {
-        if(name.value=='' && email.value==''){
+        if(firstName.value==''&& lastName.value=='' && email.value==''){
         return
         }
-        await updateProfile(name.value, email.value,bio.value);
+        await updateProfile(firstName.value, lastName.value, email.value, bio.value);
         addToast({ title: 'Profil mis à jour', message: 'Vos informations ont été enregistrées avec succès.', type: 'success' })
 
     } catch (error) {
@@ -47,7 +52,8 @@ const HandleProfileUpdate = async ()=>{
     }
 }
 const handleCancel = () => {
-  name.value = user.value?.name ?? '';
+  firstName.value = user.value?.first_name ?? '';
+  lastName.value = user.value?.last_name ?? '';
   email.value = user.value?.email ?? '';
   bio.value = user.value?.bio ?? '';
 }
@@ -121,13 +127,13 @@ const formatDate = (dateString?: string) => {
             <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
                     <div class="relative mb-4 mt-2 group">
                         <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner relative">
-                            <img :src="user?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${user?.name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
+                            <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="User Avatar" class="w-full h-full object-cover" />
                         </div>
                         <button @click="triggerFileInput" class="absolute -bottom-2 -right-2 bg-[#CCD9FC] hover:bg-[#A6C4FF] text-[#1D1D1D] p-1.5 rounded-lg border border-gray-700 transition-colors shadow-sm">
                             <Icon name="heroicons:camera" class="w-4 h-4" />
                         </button>
                     </div>
-                    <h2 class="text-xl font-bold text-main dark:text-gray-200">{{ user?.name }}</h2>
+                    <h2 class="text-xl font-bold text-main dark:text-gray-200">{{ user?.last_name + " " + user?.first_name }}</h2>
                     <button @click="triggerFileInput" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors mb-6">Changer d'avatar</button>
                     <input type="file" ref="fileInput" class="hidden" accept="image/*" @change="handleFileUpload" />
                     
@@ -150,9 +156,16 @@ const formatDate = (dateString?: string) => {
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
-                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
-                            <input type="text" v-model="name" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
+                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Prénom</label>
+                            <input type="text" v-model="firstName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
                         </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom</label>
+                            <input type="text" v-model="lastName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                         <div>
                             <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse e-mail</label>
                             <input type="email" v-model="email" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />

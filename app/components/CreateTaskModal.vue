@@ -87,8 +87,9 @@ const fetchOrgMembers = async () => {
     const members = res.data?.data ?? res.data ?? []
     orgMembers.value = members.map((m: any, i: number) => ({
       id: m.id,
-      name: m.name,
-      initials: m.name?.charAt(0)?.toUpperCase() || '?',
+      first_name: m.first_name,
+      last_name: m.last_name,
+      initials: (m.last_name || '?').charAt(0).toUpperCase() + (m.first_name || '').charAt(0).toUpperCase(),
       color: avatarColors[i % avatarColors.length],
       profile_picture: m.profile_picture || null
     }))
@@ -324,7 +325,7 @@ const submit = async () => {
                           <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                           <span v-else>{{ member.initials }}</span>
                         </div> 
-                        <span class="truncate">{{ member.name }}</span>
+                        <span class="truncate">{{ member.last_name + ' ' + member.first_name }}</span>
                       </li>
                     </ul>
                   </div>

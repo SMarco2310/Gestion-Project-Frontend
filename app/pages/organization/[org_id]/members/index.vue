@@ -10,6 +10,8 @@ const { isOwner, user } = useAuth()
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 const { addToast } = useToast()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
 
 const members = ref<any[]>([])
 const isLoading = ref(true)
@@ -190,11 +192,11 @@ const removeMember = async (memberId: number) => {
             <tr v-for="member in members" :key="member.id" @click="navigateTo(`/profile/${member.id}`)" class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer group">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300">
-                    {{ member?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                  <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300 overflow-hidden shrink-0 border border-form-border">
+                    <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : apiBase.replace('/api', '') + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
                   </div>
                   <div class="flex flex-col">
-                    <span class="font-medium text-main dark:text-white">{{ member?.name || 'Utilisateur' }}</span>
+                    <span class="font-medium text-main dark:text-white">{{ member?.last_name + ' ' + member?.first_name || 'Utilisateur' }}</span>
                     <span class="text-xs">{{ member.email }}</span>
                   </div>
                 </div>

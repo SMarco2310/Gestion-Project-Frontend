@@ -9,7 +9,7 @@ definePageMeta({
 import useAuth from '../../../composables/useAuth'
 import { useRoute } from 'vue-router'
 
-const {login}= useAuth();
+const {login, loginWithOAuth} = useAuth();
 const route = useRoute();
 
 const showPassword = ref(false);
@@ -71,6 +71,10 @@ const handleLogin = async () => {
     } finally {
         loading.value = false;
     }
+};
+
+const handleOAuth = () => {
+    loginWithOAuth(route.query.invite_token as string);
 };
 </script>
 
@@ -161,16 +165,16 @@ const handleLogin = async () => {
               {{ loading ? 'Connexion...' : 'Se connecter' }}
             </button>
 
-            <!-- <div class="relative flex items-center py-6">
+            <div class="relative flex items-center py-6">
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
               <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
             </div>
 
-            <button type="button" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]">
-              <Icon name="logos:google-icon" class="w-6 h-6" />
-              Continuer avec Google
-            </button> -->
+            <button type="button" @click="handleOAuth" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]">
+              <Icon name="heroicons:cube" class="w-6 h-6" />
+              Continuer avec l'application
+            </button>
             
           </form>
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
+
 definePageMeta({
     layout: "custom",
 });
@@ -9,6 +10,9 @@ const route = useRoute();
 const { $api } = useNuxtApp();
 const { user } = useAuth();
 import { useToast } from '~/composables/useToast'
+
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase as string;
 
 const userProfile = ref<any>(null);
 const isLoading = ref(true);
@@ -37,6 +41,8 @@ onMounted(async () => {
         const id = route.params.id;
         const data = await $api<any>(`/users/${id}`, { method: 'GET' });
         userProfile.value = data.user || data;
+
+        console.log(userProfile.value)
     } catch (e) {
         console.error("Failed to load user profile");
     } finally {
@@ -53,6 +59,8 @@ const formatDate = (dateString?: string) => {
     year: 'numeric'
   });
 }
+
+
 </script>
 
 <template>
@@ -79,10 +87,10 @@ const formatDate = (dateString?: string) => {
             <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
                 <div class="relative mb-4 mt-2">
                     <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner">
-                        <img :src="userProfile?.profile_picture || `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile?.name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
+                        <img :src="userProfile?.profile_picture ? apiBase.replace('api','') + userProfile.profile_picture : `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile?.last_name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
                     </div>
                 </div>
-                <h2 class="text-xl font-bold text-main dark:text-gray-200 text-center">{{ userProfile?.name }}</h2>
+                <h2 class="text-xl font-bold text-main dark:text-gray-200 text-center">{{ (userProfile?.last_name || 'U').charAt(0).toUpperCase() + (userProfile?.first_name || '').charAt(0).toUpperCase() }}</h2>
                 <div class="inline-flex items-center gap-1.5 px-2 py-1 mt-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-6">
                     {{ userProfile?.role || 'Membre' }}
                 </div>
@@ -109,7 +117,7 @@ const formatDate = (dateString?: string) => {
                     <div>
                         <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
                         <div class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm shadow-inner">
-                            {{ userProfile?.name }}
+                            {{ userProfile?.last_name + " " + userProfile?.first_name }}
                         </div>
                     </div>
                     <div>

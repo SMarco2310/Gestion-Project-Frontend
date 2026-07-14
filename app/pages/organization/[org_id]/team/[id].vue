@@ -14,6 +14,8 @@ const { $api } = useNuxtApp()
 const teamId = route.params.id
 
 const { addToast } = useToast()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
 
 const team = ref<any>({ name: '', description: '', created_at: '' })
 const teamMembers = ref<any[]>([])
@@ -183,7 +185,7 @@ const handleAddMember = (member: any) => {
   // Mock adding to local list since there's no backend endpoint to add to team
   teamMembers.value.push({
     id: member.id,
-    name: member.name,
+    name: member.last_name + ' ' + member.first_name,
     email: member.email,
     pivot: { role: selectedRole.value, joined_at: new Date().toISOString() }
   })
@@ -261,11 +263,11 @@ const handleInviteNew = async () => {
             <tr v-for="member in teamMembers" :key="member.id" @click="navigateTo(`/profile/${member.id}`)" class="hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer">
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300">
-                    {{ member?.name?.charAt(0)?.toUpperCase() || 'U' }}
+                  <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center font-bold text-gray-600 dark:text-gray-300 overflow-hidden shrink-0 border border-form-border">
+                    <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : apiBase.replace('/api', '') + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
                   </div>
                   <div class="flex flex-col">
-                    <span class="font-medium text-main dark:text-white">{{ member?.name || 'Utilisateur' }}</span>
+                    <span class="font-medium text-main dark:text-white">{{ member?.first_name + ' ' + member?.last_name || 'Utilisateur' }}</span>
                     <span class="text-xs">{{ member.email }}</span>
                   </div>
                 </div>
@@ -366,10 +368,10 @@ const handleInviteNew = async () => {
               <li v-for="member in filteredMembers" :key="member.id" @click="handleAddMember(member)" class="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between group transition-colors">
                 <div class="flex items-center gap-3">
                   <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
-                    {{ member.name.charAt(0) }}
+                    {{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-sm font-medium text-main dark:text-white">{{ member.name }}</span>
+                    <span class="text-sm font-medium text-main dark:text-white">{{ member.last_name + ' ' + member.first_name }}</span>
                     <span class="text-xs text-gray-500">{{ member.email }}</span>
                   </div>
                 </div>

@@ -30,6 +30,13 @@ const doneStatus = computed(() => kanbanColumns.value[kanbanColumns.value.length
 const isDone = (status: string) => status === doneStatus.value || status.toLowerCase() === 'terminé' || status.toLowerCase() === 'done'
 
 const isCreateProjectModalOpen = ref(false)
+const isTaskModalOpen = ref(false)
+const selectedTaskId = ref<string | null>(null)
+
+const handleTaskClick = (taskId: string) => {
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
+}
 
 const handleCreateProjectSubmit = async (payload: any) => {
   try {
@@ -240,7 +247,7 @@ const recentCommentsData = computed(() => {
     .map(c => ({
       id: c.id,
       content: c.content,
-      author: c.user?.name || 'Un membre',
+      author: c.user?.last_name + ' ' + user?.first_name || 'Un membre',
       time: new Date(c.created_at as string).toLocaleDateString('fr-FR'),
       taskId: c.tache_id
     }))
@@ -289,6 +296,7 @@ onMounted(async () => {
           :activeProjects="activeProjectsCount"
           :tasks="tasks"
           :kanbanColumns="kanbanColumns"
+          @taskClick="handleTaskClick"
         />
     </section>
     <br>
@@ -303,6 +311,7 @@ onMounted(async () => {
           :epics="epics"
           :upcomingTasks="upcomingTasks"
           :recentComments="recentCommentsData"
+          @taskClick="handleTaskClick"
         />
     </section>
     
@@ -310,6 +319,12 @@ onMounted(async () => {
       :is-open="isCreateProjectModalOpen"
       @close="isCreateProjectModalOpen = false"
       @submit="handleCreateProjectSubmit"
+    />
+    <TaskModal
+      :is-open="isTaskModalOpen"
+      :task-id="selectedTaskId"
+      @close="isTaskModalOpen = false"
+      @update="getTasks"
     />
     </div>
 </template>

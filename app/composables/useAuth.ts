@@ -1,7 +1,8 @@
 
 interface User {
   id: number
-  name: string
+  first_name: string
+  last_name: string
   email: string
   bio: string
   email_verified_at: string
@@ -50,12 +51,12 @@ export default function useAuth() {
     return data.message
   }
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (firstName: string, lastName: string, email: string, password: string) => {
     const { $api } = useNuxtApp()
 
     const data = await $api<{ user: User; token: string; message: string }>('/signup', {
       method: 'POST',
-      body: { name, email, password },
+      body: { first_name: firstName, last_name: lastName, email, password },
     })
 
     setAuth(data.user, data.token)
@@ -101,7 +102,7 @@ export default function useAuth() {
     }
   }
 
-  const updateProfile = async (name: string, email: string, bio: string) => {
+  const updateProfile = async (firstName: string, lastName: string, email: string, bio: string) => {
     if (!token.value) {
       return null
     }
@@ -111,7 +112,7 @@ export default function useAuth() {
     try {
       const data = await $api<{ user: User; message: string }>('/users/profile', {
         method: 'PUT',
-        body: { name, email, bio },
+        body: { first_name: firstName, last_name: lastName, email, bio },
         headers: {Authorization: `Bearer ${token.value}`},
       })
 
@@ -220,6 +221,22 @@ export default function useAuth() {
     }
   }
 
+  const loginWithOAuth = async (invitationToken?: string) => {
+    const { $api } = useNuxtApp()
+    try {
+      const url = invitationToken ? `/auth/custom/redirect?invitation_token=${invitationToken}` : '/auth/custom/redirect'
+      const data = await $api<{ url: string }>(url, {
+        method: 'GET',
+      })
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error) {
+      console.error('Failed to redirect to OAuth provider:', error)
+      throw error
+    }
+  }
+
   return {
     user,
     token,
@@ -236,6 +253,7 @@ export default function useAuth() {
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    loginWithOAuth,
     setAuth,
   }
 }

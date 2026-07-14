@@ -49,7 +49,7 @@ const props = defineProps({
         default: () => ({ totalTasks: 0, doneTasks: 0, inProgressTasks: 0, todoTasks: 0, tasksProgress: 0 })
     },
     users: {
-        type: Array as PropType<Array<{id: number, name: string, profile_picture?: string|null}>>,
+        type: Array as PropType<Array<{id: number, last_name: string, first_name: string, profile_picture?: string|null}>>,
         default: () => []
     }
 })
@@ -210,9 +210,9 @@ const bodyThemeClasses = computed(() => {
                             <div v-for="(u, index) in props.users.slice(0, 3)" :key="u.id" 
                                  class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm relative"
                                  :style="{ zIndex: 10 - index }"
-                                 :title="u.name">
+                                 :title="u.first_name + ' ' + u.last_name">
                                 <img v-if="u.profile_picture" :src="u.profile_picture" class="w-full h-full object-cover" />
-                                <span v-else class="text-[10px] font-bold">{{ u.name.charAt(0).toUpperCase() }}</span>
+                                <span v-else class="text-[10px] font-bold">{{(u.last_name || '').charAt(0).toUpperCase() + (u.first_name || '').charAt(0).toUpperCase()}}</span>
                             </div>
                             <div v-if="props.users.length > 3" 
                                  class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm text-[10px] font-bold relative z-0"

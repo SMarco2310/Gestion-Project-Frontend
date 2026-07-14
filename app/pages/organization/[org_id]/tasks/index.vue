@@ -78,8 +78,11 @@ const handleCreateTaskSubmit = async (payload: any) => {
   }
 }
 
+const isTaskModalOpen = ref(false)
+
 const handleTaskClick = (taskId: string) => {
-  navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}`)
+  selectedTaskId.value = taskId
+  isTaskModalOpen.value = true
 }
 
 const handleEditTask = (taskId: string) => {
@@ -281,7 +284,7 @@ const mapTaskToBoardItem = (task: any) => ({
   commentairesCount: task.commentaires_count || 0,
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
-    initials: task.assignee.name?.charAt(0)?.toUpperCase() || '?',
+    initials: (task.assignee.last_name || '?').charAt(0).toUpperCase() + (task.assignee.first_name || '').charAt(0).toUpperCase(),
     colorClass: 'bg-blue-500',
     profilePicture: task.assignee.profile_picture ? (task.assignee.profile_picture.startsWith('http') ? task.assignee.profile_picture : `http://localhost:8000${task.assignee.profile_picture}`) : null
   } : {
@@ -517,6 +520,13 @@ onMounted(async () => {
       :is-open="isCreateTaskModalOpen"
       :create-task="handleCreateTaskSubmit"
       @close="isCreateTaskModalOpen = false"
+    />
+    <!-- Task Modal -->
+    <TaskModal
+      :is-open="isTaskModalOpen"
+      :task-id="selectedTaskId"
+      @close="isTaskModalOpen = false"
+      @update="getTasks"
     />
     <!-- Confirm Modal -->
     <ConfirmModal

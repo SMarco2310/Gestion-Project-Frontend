@@ -9,6 +9,8 @@ definePageMeta({
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 const { addToast } = useToast()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase
 
 const teams = ref<any[]>([])
 const isLoading = ref(true)
@@ -166,9 +168,8 @@ const executeDeleteTeam = () => {
         <div class="flex items-center justify-between pt-4 border-t border-form-border dark:border-gray-800">
           <div class="flex -space-x-2">
             <template v-if="team.members && team.members.length > 0">
-              <div v-for="member in team.members.slice(0, 3)" :key="member.id" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300 overflow-hidden" :title="member.name">
-                <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" :alt="member.name" class="w-full h-full object-cover" />
-                <span v-else>{{ member.name.charAt(0).toUpperCase() }}</span>
+              <div v-for="member in team.members.slice(0, 3)" :key="member.id" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-600 dark:text-gray-300 overflow-hidden shrink-0" :title="member.last_name + ' ' + member.first_name">
+                <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : apiBase.replace('/api', '') + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
               </div>
             </template>
             <div v-if="(team.members_count || 0) > 3" class="w-8 h-8 rounded-full border-2 border-white dark:border-[#1D1D1D] bg-canvas dark:bg-[#151515] flex items-center justify-center text-[10px] font-bold text-secondary dark:text-gray-400">

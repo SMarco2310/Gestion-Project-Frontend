@@ -207,10 +207,12 @@ const calendarOptions = computed(() => ({
     const type = clickInfo.event.extendedProps.type
     if (type === 'task') {
       const taskId = clickInfo.event.id.replace('t-', '')
-      navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}`)
+      selectedTaskId.value = taskId
+      isTaskModalOpen.value = true
     } else if (type === 'project') {
       const projectId = clickInfo.event.id.replace('p-', '')
-      navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/projects/${projectId}`)
+      selectedProjectId.value = projectId
+      isProjectSheetOpen.value = true
     }
   },
   drop: async (info: any) => {
@@ -454,6 +456,18 @@ const calendarOptions = computed(() => ({
       :isOpen="isCreateProjectModalOpen" 
       @close="isCreateProjectModalOpen = false" 
       @created="getProjets"
+    />
+    <TaskModal
+      :is-open="isTaskModalOpen"
+      :task-id="selectedTaskId"
+      @close="isTaskModalOpen = false"
+      @update="getTasks"
+    />
+    <ProjectModal
+      :is-open="isProjectSheetOpen"
+      :project-id="selectedProjectId"
+      @close="isProjectSheetOpen = false"
+      @update="getProjets"
     />
   </div>
 </template>

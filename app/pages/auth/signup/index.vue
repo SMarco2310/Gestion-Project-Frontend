@@ -8,10 +8,11 @@ definePageMeta({
 
 import { useRoute } from 'vue-router'
 
-const { signup } = useAuth();
+const { signup, loginWithOAuth } = useAuth();
 const route = useRoute();
 
-const name = ref('');
+const firstName = ref('');
+const lastName = ref('');
 const email = ref('');
 const password = ref('');
 const confirmPassword = ref('');
@@ -24,7 +25,8 @@ const togglePassword = () => {
     showPassword.value = !showPassword.value;
 }
 
-watch(name, () => { if (fieldErrors.value.name) delete fieldErrors.value.name; });
+watch(firstName, () => { if (fieldErrors.value.firstName) delete fieldErrors.value.firstName; });
+watch(lastName, () => { if (fieldErrors.value.lastName) delete fieldErrors.value.lastName; });
 watch(email, () => { if (fieldErrors.value.email) delete fieldErrors.value.email; });
 watch(password, () => { if (fieldErrors.value.password) delete fieldErrors.value.password; });
 watch(confirmPassword, () => { if (fieldErrors.value.confirmPassword) delete fieldErrors.value.confirmPassword; });
@@ -33,8 +35,12 @@ watch(confirmPassword, () => { if (fieldErrors.value.confirmPassword) delete fie
 const validateFields = (): boolean => {
   fieldErrors.value = {};
 
-  if (!name.value.trim()) {
-    fieldErrors.value.name = 'Le nom est requis.';
+  if (!firstName.value.trim()) {
+    fieldErrors.value.firstName = 'Le prénom est requis.';
+  }
+
+  if (!lastName.value.trim()) {
+    fieldErrors.value.lastName = 'Le nom est requis.';
   }
 
   if (!email.value.trim()) {
@@ -66,7 +72,7 @@ const handleSignup = async () => {
     loading.value = true;
 
     try {
-        await signup(name.value, email.value, password.value);
+        await signup(firstName.value, lastName.value, email.value, password.value);
         const redirect = route.query.redirect as string;
         if (redirect) {
             navigateTo(redirect);
@@ -77,7 +83,8 @@ const handleSignup = async () => {
         // Parse Laravel validation errors
         if (error?.data?.errors) {
             const errors = error.data.errors;
-            if (errors.name) fieldErrors.value.name = errors.name[0];
+            if (errors.first_name) fieldErrors.value.firstName = errors.first_name[0];
+            if (errors.last_name) fieldErrors.value.lastName = errors.last_name[0];
             if (errors.email) fieldErrors.value.email = errors.email[0];
             if (errors.password) fieldErrors.value.password = errors.password[0];
         } else if (error?.data?.message) {
@@ -89,15 +96,19 @@ const handleSignup = async () => {
         loading.value = false;
     }
 }
+
+const handleOAuth = () => {
+    loginWithOAuth(route.query.invite_token as string);
+};
 </script>
 
 <template>
   <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8 overflow-y-auto">
     <!-- Background Image spanning the entire screen -->
-    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover fixed hidden lg:block" />
+    <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover hidden lg:block" />
     
     <!-- Dark Gradient Overlay -->
-    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 fixed hidden lg:block"></div>
+    <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20  hidden lg:block"></div>
 
     <!-- Top Left Branding -->
     <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
@@ -143,13 +154,24 @@ const handleSignup = async () => {
           <!-- Form -->
           <form @submit.prevent="handleSignup" class="space-y-6">
             
-            <!-- Name -->
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
-              <input v-model="name" id="name" type="text" placeholder="Entrez votre nom" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.name ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
-              <p v-if="fieldErrors.name" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
-                <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.name }}
-              </p>
+            <div class="flex flex-col sm:flex-row gap-4 w-full">
+              <!-- First Name -->
+              <div class="w-full">
+                <label for="firstName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prénom</label>
+                <input v-model="firstName" id="firstName" type="text" placeholder="Entrez votre prénom" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.firstName ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
+                <p v-if="fieldErrors.firstName" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                  <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.firstName }}
+                </p>
+              </div>
+
+              <!-- Last Name -->
+              <div class="w-full">
+                <label for="lastName" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom</label>
+                <input v-model="lastName" id="lastName" type="text" placeholder="Entrez votre nom" :class="['w-full px-5 py-4 rounded-xl neo-input bg-gray-50 dark:bg-[#151515] text-gray-900 dark:text-white focus:ring-2 outline-none text-base transition-all', fieldErrors.lastName ? 'ring-2 ring-red-400 focus:ring-red-400' : 'focus:ring-black/50 dark:focus:ring-white/50']" />
+                <p v-if="fieldErrors.lastName" class="mt-1.5 ml-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1">
+                  <Icon name="heroicons:exclamation-circle" class="w-3.5 h-3.5" /> {{ fieldErrors.lastName }}
+                </p>
+              </div>
             </div>
 
             <!-- Email -->
@@ -192,6 +214,17 @@ const handleSignup = async () => {
             <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" :disabled="loading">
               <svg v-if="loading" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
               {{ loading ? 'Création...' : 'Créer un compte' }}
+            </button>
+
+            <div class="relative flex items-center py-6">
+              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+              <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
+              <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+
+            <button type="button" @click="handleOAuth" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center gap-3 transform active:scale-[0.98]">
+              <Icon name="heroicons:cube" class="w-6 h-6" />
+              Continuer avec l'application
             </button>
 
           </form>

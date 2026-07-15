@@ -3,7 +3,7 @@ interface Commentaire {
   content: string
   user_id: number | string | null
   tache_id: number | string | null
-  user?: { id: number | string; name: string } | null
+  user?: { id: number | string; first_name?: string; last_name?: string; profile_picture?: string } | null
   created_at?: string
   updated_at?: string
 }

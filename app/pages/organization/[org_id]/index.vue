@@ -55,7 +55,7 @@ const handleCreateProjectSubmit = async (payload: any) => {
   }
 }
 
-const userName = computed(() => user.value?.name ?? 'Utilisateur')
+const userName = computed(() => (user.value?.first_name ?? '') + ' ' + (user.value?.last_name ?? 'Utilisateur'))
 
 const doneCount = computed(() => tasks.value.filter((task) => isDone(task.status)).length)
 const createdCount = computed(() => tasks.value.length)
@@ -247,7 +247,7 @@ const recentCommentsData = computed(() => {
     .map(c => ({
       id: c.id,
       content: c.content,
-      author: c.user?.last_name + ' ' + user?.first_name || 'Un membre',
+      author: c.user?.first_name + ' ' + c.user?.last_name,
       time: new Date(c.created_at as string).toLocaleDateString('fr-FR'),
       taskId: c.tache_id
     }))

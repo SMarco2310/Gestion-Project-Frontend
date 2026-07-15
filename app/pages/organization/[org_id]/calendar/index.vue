@@ -242,7 +242,7 @@ const calendarOptions = computed(() => ({
     </header>
 
     <div class="flex-1 flex gap-4 overflow-hidden h-full relative">
-      <div class="flex-1 bg-white dark:bg-[#1D1D1D] rounded-3xl border border-form-border dark:border-gray-800 p-6 shadow-sm overflow-hidden flex flex-col calendar-wrapper gap-4">
+      <div class="flex-1 bg-white dark:bg-[#1D1D1D] rounded-3xl border border-form-border dark:border-gray-800 p-3 md:p-6 shadow-sm overflow-hidden flex flex-col calendar-wrapper gap-2 md:gap-4">
         
         <!-- Custom Toolbar -->
         <div class="flex items-center justify-between flex-wrap gap-4 pb-2 border-b border-gray-100 dark:border-gray-800">
@@ -278,7 +278,7 @@ const calendarOptions = computed(() => ({
             </div>
           </div>
           
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 md:gap-4 flex-wrap">
             <div class="relative view-dropdown z-20">
               <div 
                 @click="isViewDropdownOpen = !isViewDropdownOpen"
@@ -364,17 +364,17 @@ const calendarOptions = computed(() => ({
             <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
                 v-if="arg.isToday"
-                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-md text-white px-2 md:px-5 py-1 md:py-1.5 rounded-full text-xs md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[28px] md:min-w-0"
+                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-md text-white px-1.5 md:px-5 py-1 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[20px] md:min-w-0"
               >
-                <span class="md:hidden">{{ arg.date.getDate() }}</span>
-                <span class="hidden md:inline">{{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}</span>
+                <span class="md:hidden uppercase">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'narrow' }) : arg.date.getDate() }}</span>
+                <span class="hidden md:inline">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'long' }) : arg.date.getDate() + ' - ' + arg.date.toLocaleDateString('fr-FR', { weekday: 'short' }) }}</span>
               </div>
               <div 
                 v-else
-                class="text-xs md:text-sm font-bold text-secondary dark:text-gray-400 tracking-wide"
+                class="text-[10px] md:text-sm font-bold text-secondary dark:text-gray-400 tracking-wide uppercase"
               >
-                <span class="md:hidden">{{ arg.date.getDate() }}</span>
-                <span class="hidden md:inline">{{ arg.date.getDate() }} - {{ arg.date.toLocaleDateString('en-US', { weekday: 'short' }) }}</span>
+                <span class="md:hidden uppercase">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'narrow' }) : arg.date.getDate() }}</span>
+                <span class="hidden md:inline">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'long' }) : arg.date.getDate() + ' - ' + arg.date.toLocaleDateString('fr-FR', { weekday: 'short' }) }}</span>
               </div>
             </div>
           </template>

@@ -27,7 +27,7 @@ const getColorClass = (type: string) => {
 
 <template>
   <!-- Fixed container at bottom right -->
-  <div class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none w-full max-w-sm">
+  <div class="fixed bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-[200] flex flex-col gap-3 pointer-events-none sm:w-full sm:max-w-sm">
     <TransitionGroup 
       name="toast" 
       tag="div" 

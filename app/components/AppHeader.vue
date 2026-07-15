@@ -391,18 +391,13 @@ const apiBase = config.public.apiBase as string;
             <div class="mt-auto p-4 pb-12 md:pb-4 shrink-0 border-t border-form-border dark:border-gray-800 flex flex-col gap-4">
                 
                 <!-- Mobile User Actions -->
-                <div class="flex md:hidden items-center justify-between px-2 py-2">
+                <div class="flex md:hidden items-center justify-start px-2 py-2">
                     <!-- Profile -->
                     <NuxtLink to="/profile" @click="isMobileMenuOpen = false" class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 overflow-hidden shrink-0">
                             <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : `http://localhost:8000${user.profile_picture}`) : `https://api.dicebear.com/7.x/initials/svg?seed=${user?.first_name ?? 'U'}&chars=1`" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                     </NuxtLink>
-                    <!-- Notifications -->
-                    <button @click="isNotifOpen = !isNotifOpen; isMobileMenuOpen = false" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors relative focus:outline-none">
-                        <Icon name="heroicons:bell" class="w-7 h-7" />
-                        <span v-if="unreadCount > 0" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-card dark:border-[#1D1D1D]"></span>
-                    </button>
                 </div>
 
                 <NuxtLink to="/auth/login" @click="handleLogout" class="w-full px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 group">

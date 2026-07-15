@@ -317,7 +317,7 @@ const apiBase = config.public.apiBase as string;
             <nav class="relative flex flex-col gap-2 p-4 pt-6 overflow-y-auto item custom-scrollbar isolate">
                 <!-- Bouncy Sliding Background -->
                 <div 
-                    class="absolute left-4 right-4 h-[44px] rounded-xl bg-[#00C2CB] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                    class="absolute top-6 left-4 right-4 h-[44px] rounded-xl bg-[#00C2CB] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
                     :style="activeNavIndex >= 0 ? { transform: `translateY(${activeNavIndex * 52}px)`, opacity: 1 } : { opacity: 0 }"
                 ></div>
 
@@ -417,3 +417,4 @@ const apiBase = config.public.apiBase as string;
         </aside>
     </div>
 </template>
+

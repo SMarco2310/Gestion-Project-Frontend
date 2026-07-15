@@ -12,6 +12,7 @@ const { isOwner } = useAuth()
 const { activeOrganization } = useOrganizations()
 const { $api } = useNuxtApp()
 const teamId = route.params.id
+const orgId = route.params.org_id
 
 const { addToast } = useToast()
 const config = useRuntimeConfig()
@@ -181,17 +182,29 @@ const isEmailQuery = computed(() => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchQuery.value)
 })
 
-const handleAddMember = (member: any) => {
-  // Mock adding to local list since there's no backend endpoint to add to team
-  teamMembers.value.push({
-    id: member.id,
-    name: member.last_name + ' ' + member.first_name,
-    email: member.email,
-    pivot: { role: selectedRole.value, joined_at: new Date().toISOString() }
-  })
-  isAddMemberModalOpen.value = false
-  searchQuery.value = ''
-  addToast({ type: 'success', title: 'Succès', message: 'Membre ajouté.' });
+const handleAddMember = async (member: any) => {
+  try {
+    const data = await $api(`/organizations/${orgId}/teams/${teamId}/members`, {
+      method: 'POST',
+      body: {
+        user_id: member.id,
+        role: selectedRole.value
+      }
+    });
+    
+    // Add to local state after successful backend creation
+    teamMembers.value.push({
+      id: member.id,
+      name: member.name || `${member.last_name} ${member.first_name}`,
+      email: member.email,
+      pivot: { role: selectedRole.value, joined_at: new Date().toISOString() }
+    })
+    isAddMemberModalOpen.value = false
+    searchQuery.value = ''
+    addToast({ type: 'success', title: 'Succès', message: 'Membre ajouté avec succès.' });
+  } catch (err: any) {
+    addToast({ type: 'error', title: 'Erreur', message: err?.data?.message || 'Impossible d\'ajouter le membre.' });
+  }
 }
 
 const handleInviteNew = async () => {
@@ -267,7 +280,7 @@ const handleInviteNew = async () => {
                     <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : apiBase.replace('/api', '') + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
                   </div>
                   <div class="flex flex-col">
-                    <span class="font-medium text-main dark:text-white">{{ member?.first_name + ' ' + member?.last_name || 'Utilisateur' }}</span>
+                    <span class="font-medium text-main dark:text-white">{{ member?.name || ((member?.first_name || '') + ' ' + (member?.last_name || '')).trim() || 'Utilisateur' }}</span>
                     <span class="text-xs">{{ member.email }}</span>
                   </div>
                 </div>
@@ -371,7 +384,7 @@ const handleInviteNew = async () => {
                     {{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}
                   </div>
                   <div class="flex flex-col">
-                    <span class="text-sm font-medium text-main dark:text-white">{{ member.last_name + ' ' + member.first_name }}</span>
+                    <span class="text-sm font-medium text-main dark:text-white">{{ member.name || ((member?.first_name || '') + ' ' + (member?.last_name || '')).trim() || 'Utilisateur' }}</span>
                     <span class="text-xs text-gray-500">{{ member.email }}</span>
                   </div>
                 </div>

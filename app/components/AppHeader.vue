@@ -143,7 +143,7 @@ const apiBase = config.public.apiBase as string;
                 <NuxtLink :to="orgId ? `/organization/${orgId}` : '/'" class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-md shrink-0 overflow-hidden bg-white flex items-center justify-center border border-form-border dark:border-gray-700">
                         <template v-if="activeOrganization">
-                            <img v-if="activeOrganization.logo" :src="apiBase.replace('/api', '') + '/' + activeOrganization.logo" alt="Org Logo" class="w-full h-full object-cover">
+                            <img v-if="activeOrganization.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : apiBase.replace('/api', '') + activeOrganization.logo" alt="Org Logo" class="w-full h-full object-cover">
                             <img v-else :src="`https://api.dicebear.com/7.x/initials/svg?seed=${activeOrganization.name}&chars=2`" alt="Org Logo" class="w-full h-full object-cover">
                         </template>
                         <img v-else src="/assets/logo_app.svg" class="w-full h-full object-contain p-1" alt="Logo">
@@ -317,7 +317,7 @@ const apiBase = config.public.apiBase as string;
             <nav class="relative flex flex-col gap-2 p-4 pt-6 overflow-y-auto item custom-scrollbar isolate">
                 <!-- Bouncy Sliding Background -->
                 <div 
-                    class="absolute left-4 right-4 h-[44px] rounded-xl bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                    class="absolute left-4 right-4 h-[44px] rounded-xl bg-[#00C2CB] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
                     :style="activeNavIndex >= 0 ? { transform: `translateY(${activeNavIndex * 52}px)`, opacity: 1 } : { opacity: 0 }"
                 ></div>
 
@@ -374,7 +374,7 @@ const apiBase = config.public.apiBase as string;
                 ]">
                     <Icon name="heroicons:bell" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/notifications') }" />
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Notifications</span>
-                    <span v-if="unreadCount > 0" class="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full" :class="isSidebarCollapsed ? 'absolute top-2 right-2 md:top-1 md:right-1' : 'ml-auto'">{{ unreadCount }}</span>
+                    <span v-if="unreadCount > 0" class="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full" :class="isSidebarCollapsed ? 'absolute top-3 right-4 md:top-1 md:right-1' : 'ml-auto'">{{ unreadCount }}</span>
                 </NuxtLink>
                 <NuxtLink v-if="isOwner" :to="orgId ? `/organization/${orgId}/settings` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',

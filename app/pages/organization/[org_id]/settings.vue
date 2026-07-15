@@ -207,7 +207,7 @@ const confirmDelete = async () => {
       <div class="lg:col-span-1 relative flex flex-col gap-2 p-2 -mx-2 isolate">
         <!-- Bouncy Sliding Background -->
         <div 
-            class="absolute left-2 right-2 top-2 h-[48px] rounded-xl bg-gradient-to-r from-cyan-400 to-teal-500 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-500/50 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+            class="absolute left-2 right-2 top-2 h-[48px] rounded-xl bg-[#00C2CB] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
             :style="activeTabIndex >= 0 ? { transform: `translateY(${activeTabIndex * 56}px)`, opacity: 1 } : { opacity: 0 }"
         ></div>
 

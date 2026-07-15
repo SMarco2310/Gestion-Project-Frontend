@@ -49,9 +49,9 @@ const handleSubmit = async () => {
     <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 hidden lg:block"></div>
 
     <!-- Top Left Branding -->
-    <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 flex items-center gap-3">
+    <div class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 hidden lg:flex items-center gap-3">
        <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="hidden lg:block text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+       <span class="text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
     </div>
 
     <!-- Main Content Container -->
@@ -85,7 +85,12 @@ const handleSubmit = async () => {
               </NuxtLink>
 
               <!-- Header -->
-              <div class="flex flex-col items-left text-left mb-12">
+              <div class="flex flex-col items-left text-left mb-12 mt-12 sm:mt-0">
+                <!-- Mobile Logo -->
+                <div class="flex items-center gap-3 mb-8 lg:hidden">
+                  <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain" />
+                  <span class="text-black dark:text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+                </div>
                 <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white mb-3">Mot de passe oublié</h2>
                 <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
               </div>

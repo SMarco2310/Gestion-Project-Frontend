@@ -349,7 +349,7 @@ const submit = async () => {
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
+            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
               <Icon name="heroicons:plus" class="w-4 h-4" />
               Créer
             </button>

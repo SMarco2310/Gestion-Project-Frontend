@@ -111,22 +111,8 @@ const setTask = async (id: string | number | null) => {
         taskAssignee.value = null
       }
       
-      if (task.projet_id) {
-        try {
-          const projet = await getProjet(task.projet_id)
-          if (projet) {
-            taskProjetReference.value = (projet as any).reference_code || (projet as any).name || `PROJ-${task.projet_id}`
-            if ((projet as any).end_date) {
-              projectEndDate.value = String((projet as any).end_date).split('T')[0] || ''
-            } else {
-              projectEndDate.value = ''
-            }
-          } else {
-            projectEndDate.value = ''
-          }
-        } catch (e) {
-          projectEndDate.value = ''
-        }
+      if (task.projet?.end_date) {
+        projectEndDate.value = String(task.projet.end_date).split('T')[0] || ''
       } else {
         projectEndDate.value = ''
       }
@@ -703,7 +689,7 @@ watch(() => activeOrganization.value, (newOrg) => {
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
               <button v-if="!isEditing" @click="startEditing" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier"><Icon name="heroicons:pencil" class="w-5 h-5" /></button>
               <button v-if="!isEditing" @click="handleDelete" class="p-1.5 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer"><Icon name="heroicons:trash" class="w-5 h-5" /></button>
-              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
+              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-blue-600 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
               <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs sm:text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> <span class="hidden sm:inline">Annuler</span></button>
             </div>
           </header>

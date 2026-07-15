@@ -125,7 +125,7 @@ const executeDeleteTeam = () => {
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les équipes au sein de votre organisation.</p>
       </div>
       <div>
-        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-5 h-5" />
           Nouvelle Équipe
         </button>
@@ -189,7 +189,7 @@ const executeDeleteTeam = () => {
       </div>
       <h3 class="text-xl font-bold text-main dark:text-white mb-2">Aucune équipe</h3>
       <p class="text-secondary dark:text-gray-400 text-center max-w-sm mb-6">Vous n'avez pas encore créé d'équipe. Créez-en une pour organiser vos membres.</p>
-      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 bg-blue-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
         <Icon name="heroicons:plus" class="w-6 h-6" />
         Créer une équipe
       </button>
@@ -218,7 +218,7 @@ const executeDeleteTeam = () => {
           <button @click="isCreateModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleCreateTeam" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+          <button @click="handleCreateTeam" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
             Créer
           </button>
         </div>

@@ -115,7 +115,7 @@ const handleAccept = async () => {
               </p>
             </div>
             <div class="flex flex-col space-y-4">
-              <NuxtLink :to="`/auth/login?redirect=/invite?token=${token}`" class="w-full py-4 px-4 bg-primary text-white font-bold text-lg rounded-full neo-emboss border border-primary/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all flex items-center justify-center">
+              <NuxtLink :to="`/auth/login?redirect=/invite?token=${token}`" class="w-full py-4 px-4 bg-blue-600 text-white font-bold text-lg rounded-full neo-emboss border border-primary/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all flex items-center justify-center">
                 Se connecter
               </NuxtLink>
               <NuxtLink :to="`/auth/signup?redirect=/invite?token=${token}`" class="w-full py-4 px-4 bg-white dark:bg-[#2A2A2D] border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 font-bold text-lg rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-all flex items-center justify-center transform active:scale-[0.98]">
@@ -170,7 +170,7 @@ const handleAccept = async () => {
               <button
                 @click="handleAccept"
                 :disabled="isLoading"
-                class="w-full py-4 px-4 bg-primary text-white font-bold text-lg rounded-full neo-emboss border border-primary/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                class="w-full py-4 px-4 bg-blue-600 text-white font-bold text-lg rounded-full neo-emboss border border-primary/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 <svg v-if="isLoading" class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

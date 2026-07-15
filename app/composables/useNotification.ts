@@ -27,10 +27,10 @@ export default function useNotification() {
   const fetchNotifications = async () => {
     loading.value = true
     try {
-      const response = await $api<{ notifications: Notification[] }>('/notifications', {
+      const response = await $api<any>('/notifications', {
         method: 'GET'
       })
-      notifications.value = response.notifications
+      notifications.value = response.data || response.notifications || []
       await fetchUnreadCount()
     } catch (error) {
       console.error('Failed to fetch notifications:', error)

@@ -124,7 +124,7 @@ const handleActionClick = () => {
             <button 
               v-if="notification.data.task_id || notification.data.projet_id"
               @click="handleActionClick" 
-              class="bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
+              class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
             >
               <Icon :name="notification.data.task_id ? 'heroicons:clipboard-document-list' : 'heroicons:folder'" class="w-5 h-5" />
               <span>Voir {{ notification.data.task_id ? 'la tâche' : 'le projet' }}</span>

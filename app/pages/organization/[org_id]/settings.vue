@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useToast } from '~/composables/useToast'
 
 definePageMeta({
@@ -43,7 +43,9 @@ watch(activeOrganization, (newOrg) => {
   }
 }, { immediate: true })
 
+const tabs = ['general', 'reminders', 'tags', 'security']
 const activeTab = ref('general')
+const activeTabIndex = computed(() => tabs.indexOf(activeTab.value))
 
 const loadTags = async () => {
   try {
@@ -202,25 +204,31 @@ const confirmDelete = async () => {
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       
       <!-- Left sidebar navigation for settings (optional, good for future expansion) -->
-      <div class="lg:col-span-1 space-y-2">
-        <button @click="activeTab = 'general'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between border" :class="activeTab === 'general' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
-          <span class="flex items-center gap-2"><Icon name="heroicons:information-circle" class="w-5 h-5" /> Informations Générales</span>
-          <Icon v-if="activeTab === 'general'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
+      <div class="lg:col-span-1 relative flex flex-col gap-2 p-2 -mx-2 isolate">
+        <!-- Bouncy Sliding Background -->
+        <div 
+            class="absolute left-2 right-2 top-2 h-[48px] rounded-xl bg-gradient-to-r from-cyan-400 to-teal-500 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-500/50 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+            :style="activeTabIndex >= 0 ? { transform: `translateY(${activeTabIndex * 56}px)`, opacity: 1 } : { opacity: 0 }"
+        ></div>
+
+        <button @click="activeTab = 'general'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'general' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
+          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:information-circle" class="w-5 h-5 transition-transform group-hover:scale-110" /> Informations Générales</span>
+          <Icon v-if="activeTab === 'general'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
         </button>
 
-        <button @click="activeTab = 'reminders'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between border" :class="activeTab === 'reminders' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
-          <span class="flex items-center gap-2"><Icon name="heroicons:bell" class="w-5 h-5" /> Rappels Automatiques</span>
-          <Icon v-if="activeTab === 'reminders'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
+        <button @click="activeTab = 'reminders'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'reminders' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
+          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:bell" class="w-5 h-5 transition-transform group-hover:scale-110" /> Rappels Automatiques</span>
+          <Icon v-if="activeTab === 'reminders'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
         </button>
 
-        <button @click="activeTab = 'tags'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between border" :class="activeTab === 'tags' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
-          <span class="flex items-center gap-2"><Icon name="heroicons:tag" class="w-5 h-5" /> Étiquettes</span>
-          <Icon v-if="activeTab === 'tags'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
+        <button @click="activeTab = 'tags'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'tags' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
+          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:tag" class="w-5 h-5 transition-transform group-hover:scale-110" /> Étiquettes</span>
+          <Icon v-if="activeTab === 'tags'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
         </button>
 
-        <button @click="activeTab = 'security'" class="w-full text-left px-4 py-3 rounded-xl border font-medium transition-colors flex items-center justify-between" :class="activeTab === 'security' ? 'bg-canvas dark:bg-gray-800 text-main dark:text-white border-form-border dark:border-gray-700 shadow-sm' : 'border-transparent text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50'">
-          <span class="flex items-center gap-2"><Icon name="heroicons:shield-check" class="w-5 h-5" /> Sécurité</span>
-          <Icon v-if="activeTab === 'security'" name="heroicons:chevron-right" class="w-4 h-4 opacity-50" />
+        <button @click="activeTab = 'security'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'security' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
+          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:shield-check" class="w-5 h-5 transition-transform group-hover:scale-110" /> Sécurité</span>
+          <Icon v-if="activeTab === 'security'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
         </button>
       </div>
 
@@ -238,7 +246,7 @@ const confirmDelete = async () => {
                   <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : 'http://localhost:8000' + activeOrganization.logo" class="w-full h-full object-cover" />
                   <span v-else class="text-2xl font-bold text-blue-500">{{ activeOrganization?.name?.substring(0, 2).toUpperCase() }}</span>
                 </div>
-                <button @click="triggerFileInput" type="button" class="absolute -bottom-2 -right-2 p-1.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all neo-emboss">
+                <button @click="triggerFileInput" type="button" class="absolute -bottom-2 -right-2 p-1.5 bg-blue-600 text-white rounded-lg shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all neo-emboss">
                   <Icon name="heroicons:camera" class="w-4 h-4" />
                 </button>
 
@@ -263,7 +271,7 @@ const confirmDelete = async () => {
               </div>
 
               <div class="pt-4 flex justify-end">
-                <button type="submit" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
                   <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
                   Sauvegarder
                 </button>
@@ -312,7 +320,7 @@ const confirmDelete = async () => {
               </div>
 
               <div class="pt-4 flex justify-end">
-                <button type="submit" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
                   <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
                   Sauvegarder les rappels
                 </button>
@@ -328,7 +336,7 @@ const confirmDelete = async () => {
                 <h2 class="text-xl font-bold text-main dark:text-white">Étiquettes</h2>
                 <p class="text-sm text-secondary dark:text-gray-400 mt-1">Gérez les étiquettes personnalisées pour cette organisation.</p>
               </div>
-              <button @click="openCreateTagModal" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 neo-emboss">
+              <button @click="openCreateTagModal" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
                 <Icon name="heroicons:plus" class="w-4 h-4" />
                 Créer une étiquette
               </button>
@@ -402,7 +410,7 @@ const confirmDelete = async () => {
             <button type="button" @click="isTagModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button type="submit" class="px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors">
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
               {{ editingTag ? 'Mettre à jour' : 'Créer' }}
             </button>
           </div>

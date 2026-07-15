@@ -244,7 +244,7 @@ const handleInviteNew = async () => {
     <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden mt-8">
       <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
         <h3 class="text-xl font-bold text-main dark:text-white">Membres de l'équipe</h3>
-        <button @click="isAddMemberModalOpen = true" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
+        <button @click="isAddMemberModalOpen = true" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
           <Icon name="heroicons:user-plus" class="w-5 h-5" />
           Ajouter un membre
         </button>
@@ -324,7 +324,7 @@ const handleInviteNew = async () => {
           <button @click="isEditModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleEditTeam" class="px-4 py-2 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
+          <button @click="handleEditTeam" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
             Enregistrer
           </button>
         </div>
@@ -426,7 +426,7 @@ const handleInviteNew = async () => {
           <button @click="isEditRoleModalOpen = false" class="px-4 py-2 text-sm font-medium text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-xl transition-colors">
             Annuler
           </button>
-          <button @click="updateMemberRole" class="px-4 py-2 text-sm font-medium bg-primary text-white rounded-xl hover:bg-blue-600 transition-colors shadow-sm">
+          <button @click="updateMemberRole" class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-sm">
             Sauvegarder
           </button>
         </div>

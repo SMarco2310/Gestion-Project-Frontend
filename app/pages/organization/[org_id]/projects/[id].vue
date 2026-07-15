@@ -394,7 +394,7 @@ onMounted(async () => {
           <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
             <Icon name="heroicons:trash" class="w-4 h-4" />
           </button>
-          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-xs font-bold hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
+          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white neo-emboss rounded transition-all text-xs font-bold hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
           <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs font-bold"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /> Annuler</button>
         </div>
       </header>

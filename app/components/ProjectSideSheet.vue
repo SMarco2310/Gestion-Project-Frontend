@@ -436,7 +436,7 @@ const updateStatus = async (status: string) => {
             <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
               <Icon name="heroicons:trash" class="w-6 h-6" />
             </button>
-            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
+            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
             <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> Annuler</button>
             <button @click="close" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors">
               <Icon name="heroicons:x-mark" class="w-6 h-6" />

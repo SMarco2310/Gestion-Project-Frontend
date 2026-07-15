@@ -10,9 +10,18 @@ definePageMeta({
 })
 
 const { $api } = useNuxtApp()
+const { user, logout } = useAuth()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase as string
 
 const organizations = ref<any[]>([])
 const invitations = ref<any[]>([])
+const isProfileOpen = ref(false)
+
+const handleLogout = async () => {
+    await logout()
+    navigateTo('/auth/login')
+}
 
 const fetchOrgsAndInvites = async () => {
   try {
@@ -79,9 +88,22 @@ const handleCreateOrganization = async () => {
 
     <!-- Top Right Actions -->
     <div class="absolute top-8 right-8 z-20">
-       <NuxtLink to="/profile?source=org" class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white font-medium transition-colors">
-         Profil
-       </NuxtLink>
+      <div class="relative">
+          <div @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 hover:ring-primary dark:hover:ring-primary overflow-hidden cursor-pointer transition-all bg-canvas dark:bg-[#151515]">
+              <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover">
+          </div>
+          <!-- Overlay for closing -->
+          <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
+          <!-- Dropdown Menu -->
+          <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
+              <NuxtLink to="/profile?source=org" @click="isProfileOpen = false" class="block px-4 py-3 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors">
+                  Profil
+              </NuxtLink>
+              <button @click="() => { isProfileOpen = false; handleLogout() }" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  Déconnexion
+              </button>
+          </div>
+      </div>
     </div>
 
     <div class="w-full max-w-4xl flex flex-col items-center pt-20">
@@ -106,7 +128,7 @@ const handleCreateOrganization = async () => {
             :key="invite.id"
             class="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800 hover:border-primary transition-all relative group shadow-sm">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xl uppercase shadow-md overflow-hidden">
+              <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl uppercase shadow-md overflow-hidden">
                 <img v-if="invite.organization?.logo" :src="invite.organization.logo.startsWith('http') ? invite.organization.logo : 'http://localhost:8000' + invite.organization.logo" class="w-full h-full object-cover" />
                 <span v-else>{{ invite.organization?.name?.substring(0, 2) || 'OR' }}</span>
               </div>
@@ -211,7 +233,7 @@ const handleCreateOrganization = async () => {
           <button 
             @click="handleCreateOrganization" 
             :disabled="isSubmitting || !newOrgForm.name.trim()"
-            class="px-5 py-2.5 bg-primary text-white font-medium rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Icon v-if="isSubmitting" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
             Créer

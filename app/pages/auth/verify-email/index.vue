@@ -26,7 +26,7 @@
             <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Email vérifié !</h2>
             <p class="text-slate-500 text-sm leading-relaxed">{{ message }}</p>
           </div>
-          <NuxtLink to="/organizations" class="w-full py-3.5 px-4 bg-primary text-white font-semibold text-base rounded-full shadow-lg shadow-primary/20 hover:bg-blue-600 hover:-translate-y-0.5 transition-all flex items-center justify-center mt-6">
+          <NuxtLink to="/organizations" class="w-full py-3.5 px-4 bg-blue-600 text-white font-semibold text-base rounded-full shadow-lg shadow-blue-600/20 hover:bg-blue-600 hover:-translate-y-0.5 transition-all flex items-center justify-center mt-6">
             Continuer vers l'application
           </NuxtLink>
         </div>

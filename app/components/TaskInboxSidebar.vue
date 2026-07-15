@@ -237,7 +237,7 @@ class="inbox-task-card task-card neo-card group flex flex-row gap-2.5 px-4 py-3.
             </div>
             <span 
               class="text-sm truncate flex-1"
-              :class="task.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-200'"
+              :class="task.status === 'done' ? 'text-gray-400 line-through' : 'text-gray-700'"
             >
               {{ task.title }}
             </span>

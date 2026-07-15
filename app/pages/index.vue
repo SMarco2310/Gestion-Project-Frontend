@@ -62,7 +62,7 @@ const xFormatter = (i: number) => chartData[i]?.month || ''
         </p>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-blue-600 text-white rounded-full font-semibold text-base transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+          <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-blue-600 text-white rounded-full font-semibold text-base transition-all shadow-lg shadow-blue-600/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
             Démarrer gratuitement
             <Icon name="heroicons:arrow-right" class="w-4 h-4" />
           </NuxtLink>

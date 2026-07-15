@@ -11,7 +11,7 @@ interface Tache {
   tag_ids?: number[] | null
   tags?: any[] | null
   projet_id?: number | string | null
-  projet?: any | null
+  projet?: { id?: number | string; reference_code?: string; name?: string; end_date?: string; } | null
   parent_task_id?: number | string | null
   sub_tasks?: any[]
   commentaires_count?: number | 0
@@ -59,7 +59,8 @@ export default function useTasks() {
     priority: task.priority ?? TaskPriority.MEDIUM,
     tag_ids: task.tags ? task.tags.map((t: any) => t.id) : (task.tag_ids ?? []),
     tags: task.tags ?? [],
-    projet_id: task.projet_id ?? task.project_id ?? null,
+    projet_id: task.projet_id ?? null,
+    projet: task.projet ?? null,
     parent_task_id: task.parent_task_id ?? null,
     sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
     commentaires_count: task.commentaires_count ?? 0,

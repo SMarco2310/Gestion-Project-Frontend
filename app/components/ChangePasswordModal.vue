@@ -196,7 +196,7 @@ const submit = async () => {
             <!-- Footer -->
             <footer v-if="!isSuccess" class="px-6 py-5 bg-canvas dark:bg-[#1A1A1D] border-t border-form-border dark:border-gray-800 flex items-center justify-end gap-3 rounded-b-2xl">
               <button @click="close" class="px-5 py-2.5 text-sm font-bold text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200 transition-colors">Annuler</button>
-              <button @click="submit" :disabled="loading" class="px-5 py-2.5 text-sm font-bold text-white bg-gradient-to-b from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg neo-emboss active:neo-inset hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+              <button @click="submit" :disabled="loading" class="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 rounded-lg neo-emboss active:neo-inset hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg v-if="loading" class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                 <Icon v-else name="heroicons:check" class="w-5 h-5" />
                 {{ loading ? 'Mise à jour...' : 'Mettre à jour' }}

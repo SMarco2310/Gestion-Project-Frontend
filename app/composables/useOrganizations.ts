@@ -3,6 +3,7 @@ export interface Organization {
   name: string;
   description?: string;
   logo?: string;
+  owner_id?: number | string;
   reminder_days_before_start?: number;
   reminder_days_before_end?: number;
   reminder_time_start?: string;

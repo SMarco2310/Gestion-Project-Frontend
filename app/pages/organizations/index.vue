@@ -3,10 +3,6 @@ import { ref, onMounted } from 'vue'
 
 definePageMeta({
   layout: false, // We use a clean layout without sidebar for org selection
-  pageTransition: {
-    name: 'fade',
-    mode: 'out-in'
-  }
 })
 
 const { $api } = useNuxtApp()

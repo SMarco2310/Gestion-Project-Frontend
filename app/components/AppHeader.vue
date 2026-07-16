@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const {logout,user,isOwner}=useAuth()
 const { activeOrganization } = useOrganizations()
+const { activeWorkspace, workspaces, getWorkspaces, setActiveWorkspace } = useWorkspaces()
 
 const isSidebarCollapsed = useState('sidebarCollapsed', () => false)
 const colorMode = useColorMode()
@@ -22,20 +23,28 @@ const {
   stopPolling 
 } = useNotification()
 
-onMounted(() => {
+const orgId = computed(() => route.params.org_id || activeOrganization.value?.id)
+const workspaceId = computed(() => route.params.workspace_id || activeWorkspace.value?.id)
+
+onMounted(async () => {
   fetchNotifications()
   startPolling()
+  if (orgId.value) {
+    await getWorkspaces(orgId.value as string)
+  }
 })
 
 onUnmounted(() => {
   stopPolling()
 })
 
-const orgId = computed(() => route.params.org_id || activeOrganization.value?.id)
-
 const isActive = (path: string) => {
-  if (!orgId.value) return route.path === path || route.path.startsWith(`${path}/`)
-  const targetPath = path === '/dashboard' ? `/organization/${orgId.value}` : `/organization/${orgId.value}${path === '/projets' ? '/projects' : path}`
+  if (path === '/notifications' && orgId.value) {
+    const targetPath = `/organization/${orgId.value}/notifications`
+    return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
+  }
+  if (!orgId.value || !workspaceId.value) return route.path === path || route.path.startsWith(`${path}/`)
+  const targetPath = path === '/dashboard' ? `/organization/${orgId.value}/workspace/${workspaceId.value}` : `/organization/${orgId.value}/workspace/${workspaceId.value}${path === '/projets' ? '/projects' : path}`
   
   if (path === '/dashboard') {
     return route.path === targetPath || route.path === `${targetPath}/`
@@ -73,16 +82,20 @@ const handleNotificationClick = async (notif: any) => {
   }
   isNotifOpen.value = false
   const targetOrgId = orgId.value || activeOrganization.value?.id;
+  const targetWsId = notif.data?.workspace_id || workspaceId.value || activeWorkspace.value?.id;
+  
   if (!targetOrgId) {
     navigateTo('/organizations')
     return
   }
-  if (notif.data.task_id) {
-    navigateTo(`/organization/${targetOrgId}/tasks`)
-  } else if (notif.data.projet_id) {
-    navigateTo(`/organization/${targetOrgId}/projects`)
-  } else if (notif.data.team_id) {
-    navigateTo(`/organization/${targetOrgId}/team`)
+  if (notif.data.task_id && targetWsId) {
+    navigateTo(`/organization/${targetOrgId}/workspace/${targetWsId}/tasks`)
+  } else if (notif.data.projet_id && targetWsId) {
+    navigateTo(`/organization/${targetOrgId}/workspace/${targetWsId}/projects`)
+  } else if (notif.data.team_id && targetWsId) {
+    navigateTo(`/organization/${targetOrgId}/workspace/${targetWsId}/team`)
+  } else {
+    navigateTo(`/organization/${targetOrgId}/notifications`)
   }
 }
 
@@ -265,7 +278,10 @@ const apiBase = config.public.apiBase as string;
                         <h1 class="text-sm font-bold text-main dark:text-white tracking-tight leading-tight truncate">
                             {{ activeOrganization ? activeOrganization.name : 'Gestion Pro' }}
                         </h1>
-                        <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5">Organisation</span>
+                        <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5" v-if="activeWorkspace">
+                            {{ activeWorkspace.name }}
+                        </span>
+                        <span class="text-[10px] text-secondary font-medium tracking-widest uppercase mt-0.5" v-else>Organisation</span>
                     </div>
                     <Icon :name="isOrgMenuExpanded ? 'heroicons:chevron-up' : 'heroicons:chevron-down'" class="w-4 h-4 text-secondary shrink-0 transition-transform group-hover:text-main dark:group-hover:text-white" :class="isSidebarCollapsed ? 'md:hidden' : ''" />
                 </div>
@@ -294,21 +310,51 @@ const apiBase = config.public.apiBase as string;
                         <Icon name="heroicons:chevron-up" class="w-4 h-4 text-secondary shrink-0" />
                     </div>
                     
+                    <div class="p-2 max-h-48 overflow-y-auto custom-scrollbar border-b border-form-border dark:border-gray-800">
+                        <div class="px-3 py-1 text-[10px] font-bold text-secondary uppercase tracking-widest">Espaces de travail</div>
+                        <NuxtLink 
+                            v-for="ws in workspaces" :key="ws.id" 
+                            :to="`/organization/${orgId}/workspace/${ws.id}`" 
+                            @click="isOrgMenuExpanded = false"
+                            class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center justify-between group"
+                            :class="ws.id === workspaceId ? 'bg-primary/10 text-primary' : 'text-main dark:text-gray-200'"
+                        >
+                            <span class="truncate">{{ ws.name }}</span>
+                            <Icon v-if="ws.id === workspaceId" name="heroicons:check" class="w-4 h-4 text-primary shrink-0" />
+                        </NuxtLink>
+                    </div>
+
                     <div class="p-2 flex flex-col gap-1">
+                        <NuxtLink :to="orgId ? `/organization/${orgId}/workspace/${workspaceId}/members` : '/organizations'" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                            <Icon name="heroicons:users" class="w-4 h-4 text-secondary" />
+                            Membres de l'espace
+                        </NuxtLink>
+                        <NuxtLink :to="orgId ? `/organization/${orgId}/workspace/${workspaceId}/settings` : '/organizations'" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                            <Icon name="heroicons:cog-8-tooth" class="w-4 h-4 text-secondary" />
+                            Paramètres de l'espace
+                        </NuxtLink>
+                    </div>
+
+                    <div class="p-2 flex flex-col gap-1 border-t border-form-border dark:border-gray-800">
+                        <div class="px-3 py-1 text-[10px] font-bold text-secondary uppercase tracking-widest">Organisation</div>
                         <NuxtLink :to="orgId ? `/organization/${orgId}/members` : '/organizations'" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
-                            <Icon name="heroicons:chart-bar" class="w-4 h-4 text-secondary" />
-                            Membres de l'organisation
+                            <Icon name="heroicons:user-group" class="w-4 h-4 text-secondary" />
+                            Membres
+                        </NuxtLink>
+                        <NuxtLink :to="orgId ? `/organization/${orgId}/teams` : '/organizations'" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
+                            <Icon name="heroicons:users" class="w-4 h-4 text-secondary" />
+                            Équipes
                         </NuxtLink>
                         <NuxtLink :to="orgId ? `/organization/${orgId}/settings` : '/organizations'" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3">
-                            <Icon name="heroicons:cog-8-tooth" class="w-4 h-4 text-secondary" />
+                            <Icon name="heroicons:building-office-2" class="w-4 h-4 text-secondary" />
                             Paramètres
                         </NuxtLink>
                     </div>
 
                     <div class="border-t border-form-border dark:border-gray-800 p-2 bg-canvas/30 dark:bg-black/10">
-                        <NuxtLink to="/organizations" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3 text-main dark:text-gray-200">
-                            <Icon name="heroicons:building-office-2" class="w-4 h-4 text-secondary" />
-                            Toutes les organisations
+                        <NuxtLink :to="`/organization/${orgId}`" @click="isOrgMenuExpanded = false" class="px-3 py-2 text-sm font-medium rounded-lg hover:bg-canvas dark:hover:bg-gray-800 transition-colors flex items-center gap-3 text-main dark:text-gray-200">
+                            <Icon name="heroicons:rectangle-group" class="w-4 h-4 text-secondary" />
+                            Tous les espaces
                         </NuxtLink>
                     </div>
                 </div>
@@ -321,7 +367,7 @@ const apiBase = config.public.apiBase as string;
                     :style="activeNavIndex >= 0 ? { transform: `translateY(${activeNavIndex * 52}px)`, opacity: 1 } : { opacity: 0 }"
                 ></div>
 
-                <NuxtLink :to="orgId ? `/organization/${orgId}` : '/'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}` : '/'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/dashboard') 
                         ? 'font-bold text-white scale-[1.02]' 
@@ -330,7 +376,7 @@ const apiBase = config.public.apiBase as string;
                     <Icon name="heroicons:home" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/dashboard') }" />
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tableau de bord</span>
                 </NuxtLink>
-                <NuxtLink :to="orgId ? `/organization/${orgId}/projects` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}/projects` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/projets') 
                         ? 'font-bold text-white scale-[1.02]' 
@@ -339,7 +385,7 @@ const apiBase = config.public.apiBase as string;
                     <Icon name="heroicons:folder" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/projets') }" />
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Projets</span>
                 </NuxtLink>
-                <NuxtLink :to="orgId ? `/organization/${orgId}/tasks` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}/tasks` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/tasks') 
                         ? 'font-bold text-white scale-[1.02]' 
@@ -348,7 +394,7 @@ const apiBase = config.public.apiBase as string;
                     <Icon name="heroicons:clipboard-document-list" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/tasks') }" />
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Tâches</span>
                 </NuxtLink>
-                <NuxtLink :to="orgId ? `/organization/${orgId}/calendar` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}/calendar` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/calendar') 
                         ? 'font-bold text-white scale-[1.02]' 
@@ -357,7 +403,7 @@ const apiBase = config.public.apiBase as string;
                     <Icon name="heroicons:calendar-days" class="w-5 h-5 relative z-10 shrink-0 transition-all duration-300" :class="{ 'drop-shadow-md text-white': isActive('/calendar') }" />
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Planning</span>
                 </NuxtLink>
-                <NuxtLink :to="orgId ? `/organization/${orgId}/team` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}/team` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/team') 
                         ? 'font-bold text-white scale-[1.02]' 
@@ -376,7 +422,7 @@ const apiBase = config.public.apiBase as string;
                     <span class="relative z-10 tracking-wide transition-colors duration-300" :class="isSidebarCollapsed ? 'md:hidden' : ''">Notifications</span>
                     <span v-if="unreadCount > 0" class="bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full" :class="isSidebarCollapsed ? 'absolute top-3 right-4 md:top-1 md:right-1' : 'ml-auto'">{{ unreadCount }}</span>
                 </NuxtLink>
-                <NuxtLink v-if="isOwner" :to="orgId ? `/organization/${orgId}/settings` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
+                <NuxtLink v-if="isOwner" :to="orgId && workspaceId ? `/organization/${orgId}/workspace/${workspaceId}/settings` : '/organizations'" @click="isMobileMenuOpen = false" :class="[
                     'px-4 py-3 text-sm font-mono rounded-xl transition-all duration-300 flex items-center gap-3 relative group',
                     isActive('/settings') 
                         ? 'font-bold text-white scale-[1.02]' 

@@ -29,7 +29,13 @@ export default function useProjets() {
         try{
             const { $api } = useNuxtApp();
             const { activeOrganization } = useOrganizations();
-            const query = activeOrganization.value?.id ? `?organization_id=${activeOrganization.value.id}` : '';
+            const { activeWorkspace } = useWorkspaces();
+            let query = '';
+            if (activeWorkspace.value?.id) {
+                query = `?workspace_id=${activeWorkspace.value.id}`;
+            } else if (activeOrganization.value?.id) {
+                query = `?organization_id=${activeOrganization.value.id}`;
+            }
             const data = await $api<any>(`/projets${query}`,{
                 method:'GET'
             });
@@ -64,6 +70,7 @@ export default function useProjets() {
         try{
             const { $api } = useNuxtApp();
             const { activeOrganization } = useOrganizations();
+            const { activeWorkspace } = useWorkspaces();
             const data = await $api<{projet:Projet,success:boolean}>(`/projets`,{
                 method:'POST',
                 body:{
@@ -74,6 +81,7 @@ export default function useProjets() {
                    start_date: start_date === '' ? null : start_date,
                    end_date: end_date === '' ? null : end_date,
                    organization_id: activeOrganization.value?.id,
+                   workspace_id: activeWorkspace.value?.id,
                    team_ids: team_ids,
                    user_ids: user_ids
                 }

@@ -10,13 +10,13 @@ definePageMeta({
 import { useToast } from '~/composables/useToast'
 
 const { tasks, getTasks, deleteTask, updateTask, createTask } = useTasks()
-const { activeOrganization, updateKanbanColumns } = useOrganizations()
+const { activeWorkspace, updateKanbanColumns, getWorkspace, setActiveWorkspace } = useWorkspaces()
 const { addToast } = useToast()
 const route = useRoute()
 
 const kanbanColumns = computed(() => {
-  return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
-    ? activeOrganization.value.kanban_columns 
+  return activeWorkspace.value?.kanban_columns !== undefined && activeWorkspace.value?.kanban_columns !== null
+    ? activeWorkspace.value.kanban_columns 
     : ['Inbox']
 })
 
@@ -34,19 +34,19 @@ watch(kanbanColumns, (newCols) => {
 }, { immediate: true })
 
 const handleColumnReorder = async () => {
-  if (!activeOrganization.value) return
+  if (!activeWorkspace.value) return
   const newColumns = localColumns.value.map((c) => c.name)
-  const oldColumns = [...activeOrganization.value.kanban_columns || []]
+  const oldColumns = [...activeWorkspace.value.kanban_columns || []]
   
   // Optmistic UI update
-  activeOrganization.value.kanban_columns = newColumns
+  activeWorkspace.value.kanban_columns = newColumns
   
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns)
+    await updateKanbanColumns(activeWorkspace.value.id, newColumns)
   } catch (e) {
     // Revert on error
-    if (activeOrganization.value) {
-      activeOrganization.value.kanban_columns = oldColumns
+    if (activeWorkspace.value) {
+      activeWorkspace.value.kanban_columns = oldColumns
     }
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de réorganiser les colonnes.' })
   }
@@ -86,7 +86,7 @@ const handleTaskClick = (taskId: string) => {
 }
 
 const handleEditTask = (taskId: string) => {
-  navigateTo(`/organization/${route.params.org_id || activeOrganization.value?.id}/tasks/${taskId}?edit=true`)
+  navigateTo(`/organization/${route.params.org_id}/workspace/${activeWorkspace.value?.id}/tasks/${taskId}?edit=true`)
 }
 
 const handleDeleteTask = (taskId: string) => {
@@ -153,20 +153,20 @@ const handleToggleStatus = async (taskId: string) => {
 }
 
 const kanbanColors = computed(() => {
-  return activeOrganization.value?.kanban_colors || {}
+  return activeWorkspace.value?.kanban_colors || {}
 })
 
 const handleRenameColumn = async (oldName: string, newName: string) => {
-  if (!activeOrganization.value) return
+  if (!activeWorkspace.value) return
   if (kanbanColumns.value.includes(newName)) {
     addToast({ type: 'error', title: 'Erreur', message: 'Ce nom de colonne existe déjà.' })
     return
   }
   
-  const newColumns = kanbanColumns.value.map(col => col === oldName ? newName : col)
+  const newColumns = kanbanColumns.value.map((col: string) => col === oldName ? newName : col)
   const renames = { [oldName]: newName }
   
-  const currentColors = activeOrganization.value.kanban_colors || {}
+  const currentColors = activeWorkspace.value.kanban_colors || {}
   const newColors = { ...currentColors }
   if (newColors[oldName]) {
     newColors[newName] = newColors[oldName]
@@ -174,7 +174,7 @@ const handleRenameColumn = async (oldName: string, newName: string) => {
   }
   
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns, newColors, renames)
+    await updateKanbanColumns(activeWorkspace.value.id, newColumns, newColors, renames)
     addToast({ type: 'success', title: 'Succès', message: 'Colonne renommée avec succès.' })
     await getTasks() // Refresh tasks to get the new status
   } catch (error) {
@@ -183,7 +183,7 @@ const handleRenameColumn = async (oldName: string, newName: string) => {
 }
 
 const handleAddColumn = async () => {
-  if (!activeOrganization.value) return
+  if (!activeWorkspace.value) return
   const newName = 'Nouvelle colonne'
   let finalName = newName
   let i = 1
@@ -194,7 +194,7 @@ const handleAddColumn = async () => {
   
   const newColumns = [...kanbanColumns.value, finalName]
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns, activeOrganization.value.kanban_colors || {})
+    await updateKanbanColumns(activeWorkspace.value.id, newColumns, activeWorkspace.value.kanban_colors || {})
     addToast({ type: 'success', title: 'Succès', message: 'Colonne ajoutée avec succès.' })
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'ajouter la colonne.' })
@@ -210,7 +210,7 @@ const pendingDeleteAction = ref<(() => void) | null>(null)
 const confirmModalConfirmText = ref('Supprimer')
 
 const handleDeleteColumn = async (colName: string) => {
-  if (!activeOrganization.value) return
+  if (!activeWorkspace.value) return
   
   if (kanbanColumns.value.length <= 1) {
     addToast({ type: 'warning', title: 'Action impossible', message: 'Impossible de supprimer la dernière colonne.' })
@@ -229,18 +229,18 @@ const handleDeleteColumn = async (colName: string) => {
 const executeDeleteColumn = async () => {
   const colName = columnToDelete.value
   isConfirmModalOpen.value = false
-  if (!colName || !activeOrganization.value) return
+  if (!colName || !activeWorkspace.value) return
   
-  const targetCol = kanbanColumns.value.find(c => c !== colName) || kanbanColumns.value[0] || ''
-  const newColumns = kanbanColumns.value.filter(c => c !== colName)
+  const targetCol = kanbanColumns.value.find((c: string) => c !== colName) || kanbanColumns.value[0] || ''
+  const newColumns = kanbanColumns.value.filter((c: string) => c !== colName)
   const renames: Record<string, string> = { [colName]: targetCol }
   
-  const currentColors: Record<string, string> = activeOrganization.value.kanban_colors || {}
+  const currentColors: Record<string, string> = activeWorkspace.value.kanban_colors || {}
   const newColors: Record<string, string> = { ...currentColors }
   delete newColors[colName]
   
   try {
-    await updateKanbanColumns(activeOrganization.value.id, newColumns, newColors, renames)
+    await updateKanbanColumns(activeWorkspace.value.id, newColumns, newColors, renames)
     addToast({ type: 'success', title: 'Succès', message: 'Colonne supprimée avec succès.' })
     await getTasks() // Refresh tasks
   } catch (error) {
@@ -249,12 +249,12 @@ const executeDeleteColumn = async () => {
 }
 
 const handleUpdateColumnColor = async (colName: string, color: string) => {
-  if (!activeOrganization.value) return
-  const currentColors = activeOrganization.value.kanban_colors || {}
+  if (!activeWorkspace.value) return
+  const currentColors = activeWorkspace.value.kanban_colors || {}
   const newColors = { ...currentColors, [colName]: color }
   
   try {
-    await updateKanbanColumns(activeOrganization.value.id, kanbanColumns.value, newColors)
+    await updateKanbanColumns(activeWorkspace.value.id, kanbanColumns.value, newColors)
     addToast({ type: 'success', title: 'Succès', message: 'Couleur de colonne modifiée.' })
   } catch (error) {
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de modifier la couleur.' })
@@ -426,6 +426,12 @@ watch([filteredTasks, kanbanColumns], () => {
 }, { deep: true })
 
 onMounted(async () => {
+  const wsId = route.params.workspace_id as string
+  if (!activeWorkspace.value || String(activeWorkspace.value.id) !== wsId) {
+    const ws = await getWorkspace(wsId).catch(() => null)
+    if (ws) setActiveWorkspace(ws)
+  }
+
   await Promise.all([
     getTasks(),
     getProjets()

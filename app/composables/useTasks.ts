@@ -80,12 +80,17 @@ export default function useTasks() {
 
     try {
       const { activeOrganization } = useOrganizations()
+      const { activeWorkspace } = useWorkspaces()
       const orgId = activeOrganization.value?.id
+      const wsId = activeWorkspace.value?.id
       
       let query = ''
       if (projectId) {
         query = `?projet_id=${projectId}`
-        if (orgId) query += `&organization_id=${orgId}`
+        if (wsId) query += `&workspace_id=${wsId}`
+        else if (orgId) query += `&organization_id=${orgId}`
+      } else if (wsId) {
+        query = `?workspace_id=${wsId}`
       } else if (orgId) {
         query = `?organization_id=${orgId}`
       }
@@ -142,6 +147,10 @@ export default function useTasks() {
 
   const createTask = async (payload: TaskPayload) => {
     try {
+      const { activeWorkspace } = useWorkspaces()
+      if (activeWorkspace.value?.id) {
+         payload = { ...payload, workspace_id: activeWorkspace.value.id } as any
+      }
       const data = await $api<Tache | any>('/taches', {
         method: 'POST',
         body: payload,

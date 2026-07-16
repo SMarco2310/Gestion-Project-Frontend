@@ -311,7 +311,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
         </div>
         <h2 class="text-2xl font-bold text-main dark:text-white mb-3">Aucun projet pour le moment</h2>
         <p class="text-secondary dark:text-gray-400 mb-8 max-w-sm px-4 leading-relaxed">
-          Vous n'avez pas encore de projet dans cette organisation. Créez votre premier projet pour commencer à collaborer.
+          Vous n'avez pas encore de projet dans cet espace de travail. Créez votre premier projet pour commencer à collaborer.
         </p>
         <button @click="isCreateModalOpen = true" class="bg-blue-600 text-white font-bold py-3.5 px-8 rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-6 h-6" />

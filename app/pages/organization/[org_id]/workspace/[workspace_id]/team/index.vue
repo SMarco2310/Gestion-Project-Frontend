@@ -1,29 +1,34 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useToast } from '~/composables/useToast'
+import useWorkspaces from '~/composables/useWorkspaces'
+import useOrganizations from '~/composables/useOrganizations'
 
 definePageMeta({
   layout: 'custom'
 })
 
 const { activeOrganization } = useOrganizations()
+const { activeWorkspace, getWorkspaceTeams, createWorkspaceTeam, attachWorkspaceTeam, detachWorkspaceTeam } = useWorkspaces()
 const { $api } = useNuxtApp()
 const { addToast } = useToast()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase
 
+const route = useRoute()
+const workspaceId = computed(() => route.params.workspace_id as string)
+const orgId = computed(() => route.params.org_id as string)
+
 const teams = ref<any[]>([])
 const isLoading = ref(true)
 
 const fetchTeams = async () => {
-  if (!activeOrganization.value) return;
+  if (!workspaceId.value) return;
   isLoading.value = true;
   try {
-    const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/organizations/${orgId}/teams`, { method: 'GET' });
-    teams.value = res.data?.data || res.data || [];
+    teams.value = await getWorkspaceTeams(workspaceId.value);
   } catch (err) {
-    console.error('Error fetching teams', err);
+    console.error('Error fetching workspace teams', err);
     addToast({ type: 'error', title: 'Erreur', message: 'Impossible de charger les équipes.' });
   } finally {
     isLoading.value = false;
@@ -39,15 +44,11 @@ const newTeamName = ref('')
 const newTeamDesc = ref('')
 
 const handleCreateTeam = async () => {
-  if (!activeOrganization.value || !newTeamName.value) return;
+  if (!workspaceId.value || !newTeamName.value) return;
   try {
-    const orgId = activeOrganization.value.id;
-    const res = await $api<any>(`/organizations/${orgId}/teams`, {
-      method: 'POST',
-      body: { name: newTeamName.value }
-    });
-    teams.value.push(res.team);
-    addToast({ type: 'success', title: 'Succès', message: 'Équipe créée avec succès.' });
+    const team = await createWorkspaceTeam(workspaceId.value, newTeamName.value, newTeamDesc.value);
+    teams.value.push(team);
+    addToast({ type: 'success', title: 'Succès', message: 'Équipe créée et associée.' });
     isCreateModalOpen.value = false
     newTeamName.value = ''
     newTeamDesc.value = ''
@@ -57,9 +58,39 @@ const handleCreateTeam = async () => {
   }
 }
 
-const activeDropdownId = ref<number | null>(null)
+const isAttachModalOpen = ref(false)
+const orgTeams = ref<any[]>([])
+const selectedOrgTeam = ref<string>('')
 
-const toggleDropdown = (id: number) => {
+const openAttachModal = async () => {
+  isAttachModalOpen.value = true
+  try {
+    const res = await $api<any>(`/organizations/${orgId.value}/teams`, { method: 'GET' });
+    const allOrgTeams = res.data?.data || res.data || [];
+    // Filter out teams already in the workspace
+    orgTeams.value = allOrgTeams.filter((t: any) => !teams.value.find(wt => wt.id === t.id));
+  } catch (err) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de charger les équipes de l\'organisation.' });
+  }
+}
+
+const handleAttachTeam = async () => {
+  if (!workspaceId.value || !selectedOrgTeam.value) return;
+  try {
+    const team = await attachWorkspaceTeam(workspaceId.value, selectedOrgTeam.value);
+    teams.value.push(team);
+    addToast({ type: 'success', title: 'Succès', message: 'Équipe associée à l\'espace.' });
+    isAttachModalOpen.value = false
+    selectedOrgTeam.value = ''
+  } catch (err) {
+    console.error('Error attaching team', err);
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible d\'associer l\'équipe.' });
+  }
+}
+
+const activeDropdownId = ref<number | string | null>(null)
+
+const toggleDropdown = (id: number | string) => {
   if (activeDropdownId.value === id) {
     activeDropdownId.value = null
   } else {
@@ -67,51 +98,27 @@ const toggleDropdown = (id: number) => {
   }
 }
 
-const { deleteTeam } = useTeams()
-
 const isDeleteModalOpen = ref(false)
-const teamToDelete = ref<number | null>(null)
+const teamToDelete = ref<number | string | null>(null)
 
-const confirmDeleteTeam = (teamId: number) => {
+const confirmDeleteTeam = (teamId: number | string) => {
   activeDropdownId.value = null
   teamToDelete.value = teamId
   isDeleteModalOpen.value = true
 }
 
-const executeDeleteTeam = () => {
-  if (!teamToDelete.value || !activeOrganization.value) return
-  const teamId = teamToDelete.value
+const executeDeleteTeam = async () => {
+  if (!teamToDelete.value || !workspaceId.value) return
+  const teamId = teamToDelete.value as string
   isDeleteModalOpen.value = false
   
-  const previousTeams = [...teams.value]
-  teams.value = teams.value.filter(t => t.id !== teamId)
-  
-  let isCancelled = false
-  
-  const timeoutId = setTimeout(async () => {
-    if (isCancelled) return
-    try {
-      await deleteTeam(activeOrganization.value!.id, teamId)
-    } catch (err) {
-      teams.value = previousTeams
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'équipe.' })
-    }
-  }, 5000)
-
-  addToast({
-    type: 'success',
-    title: 'Équipe supprimée',
-    message: 'La suppression sera définitive dans 5 secondes.',
-    duration: 5000,
-    action: {
-      label: 'Annuler',
-      onClick: () => {
-        isCancelled = true
-        clearTimeout(timeoutId)
-        teams.value = previousTeams
-      }
-    }
-  })
+  try {
+    await detachWorkspaceTeam(workspaceId.value, teamId)
+    teams.value = teams.value.filter(t => t.id !== teamId)
+    addToast({ type: 'success', title: 'Équipe retirée', message: 'L\'équipe a été retirée de cet espace de travail.' })
+  } catch (err) {
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de retirer l\'équipe.' })
+  }
 }
 
 </script>
@@ -124,7 +131,11 @@ const executeDeleteTeam = () => {
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Équipes</h1>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les équipes au sein de votre organisation.</p>
       </div>
-      <div>
+      <div class="flex items-center gap-3">
+        <button @click="openAttachModal" class="px-4 py-2 bg-gray-100 dark:bg-[#1D1D1D] text-main dark:text-gray-200 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-800 flex items-center gap-2 transition-all shadow-sm border border-form-border dark:border-gray-800">
+          <Icon name="heroicons:link" class="w-5 h-5" />
+          Associer une équipe
+        </button>
         <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-5 h-5" />
           Nouvelle Équipe
@@ -154,7 +165,7 @@ const executeDeleteTeam = () => {
                 <Icon name="heroicons:pencil" class="w-4 h-4" /> Gérer
               </button>
               <button @click.stop="confirmDeleteTeam(team.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
-                <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
+                <Icon name="heroicons:minus-circle" class="w-4 h-4" /> Retirer de l'espace
               </button>
             </div>
           </div>
@@ -225,10 +236,43 @@ const executeDeleteTeam = () => {
       </div>
     </div>
 
+    <!-- Attach Modal -->
+    <div v-if="isAttachModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-main dark:text-white">Associer une équipe</h3>
+          <button @click="isAttachModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div v-if="orgTeams.length > 0">
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Sélectionnez une équipe de l'organisation</label>
+            <select v-model="selectedOrgTeam" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
+              <option value="" disabled>Choisir une équipe...</option>
+              <option v-for="t in orgTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
+            </select>
+          </div>
+          <div v-else class="text-center py-6">
+            <Icon name="heroicons:information-circle" class="w-12 h-12 text-gray-400 mx-auto mb-2" />
+            <p class="text-secondary dark:text-gray-400">Aucune autre équipe disponible dans l'organisation.</p>
+          </div>
+        </div>
+        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
+          <button @click="isAttachModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            Annuler
+          </button>
+          <button @click="handleAttachTeam" :disabled="!selectedOrgTeam" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            Associer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <ConfirmModal
       :is-open="isDeleteModalOpen"
-      title="Supprimer l'équipe"
-      message="Voulez-vous vraiment supprimer cette équipe ? Toutes ses données seront perdues."
+      title="Retirer l'équipe"
+      message="Voulez-vous vraiment retirer cette équipe de cet espace de travail ? L'équipe existera toujours dans l'organisation."
       @close="isDeleteModalOpen = false"
       @confirm="executeDeleteTeam"
     />

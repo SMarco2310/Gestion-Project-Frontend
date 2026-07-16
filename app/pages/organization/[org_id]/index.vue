@@ -1,330 +1,220 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import type { DashboardCard } from '~/components/CardDashboard.vue'
-import { TaskPriority } from '~/utils/enums'
-import useAuth from '~/composables/useAuth'
-import useOrganizations from '~/composables/useOrganizations'
-import useTasks from '~/composables/useTasks'
-import useProjets from '~/composables/useProjets'
-import useCommentaire from '~/composables/useCommentaire'
+import { ref, onMounted } from 'vue'
 
 definePageMeta({
-  layout: 'custom',
-//   middleware: 'auth',
+  layout: false, // We use a clean layout without sidebar for workspace selection
 })
 
+const { $api } = useNuxtApp()
+const { user, logout } = useAuth()
+const config = useRuntimeConfig()
+const apiBase = config.public.apiBase as string
 const route = useRoute()
-const { user, getProfile } = useAuth()
-const { tasks, getTasks } = useTasks()
-const { projets, getProjets, createProjet } = useProjets()
-const { commentaires, getCommentaires } = useCommentaire()
-const { activeOrganization } = useOrganizations()
+const orgId = route.params.org_id
 
-const kanbanColumns = computed(() => {
-  return activeOrganization.value?.kanban_columns !== undefined && activeOrganization.value?.kanban_columns !== null
-    ? activeOrganization.value.kanban_columns 
-    : ['Inbox']
-})
+const workspaces = ref<any[]>([])
+const isProfileOpen = ref(false)
+const { activeOrganization, getOrganization } = useOrganizations()
 
-const doneStatus = computed(() => kanbanColumns.value[kanbanColumns.value.length - 1])
-const isDone = (status: string) => status === doneStatus.value || status.toLowerCase() === 'terminé' || status.toLowerCase() === 'done'
-
-const isCreateProjectModalOpen = ref(false)
-const isTaskModalOpen = ref(false)
-const selectedTaskId = ref<string | null>(null)
-
-const handleTaskClick = (taskId: string) => {
-  selectedTaskId.value = taskId
-  isTaskModalOpen.value = true
+const handleLogout = async () => {
+    await logout()
+    navigateTo('/auth/login')
 }
 
-const handleCreateProjectSubmit = async (payload: any) => {
+const fetchWorkspaces = async () => {
   try {
-    await createProjet(
-      payload.name,
-      payload.description,
-      payload.status,
-      payload.start_date,
-      payload.end_date
-    )
-    await getProjets()
-    isCreateProjectModalOpen.value = false
-    navigateTo(`/organization/${route.params.org_id}/projects`)
+    const res = await $api<any>(`/workspaces?organization_id=${orgId}`)
+    workspaces.value = res.data?.data || res.data || []
   } catch (err) {
-    console.error('Failed to create project', err)
+    console.error(err)
   }
 }
-
-const userName = computed(() => (user.value?.first_name ?? '') + ' ' + (user.value?.last_name ?? 'Utilisateur'))
-
-const doneCount = computed(() => tasks.value.filter((task) => isDone(task.status)).length)
-const createdCount = computed(() => tasks.value.length)
-const openCount = computed(() => tasks.value.filter((task) => !isDone(task.status)).length)
-const projectsCount = computed(() => projets.value.length)
-const commentsCount = computed(() => commentaires.value.length)
-
-const orgMembersCount = ref(0)
-
-const totalUsersCount = computed(() => {
-  return orgMembersCount.value || (activeOrganization.value as any)?.users?.length || (activeOrganization.value as any)?.members?.length || 1
-})
-
-const activeProjectsCount = computed(() => {
-  return projets.value.filter(p => !isDone(p.status) && !p.is_archived).length
-})
-
-const recentCount = computed(() => {
-  const now = Date.now()
-  const twentyFourHours = 24 * 60 * 60 * 1000
-
-  const updatedTasks = tasks.value.filter((task) => {
-    if (!task.updated_at) return false
-    const date = new Date(task.updated_at).getTime()
-    return !Number.isNaN(date) && now - date <= twentyFourHours
-  }).length
-
-  const recentComments = commentaires.value.filter((comment) => {
-    if (!comment.created_at) return false
-    const date = new Date(comment.created_at).getTime()
-    return !Number.isNaN(date) && now - date <= twentyFourHours
-  }).length
-
-  return Math.max(updatedTasks, recentComments, 0)
-})
-
-const cards = computed<DashboardCard[]>(() => [
-  {
-    title: 'TERMINÉS',
-    value: doneCount.value,
-    subtitle: `${createdCount.value ? Math.round((doneCount.value / Math.max(createdCount.value, 1)) * 100) : 0}% du total`,
-    subtitleIcon: 'ph:trend-up',
-    icon: 'ph:check-circle',
-    iconClass: 'text-blue-400',
-    type: 'default',
-  },
-  {
-    title: 'MIS À JOUR',
-    value: recentCount.value,
-    subtitle: 'Dernières 24 heures',
-    icon: 'ph:clock-counter-clockwise',
-    iconClass: 'text-blue-400',
-    type: 'default',
-  },
-  {
-    title: 'CRÉÉS',
-    value: createdCount.value,
-    subtitle: `${projectsCount.value} projets actifs`,
-    icon: 'ph:plus-circle',
-    iconClass: 'text-gray-400',
-    type: 'default',
-  },
-  {
-    title: 'OUVERTES',
-    value: openCount.value,
-    subtitle: `${commentsCount.value} commentaires`,
-    icon: 'ph:warning',
-    iconClass: 'text-rose-300',
-    type: 'danger',
-  },
-])
-
-const statusMetrics = computed(() => {
-  const total = tasks.value.length
-  const colors = [
-    { class: 'bg-[#FFB78C]', code: '#FFB78C' },
-    { class: 'bg-[#8CA8F9]', code: '#8CA8F9' },
-    { class: 'bg-[#A6C4FF]', code: '#A6C4FF' },
-    { class: 'bg-[#C4A6FF]', code: '#C4A6FF' },
-    { class: 'bg-[#FFA6C4]', code: '#FFA6C4' }
-  ]
-
-  if (total === 0) {
-    return kanbanColumns.value.slice(0, 3).map((col, i) => ({
-      label: col, percentage: '0%', colorClass: colors[i % colors.length]?.class || 'bg-[#FFB78C]', colorCode: colors[i % colors.length]?.code || '#FFB78C', rawPercent: 0
-    }))
-  }
-
-  return kanbanColumns.value.slice(0, 3).map((col, i) => {
-    let count = 0
-    tasks.value.forEach((task) => {
-      // Determine which column this task belongs to
-      let assignedCol = null
-      if (task.board_column && kanbanColumns.value.includes(task.board_column)) {
-        assignedCol = task.board_column
-      } else if (task.status) {
-        const matched = kanbanColumns.value.find(c => c.toLowerCase() === task.status.toLowerCase())
-        if (matched) assignedCol = matched
-      }
-      
-      // If it belongs to THIS column, increment
-      if (assignedCol === col) {
-        count++
-      }
-    })
-    
-    return {
-      label: col,
-      percentage: `${total > 0 ? Math.round((count / total) * 100) : 0}%`,
-      colorClass: colors[i % colors.length]?.class || 'bg-[#FFB78C]',
-      colorCode: colors[i % colors.length]?.code || '#FFB78C',
-      rawPercent: total > 0 ? (count / total) * 100 : 0
-    }
-  })
-})
-
-const priorities = computed(() => {
-  const counts = {
-    [TaskPriority.HIGH]: 0,
-    [TaskPriority.MEDIUM]: 0,
-    [TaskPriority.LOW]: 0,
-  }
-
-  tasks.value.forEach((task) => {
-    if (task.priority in counts) {
-      counts[task.priority as TaskPriority]++
-    }
-  })
-
-  const maxCount = Math.max(counts[TaskPriority.HIGH], counts[TaskPriority.MEDIUM], counts[TaskPriority.LOW], 1)
-
-  return [
-    { label: 'Élevé', count: counts[TaskPriority.HIGH], icon: 'ph:caret-double-up', iconColor: 'text-rose-400', barColor: 'bg-rose-300', percent: Math.round((counts[TaskPriority.HIGH] / maxCount) * 100) },
-    { label: 'Moyen', count: counts[TaskPriority.MEDIUM], icon: 'ph:equals', iconColor: 'text-blue-400', barColor: 'bg-blue-300', percent: Math.round((counts[TaskPriority.MEDIUM] / maxCount) * 100) },
-    { label: 'Faible', count: counts[TaskPriority.LOW], icon: 'ph:caret-down', iconColor: 'text-gray-400', barColor: 'bg-gray-400', percent: Math.round((counts[TaskPriority.LOW] / maxCount) * 100) },
-  ]
-})
-
-const epics = computed(() => {
-  return projets.value.map((project) => {
-    const projectTasks = tasks.value.filter((task) => String(task.projet_id) === String(project.id))
-    const total = projectTasks.length
-    const done = projectTasks.filter((task) => isDone(task.status)).length
-    const progress = total ? Math.round((done / total) * 100) : 0
-
-    return {
-      reference_code: project.reference_code || String(project.id),
-      title: project.name,
-      progress,
-      badgeBg: progress > 65 ? 'bg-blue-500/10' : 'bg-orange-500/10',
-      badgeText: progress > 65 ? 'text-blue-400' : 'text-orange-400',
-      barColor: progress > 65 ? 'bg-[#A6C4FF]' : 'bg-[#FFB78C]',
-    }
-  }).slice(0, 3)
-})
-
-const upcomingTasks = computed(() => {
-  const now = new Date().getTime()
-  const sevenDays = 7 * 24 * 60 * 60 * 1000
-  
-  return tasks.value
-    .filter(t => !isDone(t.status) && t.due_date)
-    .filter(t => {
-      const dueDate = new Date(t.due_date as string).getTime()
-      return dueDate >= now - (24 * 60 * 60 * 1000) && dueDate <= now + sevenDays
-    })
-    .sort((a, b) => new Date(a.due_date as string).getTime() - new Date(b.due_date as string).getTime())
-    .slice(0, 4)
-})
-
-const projectTaskStats = computed(() => {
-  return projets.value.map((project) => {
-    const projectTasks = tasks.value.filter((task) => String(task.projet_id) === String(project.id))
-    const total = projectTasks.length
-    const done = projectTasks.filter((task) => isDone(task.status)).length
-    return {
-      name: project.reference_code || project.name.substring(0, 8),
-      Total: total,
-      Complété: done
-    }
-  })
-})
-
-const recentCommentsData = computed(() => {
-  return commentaires.value
-    .filter(c => c.created_at)
-    .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime())
-    .slice(0, 4)
-    .map(c => ({
-      id: c.id,
-      content: c.content,
-      author: c.user?.first_name + ' ' + c.user?.last_name,
-      time: new Date(c.created_at as string).toLocaleDateString('fr-FR'),
-      taskId: c.tache_id
-    }))
-})
 
 onMounted(async () => {
-  if (activeOrganization.value) {
-    const { getMembers } = useOrganizations()
-    getMembers(activeOrganization.value.id).then((res: any) => {
-      if (res && res.length !== undefined) {
-        orgMembersCount.value = res.length
-      }
-    }).catch(() => null)
+  if (!activeOrganization.value || String(activeOrganization.value.id) !== String(orgId)) {
+     const org = await getOrganization(orgId as string)
+     if(org) {
+         useOrganizations().setActiveOrganization(org)
+     }
   }
-
-  await Promise.all([
-    getProfile().catch(() => null),
-    getTasks().catch(() => null),
-    getProjets().catch(() => null),
-    getCommentaires().catch(() => null),
-  ])
+  fetchWorkspaces()
 })
+
+const selectWorkspace = (workspace: any) => {
+  navigateTo(`/organization/${orgId}/workspace/${workspace.id}`);
+}
+
+const isCreateModalOpen = ref(false)
+const isSubmitting = ref(false)
+const newWorkspaceForm = ref({ name: '', description: '' })
+const createError = ref('')
+
+const openCreateModal = () => {
+  newWorkspaceForm.value = { name: '', description: '' }
+  createError.value = ''
+  isCreateModalOpen.value = true
+}
+
+const handleCreateWorkspace = async () => {
+  if (!newWorkspaceForm.value.name.trim()) return
+
+  isSubmitting.value = true
+  createError.value = ''
+  
+  try {
+    const res = await $api<any>('/workspaces', {
+        method: 'POST',
+        body: {
+            name: newWorkspaceForm.value.name,
+            description: newWorkspaceForm.value.description,
+            organization_id: orgId
+        }
+    })
+    const newWorkspace = res.workspace || res.data?.workspace || res.data
+    navigateTo(`/organization/${orgId}/workspace/${newWorkspace.id}`)
+  } catch (err: any) {
+    createError.value = err.data?.message || 'Erreur lors de la création'
+  } finally {
+    isSubmitting.value = false
+  }
+}
 </script>
 
 <template>
-    <div>
-        <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex flex-col gap-2">
-            <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Dashboard</h1>
-            <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Bienvenue sur votre tableau de bord, {{ userName }}</p>
-          </div>
-          <button @click="isCreateProjectModalOpen = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
-            <Icon name="heroicons:plus" class="w-4 h-4" />
-            Créer un projet
-          </button>
-        </section>
-    <br>
-    <section>
-        <!-- Stats Cards with only numbers -->
-        <CardDashboard :cards="cards" />
-    </section>
-    <br>
-    <section>
-        <DashboardAnalytics 
-          :totalUsers="totalUsersCount"
-          :activeProjects="activeProjectsCount"
-          :tasks="tasks"
-          :kanbanColumns="kanbanColumns"
-          @taskClick="handleTaskClick"
-        />
-    </section>
-    <br>
+  <div class="relative min-h-[100dvh] flex items-center justify-center bg-canvas dark:bg-[#151515] p-4 sm:p-8">
     
-    <section>
-        <!-- Stats Cards with graphs -->
-        <CardV2Dashboard
-          :totalIssues="createdCount"
-          :statusMetrics="statusMetrics"
-          :projectTaskStats="projectTaskStats"
-          :priorities="priorities"
-          :epics="epics"
-          :upcomingTasks="upcomingTasks"
-          :recentComments="recentCommentsData"
-          @taskClick="handleTaskClick"
-        />
-    </section>
-    
-    <CreateProjectModal
-      :is-open="isCreateProjectModalOpen"
-      @close="isCreateProjectModalOpen = false"
-      @submit="handleCreateProjectSubmit"
-    />
-    <TaskModal
-      :is-open="isTaskModalOpen"
-      :task-id="selectedTaskId"
-      @close="isTaskModalOpen = false"
-      @update="getTasks"
-    />
+    <!-- Top Left Branding -->
+    <div class="absolute top-8 left-8 z-20 flex items-center gap-3">
+        <NuxtLink to="/organizations" class="text-secondary hover:text-primary transition-colors flex items-center gap-2">
+            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
+            Retour aux organisations
+        </NuxtLink>
     </div>
+
+    <!-- Top Right Actions -->
+    <div class="absolute top-8 right-8 z-20">
+      <div class="relative">
+          <div @click="isProfileOpen = !isProfileOpen" class="w-10 h-10 rounded-full ring-2 ring-form-border dark:ring-gray-700 hover:ring-primary dark:hover:ring-primary overflow-hidden cursor-pointer transition-all bg-canvas dark:bg-[#151515]">
+              <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover">
+          </div>
+          <!-- Overlay for closing -->
+          <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
+          <!-- Dropdown Menu -->
+          <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-48 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
+              <NuxtLink to="/profile?source=workspace" @click="isProfileOpen = false" class="block px-4 py-3 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors">
+                  Profil
+              </NuxtLink>
+              <button @click="() => { isProfileOpen = false; handleLogout() }" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                  Déconnexion
+              </button>
+          </div>
+      </div>
+    </div>
+
+    <div class="w-full max-w-4xl flex flex-col items-center pt-20">
+      
+      <!-- Header text -->
+      <div class="text-center mb-12">
+        <h1 class="text-4xl sm:text-5xl font-bold tracking-wider text-main dark:text-white mb-4">
+            {{ activeOrganization?.name || 'Organisation' }}
+        </h1>
+        <p class="text-secondary dark:text-gray-400 text-lg max-w-md mx-auto">
+          Sélectionnez un espace de travail (Workspace) pour continuer.
+        </p>
+      </div>
+
+      <!-- Active Workspaces Grid -->
+      <div class="w-full mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          
+          <!-- Add New Workspace Card -->
+          <div @click="openCreateModal" class="flex flex-col items-center justify-center bg-white dark:bg-[#1D1D1D] rounded-2xl p-8 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-[#252525] transition-all cursor-pointer group min-h-[200px]">
+            <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Icon name="heroicons:plus" class="w-6 h-6 text-gray-500 dark:text-gray-400 group-hover:text-primary" />
+            </div>
+            <span class="font-semibold text-main dark:text-white text-center">Créer un espace de travail</span>
+          </div>
+
+          <!-- Render Active Workspaces -->
+          <div 
+            v-for="workspace in workspaces" 
+            :key="workspace.id"
+            @click="selectWorkspace(workspace)"
+            class="flex flex-col bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-primary hover:shadow-lg transition-all cursor-pointer min-h-[200px] relative overflow-hidden group"
+          >
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            
+            <div class="flex justify-between items-start mb-4">
+              <div class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center font-bold text-xl uppercase shadow-sm overflow-hidden">
+                <span>{{ workspace.name?.substring(0, 2) || 'WS' }}</span>
+              </div>
+              <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 dark:bg-gray-800/50 group-hover:bg-primary group-hover:text-white text-gray-400 transition-colors">
+                 <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+              </div>
+            </div>
+            
+            <h2 class="text-xl font-bold text-main dark:text-white mb-2">{{ workspace.name }}</h2>
+            <div v-if="workspace.description" class="text-sm text-secondary dark:text-gray-400 line-clamp-2 mt-auto prose dark:prose-invert max-w-none" v-html="workspace.description"></div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Create Workspace Modal -->
+    <div v-if="isCreateModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
+      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden transform transition-all animate-fade-in-up">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-main dark:text-white">Nouvel Espace de Travail</h3>
+          <button @click="isCreateModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        
+        <div class="p-6 space-y-5">
+          <div v-if="createError" class="p-3 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30">
+            {{ createError }}
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'espace</label>
+            <input 
+              v-model="newWorkspaceForm.name" 
+              type="text" 
+              placeholder="Ex: Marketing, Développement..."
+              class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+            />
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description (optionnel)</label>
+            <textarea
+              v-model="newWorkspaceForm.description" 
+              rows="3"
+              class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50 dark:bg-black/10">
+          <button 
+            @click="isCreateModalOpen = false" 
+            :disabled="isSubmitting"
+            class="px-5 py-2.5 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors disabled:opacity-50"
+          >
+            Annuler
+          </button>
+          <button 
+            @click="handleCreateWorkspace" 
+            :disabled="isSubmitting || !newWorkspaceForm.name.trim()"
+            class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            <Icon v-if="isSubmitting" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
+            Créer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

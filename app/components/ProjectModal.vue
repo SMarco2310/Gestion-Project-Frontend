@@ -500,7 +500,7 @@ const updateStatus = async (status: string) => {
               <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
                 <NuxtLink
                   v-for="task in projectTasks.slice(0, 5)" :key="task.id"
-                  :to="`/organization/${route.params.org_id || activeOrganization?.id}/tasks/${task.id}`"
+                  :to="`/organization/${route.params.org_id || activeOrganization?.id}/workspace/${route.params.workspace_id}/tasks/${task.id}`"
                   @click="close"
                   class="flex items-center justify-between p-3 bg-white dark:bg-[#222224] rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/50 dark:hover:border-blue-500/50 shadow-sm hover:shadow transition-all group cursor-pointer"
                 >

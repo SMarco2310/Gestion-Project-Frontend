@@ -61,6 +61,7 @@ const handleCreateTeam = async () => {
 const isAttachModalOpen = ref(false)
 const orgTeams = ref<any[]>([])
 const selectedOrgTeam = ref<string>('')
+const isSelectOpen = ref(false)
 
 const openAttachModal = async () => {
   isAttachModalOpen.value = true
@@ -151,7 +152,7 @@ const executeDeleteTeam = async () => {
     <!-- Teams Grid -->
     <div v-else-if="teams.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       
-      <div v-for="team in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer">
+      <div v-for="team in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary/50 dark:hover:border-primary/50 hover:shadow-lg transition-all group flex flex-col h-full cursor-pointer">
         <div class="flex justify-between items-start mb-4">
           <div class="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 flex items-center justify-center">
             <Icon name="heroicons:user-group" class="w-6 h-6" />
@@ -161,7 +162,7 @@ const executeDeleteTeam = async () => {
               <Icon name="heroicons:ellipsis-vertical" class="w-5 h-5" />
             </button>
             <div v-if="activeDropdownId === team.id" class="absolute right-0 mt-2 w-40 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-xl border border-form-border dark:border-gray-800 z-50 overflow-hidden text-main dark:text-gray-300">
-              <button @click.stop="activeDropdownId = null; navigateTo(`/organization/${$route.params.org_id}/team/${team.id}`)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
+              <button @click.stop="activeDropdownId = null; navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="w-full text-left px-4 py-3 text-sm font-medium hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                 <Icon name="heroicons:pencil" class="w-4 h-4" /> Gérer
               </button>
               <button @click.stop="confirmDeleteTeam(team.id)" class="w-full text-left px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
@@ -248,10 +249,32 @@ const executeDeleteTeam = async () => {
         <div class="p-6 space-y-4">
           <div v-if="orgTeams.length > 0">
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Sélectionnez une équipe de l'organisation</label>
-            <select v-model="selectedOrgTeam" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none">
-              <option value="" disabled>Choisir une équipe...</option>
-              <option v-for="t in orgTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
-            </select>
+            <div class="relative">
+              <button @click="isSelectOpen = !isSelectOpen" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 flex justify-between items-center text-left transition-colors cursor-pointer">
+                <span :class="{'text-gray-400': !selectedOrgTeam}">
+                  {{ selectedOrgTeam ? orgTeams.find(t => t.id === selectedOrgTeam)?.name : 'Choisir une équipe...' }}
+                </span>
+                <Icon name="heroicons:chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': isSelectOpen }" />
+              </button>
+              
+              <div v-if="isSelectOpen" @click="isSelectOpen = false" class="fixed inset-0 z-40"></div>
+              
+              <Transition
+                enter-active-class="transition duration-100 ease-out"
+                enter-from-class="transform scale-95 opacity-0"
+                enter-to-class="transform scale-100 opacity-100"
+                leave-active-class="transition duration-75 ease-in"
+                leave-from-class="transform scale-100 opacity-100"
+                leave-to-class="transform scale-95 opacity-0"
+              >
+                <div v-if="isSelectOpen" class="absolute z-50 w-full mt-2 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-form-border dark:border-gray-800 py-1 max-h-60 overflow-auto custom-scrollbar">
+                  <div v-for="t in orgTeams" :key="t.id" @click="selectedOrgTeam = t.id; isSelectOpen = false" class="px-4 py-3 mx-1 my-0.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
+                    <span class="text-main dark:text-white font-medium">{{ t.name }}</span>
+                    <Icon v-if="selectedOrgTeam === t.id" name="heroicons:check" class="w-5 h-5 text-primary dark:text-blue-500" />
+                  </div>
+                </div>
+              </Transition>
+            </div>
           </div>
           <div v-else class="text-center py-6">
             <Icon name="heroicons:information-circle" class="w-12 h-12 text-gray-400 mx-auto mb-2" />

@@ -26,7 +26,7 @@ const handleResend = async () => {
 </script>
 
 <template>
-  <div class="h-[100dvh] w-screen bg-canvas dark:bg-[#1D1D1D] pt-20 overflow-hidden flex flex-col text-main dark:text-gray-200 transition-all duration-300 ease-in-out" :class="isSidebarCollapsed ? 'md:pl-20' : 'md:pl-64'">
+  <div class="h-[100dvh] w-screen bg-canvas dark:bg-[#1D1D1D] pt-20 overflow-hidden flex flex-col text-main dark:text-gray-200 transition-all duration-300 ease-in-out" :class="isSidebarCollapsed ? 'md:pl-20' : 'md:pl-80'">
     <AppHeader />
     <main class="px-4 md:px-8 pt-4 pb-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
       <div v-if="user && !user.email_verified_at" class="bg-yellow-500/10 border border-yellow-500/50 text-yellow-700 dark:text-yellow-400 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

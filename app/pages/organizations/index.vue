@@ -28,8 +28,13 @@ const fetchOrgsAndInvites = async () => {
   }
 }
 
+const route = useRoute()
+
 onMounted(() => {
   fetchOrgsAndInvites()
+  if (route.query.create === 'true') {
+    openCreateModal()
+  }
 })
 
 const selectOrganization = (org: any) => {
@@ -43,8 +48,18 @@ const acceptInvitation = (inviteId: number, orgId: number) => {
   navigateTo(`/organization/${orgId}`);
 }
 
-const { createOrganization: apiCreateOrganization, setActiveOrganization } = useOrganizations()
+const { createOrganization: apiCreateOrganization, setActiveOrganization, activeOrganization } = useOrganizations()
 const isCreateModalOpen = ref(false)
+
+const getIconColor = (name: string) => {
+  if (!name) return '#0891b2';
+  const colors = ['#0891b2', '#8B5CF6', '#F97316', '#3B82F6', '#10B981', '#EC4899'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
 const isSubmitting = ref(false)
 const newOrgForm = ref({ name: '', description: '' })
 const createError = ref('')
@@ -62,7 +77,7 @@ const handleCreateOrganization = async () => {
   createError.value = ''
   
   try {
-    const newOrg = await apiCreateOrganization(newOrgForm.value.name, newOrgForm.value.description)
+    const newOrg = await apiCreateOrganization({ name: newOrgForm.value.name, description: newOrgForm.value.description })
     setActiveOrganization(newOrg)
     navigateTo(`/organization/${newOrg.id}`)
   } catch (err: any) {
@@ -124,7 +139,7 @@ const handleCreateOrganization = async () => {
             :key="invite.id"
             class="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border-2 border-blue-200 dark:border-blue-800 hover:border-primary transition-all relative group shadow-sm">
             <div class="flex items-center gap-3 mb-4">
-              <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl uppercase shadow-md overflow-hidden">
+              <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xl uppercase shadow-md overflow-hidden">
                 <img v-if="invite.organization?.logo" :src="invite.organization.logo.startsWith('http') ? invite.organization.logo : 'http://localhost:8000' + invite.organization.logo" class="w-full h-full object-cover" />
                 <span v-else>{{ invite.organization?.name?.substring(0, 2) || 'OR' }}</span>
               </div>
@@ -135,7 +150,7 @@ const handleCreateOrganization = async () => {
             </div>
             <p class="text-sm text-secondary dark:text-gray-400 mb-6 flex-1">Vous avez été invité à rejoindre cette organisation.</p>
             
-            <button @click="acceptInvitation(invite.id, invite.organization.id)" class="w-full bg-primary hover:bg-blue-600 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <button @click="acceptInvitation(invite.id, invite.organization.id)" class="w-full bg-cyan-600 hover:bg-cyan-600 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
               <span>Rejoindre l'équipe</span>
               <Icon name="heroicons:arrow-right" class="w-4 h-4" />
             </button>
@@ -145,39 +160,58 @@ const handleCreateOrganization = async () => {
 
       <!-- Active Organizations Grid -->
       <div class="w-full mb-10">
-        <h2 class="text-2xl font-bold text-main dark:text-white mb-6">Vos Organisations</h2>
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl sm:text-3xl font-bold text-main dark:text-white">Vos Organisations</h2>
+        </div>
+        
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           
-          <!-- Add New Organization Card -->
-          <div @click="openCreateModal" class="flex flex-col items-center justify-center bg-white dark:bg-[#1D1D1D] rounded-2xl p-8 border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-primary dark:hover:border-primary hover:bg-gray-50 dark:hover:bg-[#252525] transition-all cursor-pointer group min-h-[200px]">
-            <div class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Icon name="heroicons:plus" class="w-6 h-6 text-gray-500 dark:text-gray-400 group-hover:text-primary" />
-            </div>
-            <span class="font-semibold text-main dark:text-white">Créer une organisation</span>
-          </div>
-
           <!-- Render Active Organizations -->
           <div 
             v-for="org in organizations" 
             :key="org.id"
-            @click="selectOrganization(org)"
-            class="flex flex-col bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-primary hover:shadow-lg transition-all cursor-pointer min-h-[200px] relative overflow-hidden group"
+            class="bg-card dark:bg-[#1A1A1D] rounded-[32px] p-6 border border-form-border dark:border-gray-800 flex flex-col hover:border-primary/30 transition-colors group min-h-[280px]"
           >
-            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
             <div class="flex justify-between items-start mb-4">
-              <div class="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 flex items-center justify-center font-bold text-xl uppercase shadow-sm overflow-hidden">
-                <img v-if="org.logo" :src="org.logo.startsWith('http') ? org.logo : 'http://localhost:8000' + org.logo" class="w-full h-full object-cover" />
-                <span v-else>{{ org.name?.substring(0, 2) || 'OR' }}</span>
+              <div v-if="org.logo" class="w-14 h-14 rounded-2xl overflow-hidden shadow-sm">
+                <img :src="org.logo.startsWith('http') ? org.logo : 'http://localhost:8000' + org.logo" class="w-full h-full object-cover" />
               </div>
-              <div class="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 dark:bg-gray-800/50 group-hover:bg-primary group-hover:text-white text-gray-400 transition-colors">
-                 <Icon name="heroicons:arrow-right" class="w-4 h-4" />
+              <div v-else class="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-sm" :style="{ backgroundColor: getIconColor(org.name) }">
+                {{ org.name?.charAt(0).toUpperCase() || 'O' }}
               </div>
             </div>
             
-            <h2 class="text-xl font-bold text-main dark:text-white mb-2">{{ org.name }}</h2>
-            <div v-if="org.description" class="text-sm text-secondary dark:text-gray-400 line-clamp-2 mt-auto prose dark:prose-invert max-w-none" v-html="org.description"></div>
+            <h2 class="text-xl font-bold text-main dark:text-white mb-2 truncate" :title="org.name">{{ org.name }}</h2>
+
+            <div class="flex items-center gap-8 mb-8 mt-auto">
+              <div>
+                <div class="text-xl font-bold text-main dark:text-white">{{ org.users_count || 0 }}</div>
+                <div class="text-[9px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase mt-1">Membres</div>
+              </div>
+              <div>
+                <div class="text-xl font-bold text-main dark:text-white">{{ org.workspaces_count || 0 }}</div>
+                <div class="text-[9px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase mt-1">Workspaces</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button @click="selectOrganization(org)" class="flex-1 py-2.5 rounded-xl font-bold text-sm text-center transition-colors shadow-sm" :class="activeOrganization?.id === org.id ? 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 cursor-not-allowed' : 'bg-[#0891b2] text-white hover:bg-[#26b0ac]'">
+                {{ activeOrganization?.id === org.id ? 'Organisation active' : 'Basculer' }}
+              </button>
+              <NuxtLink :to="`/organization/${org.id}/settings`" class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-main dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl font-bold text-sm transition-colors text-center">
+                Gérer
+              </NuxtLink>
+            </div>
           </div>
+
+          <!-- Add New Organization Card (Mobile: fallback, Desktop: inline) -->
+          <button @click="openCreateModal" class="bg-transparent dark:bg-transparent rounded-[32px] p-6 border-2 border-dashed border-gray-300 dark:border-gray-700 flex flex-col items-center justify-center min-h-[280px] hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-[#0891b2] transition-colors group">
+            <div class="w-14 h-14 rounded-2xl bg-cyan-50 text-primary dark:bg-cyan-900/30 dark:text-cyan-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Icon name="heroicons:plus" class="w-6 h-6" />
+            </div>
+            <span class="font-bold text-main dark:text-white">Créer une organisation</span>
+          </button>
 
         </div>
       </div>
@@ -229,7 +263,7 @@ const handleCreateOrganization = async () => {
           <button 
             @click="handleCreateOrganization" 
             :disabled="isSubmitting || !newOrgForm.name.trim()"
-            class="px-5 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            class="px-5 py-2.5 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Icon v-if="isSubmitting" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
             Créer

@@ -182,8 +182,8 @@ onBeforeUnmount(() => {
   border-radius: 0.5rem;
 }
 .ProseMirror code {
-  color: #35A3EB;
-  background-color: rgba(53, 163, 235, 0.1);
+  color: #0891b2;
+  background-color: rgba(43, 196, 191, 0.1);
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
 }

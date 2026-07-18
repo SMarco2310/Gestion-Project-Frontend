@@ -1,5 +1,5 @@
 export interface Organization {
-  id: number;
+  id: string | number;
   name: string;
   description?: string;
   logo?: string;
@@ -55,12 +55,12 @@ export default function useOrganizations() {
     }
   };
 
-  const createOrganization = async (name: string, description?: string) => {
+  const createOrganization = async (payload: Partial<Organization>) => {
     try {
       const { $api } = useNuxtApp();
       const data = await $api<{ data: Organization } | any>('/organizations', {
         method: 'POST',
-        body: { name, description }
+        body: payload
       });
       return data.organization ?? data.data ?? data;
     } catch (error) {

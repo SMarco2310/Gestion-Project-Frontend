@@ -1,71 +1,103 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useToast } from '~/composables/useToast'
 
 definePageMeta({
   layout: 'custom'
 })
 
-const { activeWorkspace, updateWorkspace, deleteWorkspace, setActiveWorkspace } = useWorkspaces()
+const route = useRoute()
+const orgId = route.params.org_id as string
+const { goBack: smartBack } = useSmartBack()
+const goBack = () => {
+  smartBack(`/organization/${orgId}/workspace/${route.params.workspace_id}`)
+}
+const workspaceId = route.params.workspace_id as string
+const { activeWorkspace, getWorkspace, getWorkspaceTeams, updateWorkspace, deleteWorkspace, setActiveWorkspace } = useWorkspaces()
 const { activeOrganization } = useOrganizations()
 const { addToast } = useToast()
+
+const currentWorkspace = ref<any>(null)
+const workspaceTeams = ref<any[]>([])
+const workspaceMembers = ref<any[]>([])
 
 const form = ref({
   name: '',
   description: '',
-  kanban_columns: ['À faire', 'En cours', 'Terminé'] as string[],
-  kanban_colors: ['#FFB78C', '#8CA8F9', '#A6C4FF'] as string[],
 })
-
-onMounted(() => {
-  if (activeWorkspace.value) {
-    form.value.name = activeWorkspace.value.name
-    form.value.description = activeWorkspace.value.description || ''
-    if (activeWorkspace.value.kanban_columns) form.value.kanban_columns = [...activeWorkspace.value.kanban_columns]
-    if (activeWorkspace.value.kanban_colors) form.value.kanban_colors = [...activeWorkspace.value.kanban_colors]
-  }
-})
-
-watch(activeWorkspace, (newWs) => {
-  if (newWs) {
-    form.value.name = newWs.name
-    form.value.description = newWs.description || ''
-    if (newWs.kanban_columns) form.value.kanban_columns = [...newWs.kanban_columns]
-    if (newWs.kanban_colors) form.value.kanban_colors = [...newWs.kanban_colors]
-  }
-}, { immediate: true })
-
-const tabs = ['general', 'kanban', 'security']
-const activeTab = ref('general')
-const activeTabIndex = computed(() => tabs.indexOf(activeTab.value))
-
-const addKanbanColumn = () => {
-  form.value.kanban_columns.push('Nouvelle colonne')
-  form.value.kanban_colors.push('#CBD5E1')
-}
-
-const removeKanbanColumn = (index: number) => {
-  if (form.value.kanban_columns.length <= 1) {
-    addToast({ type: 'error', title: 'Erreur', message: 'Il doit rester au moins une colonne.' })
-    return
-  }
-  form.value.kanban_columns.splice(index, 1)
-  form.value.kanban_colors.splice(index, 1)
-}
 
 const isLoading = ref(false)
+const selectedColor = ref('#8B5CF6') // default purple
+const identityColors = ['#3B82F6', '#8B5CF6', '#EC4899', '#EAB308', '#10B981', '#F97316', '#64748B', '#84CC16']
+
+const isActiveWorkspace = computed(() => {
+  return activeWorkspace.value?.id == workspaceId
+})
+
+const fetchWorkspace = async () => {
+  if (!workspaceId) return;
+  try {
+    const ws = await getWorkspace(workspaceId)
+    currentWorkspace.value = ws
+    form.value.name = ws.name
+    form.value.description = ws.description || ''
+    if (ws.color) {
+      selectedColor.value = ws.color
+    }
+
+    const teams = await getWorkspaceTeams(workspaceId)
+    workspaceTeams.value = teams || []
+    
+    const membersMap = new Map()
+    workspaceTeams.value.forEach(t => {
+       if (t.members) {
+         t.members.forEach((m: any) => {
+            if (!membersMap.has(m.id)) {
+               membersMap.set(m.id, m)
+            }
+         })
+       }
+    })
+    workspaceMembers.value = Array.from(membersMap.values())
+  } catch (err) {
+    console.error('Failed to fetch workspace:', err)
+  }
+}
+
+onMounted(() => {
+  fetchWorkspace()
+})
+
+const getIconColor = (name: string) => {
+  if (!name) return '#0891b2';
+  const colors = ['#0891b2', '#8B5CF6', '#F97316', '#3B82F6', '#10B981', '#EC4899'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '...'
+  const date = new Date(dateStr)
+  return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
+}
 
 const handleSave = async () => {
-  if (!activeWorkspace.value) return;
+  if (!currentWorkspace.value) return;
   isLoading.value = true
   try {
-    const updated = await updateWorkspace(activeWorkspace.value.id, {
+    const updated = await updateWorkspace(currentWorkspace.value.id, {
       name: form.value.name,
       description: form.value.description,
-      kanban_columns: form.value.kanban_columns,
-      kanban_colors: form.value.kanban_colors,
+      color: selectedColor.value,
     })
-    setActiveWorkspace(updated)
+    currentWorkspace.value = updated
+    if (isActiveWorkspace.value) {
+      setActiveWorkspace(updated)
+    }
     addToast({ type: 'success', title: 'Succès', message: 'Paramètres mis à jour.' })
   } catch (err) {
     console.error('Error updating workspace', err)
@@ -75,144 +107,237 @@ const handleSave = async () => {
   }
 }
 
-const confirmDelete = async () => {
-  if (!activeWorkspace.value) return;
-  if (confirm("Êtes-vous sûr de vouloir supprimer cet espace de travail ? Cette action est irréversible.")) {
-    try {
-      await deleteWorkspace(activeWorkspace.value.id)
+const isDeleteModalOpen = ref(false)
+
+const confirmDelete = () => {
+  isDeleteModalOpen.value = true
+}
+
+const executeDeleteWorkspace = async () => {
+  if (!currentWorkspace.value) return;
+  try {
+    await deleteWorkspace(currentWorkspace.value.id)
+    if (isActiveWorkspace.value) {
       setActiveWorkspace(null)
-      addToast({ type: 'success', title: 'Succès', message: 'Espace supprimé.' })
-      navigateTo(`/organization/${activeOrganization.value?.id || ''}`)
-    } catch (err) {
-      console.error('Error deleting workspace', err)
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'espace.' })
     }
+    isDeleteModalOpen.value = false
+    addToast({ type: 'success', title: 'Succès', message: 'Espace supprimé.' })
+    navigateTo(`/organization/${activeOrganization.value?.id || ''}`)
+  } catch (err) {
+    console.error('Error deleting workspace', err)
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'espace.' })
+  }
+}
+
+const makeActive = () => {
+  if (currentWorkspace.value) {
+    setActiveWorkspace(currentWorkspace.value)
+    addToast({ type: 'success', title: 'Workspace activé', message: `${currentWorkspace.value.name} est maintenant actif.` })
   }
 }
 </script>
 
 <template>
-  <div>
-    <!-- Header Section -->
-    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center gap-2">
-          <NuxtLink :to="`/organization/${activeOrganization?.id || ''}/workspace/${activeWorkspace?.id || ''}`" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
-            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
-          </NuxtLink>
-          <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Paramètres de l'espace</h1>
-        </div>
-        <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1 ml-7">Modifiez les informations de l'espace de travail.</p>
-      </div>
-    </section>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      
-      <!-- Left sidebar navigation for settings (optional, good for future expansion) -->
-      <div class="lg:col-span-1 relative flex flex-col gap-2 p-2 -mx-2 isolate">
-        <!-- Bouncy Sliding Background -->
-        <div 
-            class="absolute left-2 right-2 top-2 h-[48px] rounded-xl bg-[#00C2CB] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
-            :style="activeTabIndex >= 0 ? { transform: `translateY(${activeTabIndex * 56}px)`, opacity: 1 } : { opacity: 0 }"
-        ></div>
-
-        <button @click="activeTab = 'general'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'general' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
-          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:information-circle" class="w-5 h-5 transition-transform group-hover:scale-110" /> Informations Générales</span>
-          <Icon v-if="activeTab === 'general'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
-        </button>
-
-        <button @click="activeTab = 'kanban'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'kanban' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
-          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:view-columns" class="w-5 h-5 transition-transform group-hover:scale-110" /> Colonnes Kanban</span>
-          <Icon v-if="activeTab === 'kanban'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
-        </button>
-
-        <button @click="activeTab = 'security'" class="w-full text-left px-4 py-3 rounded-xl font-medium transition-colors flex items-center justify-between relative group" :class="activeTab === 'security' ? 'text-white font-bold' : 'text-secondary dark:text-gray-400 hover:bg-canvas dark:hover:bg-gray-800/50 hover:text-main dark:hover:text-white'">
-          <span class="flex items-center gap-2 relative z-10"><Icon name="heroicons:shield-check" class="w-5 h-5 transition-transform group-hover:scale-110" /> Sécurité</span>
-          <Icon v-if="activeTab === 'security'" name="heroicons:chevron-right" class="w-4 h-4 opacity-80 relative z-10 drop-shadow-md" />
-        </button>
-      </div>
-
-      <!-- Main Settings Form -->
-      <div class="lg:col-span-2 space-y-6">
-        
-        <template v-if="activeTab === 'general'">
-          <!-- General Info Card -->
-          <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 md:p-8 border border-form-border dark:border-gray-800 shadow-sm">
-            <h2 class="text-xl font-bold text-main dark:text-white mb-6">Informations Générales</h2>
-            
-            <form @submit.prevent="handleSave" class="space-y-5">
-              <div>
-                <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'espace</label>
-                <input v-model="form.name" type="text" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50" />
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
-                <RichTextEditor v-model="form.description" class="w-full" />
-              </div>
-
-              <div class="pt-4 flex justify-end">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="isLoading">
-                  <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
-                  Sauvegarder
-                </button>
-              </div>
-            </form>
-          </div>
-        </template>
-
-        <template v-if="activeTab === 'kanban'">
-          <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 md:p-8 border border-form-border dark:border-gray-800 shadow-sm">
-            <h2 class="text-xl font-bold text-main dark:text-white mb-2">Colonnes Kanban</h2>
-            <p class="text-sm text-secondary dark:text-gray-400 mb-8">Personnalisez les colonnes de vos projets Kanban pour cet espace de travail.</p>
-            
-            <form @submit.prevent="handleSave" class="space-y-6">
-              
-              <div class="space-y-3">
-                <div v-for="(col, index) in form.kanban_columns" :key="index" class="flex items-center gap-3">
-                  <div class="w-8 h-8 flex items-center justify-center bg-gray-50 dark:bg-gray-800 text-gray-400 rounded-lg cursor-move border border-form-border dark:border-gray-700">
-                    <Icon name="heroicons:bars-2" class="w-5 h-5" />
-                  </div>
-                  <input type="color" v-model="form.kanban_colors[index]" class="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent shrink-0" />
-                  <input v-model="form.kanban_columns[index]" type="text" class="flex-1 px-4 py-2 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow" placeholder="Nom de la colonne" />
-                  <button type="button" @click="removeKanbanColumn(index)" class="p-2 text-gray-400 hover:text-red-500 transition-colors bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 rounded-xl" title="Supprimer">
-                    <Icon name="heroicons:trash" class="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <button type="button" @click="addKanbanColumn" class="text-sm font-medium text-primary hover:text-blue-600 dark:text-blue-400 transition-colors flex items-center gap-2 mt-4">
-                <Icon name="heroicons:plus-circle" class="w-5 h-5" />
-                Ajouter une colonne
-              </button>
-
-              <div class="pt-4 flex justify-end border-t border-form-border dark:border-gray-800">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 neo-emboss" :disabled="isLoading">
-                  <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
-                  Sauvegarder les colonnes
-                </button>
-              </div>
-            </form>
-          </div>
-        </template>
-
-        <template v-if="activeTab === 'security'">
-          <!-- Danger Zone at the bottom of Security -->
-          <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 md:p-8 border border-red-200 dark:border-red-900/30 shadow-sm">
-            <h2 class="text-xl font-bold text-red-600 dark:text-red-400 mb-4">Zone de Danger</h2>
-            <p class="text-sm text-secondary dark:text-gray-400 mb-6">
-              La suppression d'un espace de travail est permanente. Tous les projets et tâches associés seront supprimés.
-            </p>
-            <button @click="confirmDelete" class="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
-              Supprimer l'espace de travail
-            </button>
-          </div>
-        </template>
-
-      </div>
+  <div class="w-full px-4 md:px-6 lg:px-8 pb-12">
+    
+    <!-- Top Nav / Back button -->
+    <div class="flex items-center gap-4 mb-8">
+      <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+        <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
+      </button>
     </div>
 
+    <!-- Header Block -->
+    <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-6 border border-gray-200/50 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 shadow-sm">
+      <div class="flex items-center gap-6">
+         <div class="w-20 h-20 rounded-[24px] flex items-center justify-center text-white font-bold text-4xl shadow-sm shrink-0 transition-colors duration-300" :style="{ backgroundColor: selectedColor }">
+            {{ form.name ? form.name.charAt(0).toUpperCase() : 'W' }}
+         </div>
+         <div>
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-main dark:text-white mb-2 truncate max-w-sm">{{ form.name }}</h1>
+         </div>
+      </div>
+      <button 
+        @click="makeActive" 
+        class="px-6 py-3 font-bold rounded-xl transition-colors shadow-md shrink-0 w-full md:w-auto text-white flex items-center justify-center"
+        :class="isActiveWorkspace ? 'bg-[#0891b2]/80 cursor-default shadow-[#0891b2]/10' : 'bg-[#0891b2] hover:bg-[#26b0ac] shadow-[#0891b2]/20'"
+        :disabled="isActiveWorkspace"
+      >
+        <span v-if="isActiveWorkspace">Workspace actif</span>
+        <span v-else>Définir comme actif</span>
+      </button>
+    </div>
 
+    <!-- Grid Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left Column (Informations & Membres) -->
+      <div class="lg:col-span-8 space-y-6">
+        
+        <!-- Informations Form -->
+        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+          <h2 class="text-xl font-bold text-main dark:text-white mb-6">Informations</h2>
+          
+          <form @submit.prevent="handleSave" class="space-y-6">
+            <div>
+              <label class="block text-[10px] font-mono font-bold tracking-widest text-secondary dark:text-gray-500 uppercase mb-2">Nom du Workspace</label>
+              <input v-model="form.name" type="text" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0891b2]/50 transition-shadow shadow-sm" />
+            </div>
 
+            <div>
+              <label class="block text-[10px] font-mono font-bold tracking-widest text-secondary dark:text-gray-500 uppercase mb-2">Description</label>
+              <textarea v-model="form.description" rows="3" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0891b2]/50 transition-shadow shadow-sm"></textarea>
+            </div>
+
+            <div class="pt-2">
+              <label class="block text-[10px] font-mono font-bold tracking-widest text-secondary dark:text-gray-500 uppercase mb-3">Couleur d'identité</label>
+              <div class="flex flex-wrap items-center gap-3">
+                 <button v-for="color in identityColors" :key="color" type="button" class="w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-sm" :class="selectedColor === color ? 'ring-2 ring-offset-2 ring-gray-400 dark:ring-gray-600 dark:ring-offset-[#1A1A1D]' : ''" :style="{ backgroundColor: color }" @click="selectedColor = color">
+                    <Icon v-if="selectedColor === color" name="heroicons:check" class="w-4 h-4 text-white" />
+                 </button>
+              </div>
+            </div>
+
+            <div class="pt-6 flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-gray-200/50 dark:border-gray-800">
+              <NuxtLink :to="`/organization/${orgId}/workspaces`" class="w-full sm:w-auto px-5 py-2.5 font-bold text-sm text-center text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors">
+                Annuler
+              </NuxtLink>
+              <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-cyan-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-cyan-600 hover:brightness-90 transition-colors flex items-center justify-center gap-2" :disabled="isLoading">
+                <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-4 h-4 animate-spin" />
+                Enregistrer
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Membres -->
+        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+           <div class="flex items-center justify-between mb-6">
+             <h2 class="text-xl font-bold text-main dark:text-white">Membres</h2>
+             <span class="text-xs text-secondary dark:text-gray-500 font-mono tracking-wider">{{ workspaceMembers.length }}</span>
+           </div>
+           
+           <div class="space-y-3" v-if="workspaceMembers.length > 0">
+             <div v-for="(member, index) in workspaceMembers" :key="member.id" class="flex items-center justify-between p-3 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-gray-200/50 dark:hover:border-gray-800" :class="index !== 0 ? 'border-t border-gray-200/50 dark:border-gray-800' : ''">
+               <div class="flex items-center gap-4">
+                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 shadow-sm text-white" :style="{ backgroundColor: getIconColor((member.last_name || '') + (member.first_name || '')) }">
+                    {{ ((member.last_name || '').charAt(0) + (member.first_name || '').charAt(0)).toUpperCase() || 'U' }}
+                 </div>
+                 <span class="font-bold text-sm text-main dark:text-gray-200">{{ member.last_name }} {{ member.first_name }}</span>
+               </div>
+               <span class="text-[11px] font-mono text-gray-400 capitalize">{{ member.pivot?.role || 'Membre' }}</span>
+             </div>
+           </div>
+           <div v-else class="text-sm text-secondary dark:text-gray-500 text-center py-4">
+             Aucun membre trouvé.
+           </div>
+        </div>
+
+        <!-- Équipes -->
+        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+           <div class="flex items-center justify-between mb-6">
+             <h2 class="text-xl font-bold text-main dark:text-white">Équipes</h2>
+             <span class="text-xs text-secondary dark:text-gray-500 font-mono tracking-wider">{{ workspaceTeams.length }}</span>
+           </div>
+           
+           <div class="space-y-3" v-if="workspaceTeams.length > 0">
+             <div v-for="(team, index) in workspaceTeams" :key="team.id" class="flex items-center justify-between p-3 rounded-xl hover:bg-white/50 dark:hover:bg-white/5 transition-colors border border-transparent hover:border-gray-200/50 dark:hover:border-gray-800" :class="index !== 0 ? 'border-t border-gray-200/50 dark:border-gray-800' : ''">
+               <div class="flex items-center gap-4">
+                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 shadow-sm text-white" :style="{ backgroundColor: getIconColor(team.name) }">
+                    <Icon name="heroicons:user-group" class="w-5 h-5" />
+                 </div>
+                 <div class="flex flex-col">
+                   <span class="font-bold text-sm text-main dark:text-gray-200">{{ team.name }}</span>
+                   <span class="text-[11px] font-mono text-gray-500">{{ team.members_count || 0 }} membres</span>
+                 </div>
+               </div>
+               <NuxtLink :to="`/organization/${orgId}/workspace/${workspaceId}/team/${team.id}`" class="px-3 py-1.5 text-[11px] font-bold text-[#0891b2] hover:bg-[#0891b2]/10 rounded-lg transition-colors">
+                 Gérer
+               </NuxtLink>
+             </div>
+           </div>
+           <div v-else class="text-sm text-secondary dark:text-gray-500 text-center py-4">
+             Aucune équipe attachée.
+           </div>
+        </div>
+
+      </div>
+      
+      <!-- Right Column -->
+      <div class="lg:col-span-4 space-y-6">
+        
+        <!-- Aperçu -->
+        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+           <h2 class="text-lg font-bold text-main dark:text-white mb-6">Aperçu</h2>
+           <div class="flex items-center gap-8 mb-8">
+              <div>
+                <div class="text-2xl font-bold text-main dark:text-white">{{ workspaceMembers.length }}</div>
+                <div class="text-[9px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase mt-1">Membres</div>
+              </div>
+           </div>
+           
+           <div class="flex items-center justify-between border-t border-gray-200/50 dark:border-gray-800 pt-5">
+             <span class="text-[10px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase">Créé le</span>
+             <span class="text-[11px] font-bold text-main dark:text-gray-300">{{ formatDate(currentWorkspace?.created_at) }}</span>
+           </div>
+        </div>
+
+        <!-- Organisations -->
+        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+           <div class="flex items-center justify-between mb-5">
+             <h2 class="text-lg font-bold text-main dark:text-white">Organisation</h2>
+             <span class="text-xs text-secondary dark:text-gray-500 font-mono">1</span>
+           </div>
+           
+           <div class="bg-white dark:bg-[#252525] rounded-xl p-3 flex items-center gap-3 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden" :class="!activeOrganization?.logo ? 'bg-cyan-50 text-primary dark:bg-cyan-900/30 dark:text-cyan-400' : 'bg-transparent'">
+                <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                <span v-else>{{ activeOrganization?.name ? activeOrganization.name.charAt(0).toUpperCase() : 'N' }}</span>
+              </div>
+             <span class="font-bold text-sm text-main dark:text-gray-200 truncate">{{ activeOrganization?.name || 'Neo Start Technology' }}</span>
+           </div>
+        </div>
+
+        <!-- Zone sensible -->
+        <div class="bg-[#FFF5F5] dark:bg-red-900/10 rounded-[32px] p-8 border border-red-200 dark:border-red-900/30 shadow-sm">
+          <h2 class="text-lg font-bold text-red-500 dark:text-red-400 mb-3">Zone sensible</h2>
+          <p class="text-[11px] text-gray-500 dark:text-red-300/70 mb-5 leading-relaxed">
+            La suppression d'un workspace efface définitivement ses organisations, équipes et projets.
+          </p>
+          <button @click="confirmDelete" class="w-full py-2.5 px-4 bg-transparent border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors shadow-sm">
+            <Icon name="heroicons:trash" class="w-4 h-4" />
+            Supprimer le workspace
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Custom Delete Workspace Modal -->
+    <div v-if="isDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+      <div @click="isDeleteModalOpen = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+      <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden transform transition-all relative z-10 animate-fade-in-up">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-main dark:text-white">Supprimer le workspace</h3>
+          <button @click="isDeleteModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="p-6">
+          <p class="text-secondary dark:text-gray-400 mb-4">
+            Êtes-vous sûr de vouloir supprimer cet espace de travail ? Cette action est irréversible et supprimera toutes les données associées.
+          </p>
+        </div>
+        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50 dark:bg-black/10">
+          <button @click="isDeleteModalOpen = false" class="px-5 py-2.5 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            Annuler
+          </button>
+          <button @click="executeDeleteWorkspace" class="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>

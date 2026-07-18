@@ -99,7 +99,7 @@ onBeforeUnmount(() => {
             :class="[
               'px-3 py-2 rounded-lg cursor-pointer flex items-center gap-2 text-sm transition-colors',
               modelValue === option.value 
-                ? 'bg-primary/10 text-primary font-medium dark:bg-blue-500/20 dark:text-blue-400' 
+                ? 'bg-primary/10 text-primary font-medium dark:bg-primary/20 dark:text-blue-400' 
                 : 'text-main dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
             ]"
           >

@@ -110,7 +110,7 @@ const toggleColorPicker = (event: MouseEvent) => {
 const { $api } = useNuxtApp()
 const { activeOrganization } = useOrganizations()
 
-const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
 const orgMembers = ref<any[]>([])
 
 const fetchOrgMembers = async () => {
@@ -287,7 +287,7 @@ const isItemOverdue = (item: any) => {
       </div>
 
       <!-- Inline Create Form -->
-      <div v-if="isCreating" ref="createFormRef" class="bg-card dark:bg-[#222224] rounded-lg p-3 mb-2 border-2 border-primary dark:border-blue-500 shadow-sm flex flex-col gap-2">
+      <div v-if="isCreating" ref="createFormRef" class="bg-card dark:bg-[#222224] rounded-lg p-3 mb-2 border-2 border-primary dark:border-primary shadow-sm flex flex-col gap-2">
         <textarea 
           v-model="newTaskTitle"
           class="w-full bg-transparent text-main dark:text-gray-200 text-[15px] placeholder-secondary dark:placeholder-gray-500 focus:outline-none resize-none"
@@ -304,13 +304,13 @@ const isItemOverdue = (item: any) => {
               v-model="newTaskProject"
               :options="availableProjects.map(p => ({ value: p.id, label: p.name }))"
               placeholder="Projet"
-              buttonClass="text-[11px] font-medium text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer w-24 flex justify-between items-center"
+              buttonClass="text-[11px] font-medium text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary cursor-pointer w-24 flex justify-between items-center"
               dropdownClass="w-32 mt-1 bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-200 dark:border-gray-800 z-50 absolute left-0 top-full"
             />
             
             <!-- Calendar Date Picker -->
             <div class="relative flex items-center">
-              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer" />
+              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-main dark:text-gray-300 bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary cursor-pointer" />
             </div>
             
             <!-- User -->
@@ -350,7 +350,7 @@ const isItemOverdue = (item: any) => {
             </div>
           </div>
           
-          <button @click="submitNewTask" class="p-1 text-secondary dark:text-gray-600 hover:text-primary dark:hover:text-blue-500 border border-form-border dark:border-gray-700 hover:border-primary dark:hover:border-blue-500 rounded transition-colors flex items-center justify-center">
+          <button @click="submitNewTask" class="p-1 text-secondary dark:text-gray-600 hover:text-cyan-600 dark:hover:text-cyan-600 border border-form-border dark:border-gray-700 hover:border-cyan-600 dark:hover:border-cyan-600 rounded transition-colors flex items-center justify-center">
             <Icon name="heroicons:paper-airplane" class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -425,8 +425,8 @@ const isItemOverdue = (item: any) => {
                    <span class="truncate">{{ item.projetName }}</span>
                  </div>
                  <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
-                    <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                      <div v-if="item.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                    <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors">
+                      <div v-if="item.status === 'done'" class="w-2 h-2 bg-primary dark:bg-primary rounded-full"></div>
                     </div>
                     <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
                     <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': item.status === 'done' }">{{ item.reference }}</span>

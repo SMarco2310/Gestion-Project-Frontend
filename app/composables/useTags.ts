@@ -1,11 +1,11 @@
 import { ref } from 'vue'
 
 export interface Tag {
-  id: number
+  id: string | number
   name: string
   color: string | null
   is_default: boolean
-  user_id: number | null
+  user_id: string | number | null
 }
 
 export default function useTags() {
@@ -64,7 +64,7 @@ export default function useTags() {
         method: 'PUT',
         body: payload
       })
-      const index = tags.value.findIndex(t => t.id === Number(tagId))
+      const index = tags.value.findIndex(t => String(t.id) === String(tagId))
       if (index !== -1) {
         tags.value[index] = response.tag
       }
@@ -86,7 +86,7 @@ export default function useTags() {
       await $api(`/tags/${tagId}`, {
         method: 'DELETE'
       })
-      tags.value = tags.value.filter(t => t.id !== Number(tagId))
+      tags.value = tags.value.filter(t => String(t.id) !== String(tagId))
     } catch (e: any) {
       error.value = e.message || 'Erreur lors de la suppression de l\'étiquette'
       console.error(e)

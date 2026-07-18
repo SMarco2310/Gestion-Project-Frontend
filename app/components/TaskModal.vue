@@ -63,7 +63,7 @@ const taskBannerImage = ref('')
 const isAssigneeDropdownOpen = ref(false)
 const taskAssignee = ref<any>(null)
 const orgMembers = ref<any[]>([])
-const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
 
 const fetchOrgMembers = async () => {
   if (!activeOrganization.value) return
@@ -371,7 +371,7 @@ const statusConfig = computed(() => {
     } else if (lowerCol === 'à faire' || lowerCol === 'to do') {
       colorClass = 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500'
     } else if (lowerCol === 'en cours' || lowerCol === 'in progress') {
-      colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500'
+      colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-primary'
     } else if (lowerCol === 'terminé' || lowerCol === 'done') {
       colorClass = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500'
     }
@@ -395,7 +395,7 @@ const statusConfig = computed(() => {
 
 const priorityConfig: Record<string, { label: string; colorClass: string; icon: string }> = {
   faible: { label: 'FAIBLE', colorClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', icon: 'ph:caret-down-bold' },
-  moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-500', icon: 'ph:equals-bold' },
+  moyen: { label: 'MOYEN', colorClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-primary', icon: 'ph:equals-bold' },
   'élevé': { label: 'ÉLEVÉ', icon: 'heroicons:chevron-double-up', colorClass: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
 }
 
@@ -834,7 +834,10 @@ watch(() => props.isOpen, (newIsOpen) => {
             <div class="flex items-center gap-1 sm:gap-2 shrink-0">
               <button v-if="!isEditing" @click="startEditing" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier"><Icon name="heroicons:pencil" class="w-5 h-5" /></button>
               <button v-if="!isEditing" @click="handleDelete" class="p-1.5 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer"><Icon name="heroicons:trash" class="w-5 h-5" /></button>
-              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-blue-600 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
+              <NuxtLink v-if="taskId && !$route.path.includes('/tasks/' + taskId)" :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/tasks/${taskId}`" @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Agrandir">
+                <Icon name="heroicons:arrows-pointing-out" class="w-5 h-5" />
+              </NuxtLink>
+              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-cyan-600 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
               <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs sm:text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> <span class="hidden sm:inline">Annuler</span></button>
               <div class="hidden sm:block w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
               <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
@@ -870,7 +873,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               <h1 v-if="!isEditing" class="text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-4 leading-tight">
                 {{ taskTitle }}
               </h1>
-              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-4 bg-transparent focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 rounded-lg py-2 px-3 -ml-3" />
+              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-2xl sm:text-3xl font-bold text-main dark:text-gray-200 mb-4 bg-transparent focus:ring-2 focus:ring-primary dark:focus:ring-primary rounded-lg py-2 px-3 -ml-3" />
               
               <!-- Quick Actions Row -->
               <div class="flex flex-wrap gap-2 mb-8 items-center">
@@ -891,7 +894,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
                         {{ statusConfig[col]?.label || col }}
                       </span>
-                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4 text-primary dark:text-blue-500" />
+                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4 text-primary dark:text-primary" />
                     </button>
                   </div>
                 </div>
@@ -899,15 +902,25 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <!-- Assignee -->
                 <div class="relative">
                   <button @click="isAssigneeDropdownOpen = !isAssigneeDropdownOpen" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-gray-700 dark:text-gray-300 rounded-md font-bold text-xs transition-colors hover:brightness-105">
-                    <Icon name="heroicons:user" class="w-3.5 h-3.5" />
-                    <span v-if="taskAssignee" class="truncate max-w-[100px]">{{ taskAssignee.last_name + ' ' + taskAssignee.first_name }}</span>
-                    <span v-else>Assigner</span>
+                    <div v-if="taskAssignee" class="flex items-center gap-1.5">
+                      <div v-if="taskAssignee.profile_picture" class="w-4 h-4 rounded-full overflow-hidden">
+                        <img :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : backendBaseUrl + taskAssignee.profile_picture" class="w-full h-full object-cover" />
+                      </div>
+                      <div v-else class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm">
+                        {{ (taskAssignee.last_name || '').charAt(0).toUpperCase() }}{{ (taskAssignee.first_name || '').charAt(0).toUpperCase() || 'U' }}
+                      </div>
+                      <span class="truncate max-w-[100px]">{{ taskAssignee.last_name + ' ' + taskAssignee.first_name }}</span>
+                    </div>
+                    <div v-else class="flex items-center gap-1.5">
+                      <Icon name="heroicons:user" class="w-3.5 h-3.5" />
+                      <span>Assigner</span>
+                    </div>
                   </button>
                   <div v-if="isAssigneeDropdownOpen" @click="isAssigneeDropdownOpen = false" class="fixed inset-0 z-40"></div>
                   <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-56 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
                     <div class="p-2 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
                       <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
-                      <button class="text-primary dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
+                      <button class="text-cyan-600 dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
                     </div>
                     <ul class="p-1 max-h-48 overflow-y-auto custom-scrollbar">
                       <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(null)">
@@ -917,9 +930,12 @@ watch(() => props.isOpen, (newIsOpen) => {
                         <span class="text-secondary dark:text-gray-400">Non assigné</span>
                       </li>
                       <li v-for="member in orgMembers" :key="member.id" class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(member)">
-                        <div class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
-                          <img :src="member?.profile_picture ? (member.profile_picture.startsWith('http') ? member.profile_picture : backendBaseUrl + member.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(member?.last_name || '').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="Avatar" class="w-full h-full object-cover" />
+                        <div v-if="member?.profile_picture" class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
+                          <img :src="member.profile_picture.startsWith('http') ? member.profile_picture : backendBaseUrl + member.profile_picture" alt="Avatar" class="w-full h-full object-cover" />
                         </div> 
+                        <div v-else class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-transparent">
+                          {{ (member?.last_name || '').charAt(0).toUpperCase() }}{{ (member?.first_name || '').charAt(0).toUpperCase() || 'U' }}
+                        </div>
                         {{ member.last_name + ' ' + member.first_name }}
                       </li>
                     </ul>
@@ -945,7 +961,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                     </div>
                     <div v-if="!isCreatingLabel" class="flex flex-col">
                       <div class="p-2">
-                        <input v-model="labelSearchQuery" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" placeholder="Rechercher une étiquette..." />
+                        <input v-model="labelSearchQuery" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-primary" placeholder="Rechercher une étiquette..." />
                       </div>
                       <div class="max-h-60 overflow-y-auto px-2 pb-2 custom-scrollbar flex flex-col gap-1">
                         <div v-for="tag in filteredLabels" :key="tag.id" class="flex items-center gap-2 group/label">
@@ -969,7 +985,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       <div class="w-full py-2 px-3 rounded font-bold text-xs uppercase flex items-center gap-2 shadow-sm" :style="{ backgroundColor: labelFormColor + '33', color: labelFormColor }"><span class="w-4"></span> {{ labelFormName || 'APERÇU' }}</div>
                       <div class="flex flex-col gap-1">
                         <label class="text-xs font-bold text-secondary dark:text-gray-500">Titre</label>
-                        <input v-model="labelFormName" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-blue-500" />
+                        <input v-model="labelFormName" type="text" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-1.5 text-xs text-main dark:text-gray-200 focus:outline-none focus:border-primary dark:focus:border-primary" />
                       </div>
                       <div class="flex flex-col gap-1">
                         <label class="text-xs font-bold text-secondary dark:text-gray-500">Couleur</label>
@@ -981,7 +997,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       </div>
                       <div class="flex gap-2 mt-2">
                         <button @click="isCreatingLabel = false" class="flex-1 py-1.5 rounded bg-gray-200 dark:bg-gray-800 text-main dark:text-gray-300 text-xs font-bold transition-colors">Annuler</button>
-                        <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-blue-500 text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
+                        <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-cyan-600 text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
                       </div>
                     </div>
                   </div>
@@ -1015,8 +1031,8 @@ watch(() => props.isOpen, (newIsOpen) => {
               </div>
 
               <!-- Display selected labels if any -->
-              <div v-if="taskTags.length > 0" class="flex flex-wrap gap-1.5 mb-6">
-                <span v-for="tag in taskTags" :key="tag.id" class="px-2 py-0.5 rounded text-[11px] font-bold uppercase shadow-sm" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '33', color: tag.color || '#9CA3AF' }">
+              <div v-if="taskTags.length > 0" class="flex flex-wrap gap-2 mb-8">
+                <span v-for="tag in taskTags" :key="tag.id" class="px-3 py-1 rounded-md text-[13px] font-black uppercase shadow-sm" :style="{ backgroundColor: (tag.color || '#9CA3AF') + '33', color: tag.color || '#9CA3AF' }">
                   {{ tag.name }}
                 </span>
               </div>
@@ -1050,7 +1066,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <input v-model="newChecklistTitle" type="text" placeholder="Titre de la checklist..." class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:border-primary" @keydown.enter="handleAddChecklist" />
                   <div class="flex gap-2 justify-end">
                     <button @click="isAddingChecklist = false" class="px-3 py-1.5 rounded text-secondary dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Annuler</button>
-                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded bg-blue-500 text-white text-xs font-bold shadow-sm hover:bg-blue-600 transition-colors">Enregistrer</button>
+                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded bg-cyan-600 text-white text-xs font-bold shadow-sm hover:bg-cyan-600 transition-colors">Enregistrer</button>
                   </div>
                 </div>
 
@@ -1067,14 +1083,14 @@ watch(() => props.isOpen, (newIsOpen) => {
                     <div v-if="checklist.items && checklist.items.length > 0" class="flex items-center gap-3 mb-2">
                       <span class="text-[10px] font-bold text-secondary">{{ Math.round((checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100) }}%</span>
                       <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
+                        <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
                       </div>
                     </div>
 
                     <div class="flex flex-col gap-1">
                       <div v-for="item in checklist.items" :key="item.id" class="flex items-center gap-3 group/item p-1 -mx-1 rounded hover:bg-gray-100 dark:hover:bg-[#1A1A1D] transition-colors">
                         <div @click="toggleChecklistItem(item)" class="w-4 h-4 rounded border-2 border-secondary dark:border-gray-500 flex items-center justify-center cursor-pointer hover:border-primary transition-colors bg-white dark:bg-[#222224]">
-                          <Icon v-if="item.is_done" name="heroicons:check" class="w-3 h-3 text-primary dark:text-blue-500" />
+                          <Icon v-if="item.is_done" name="heroicons:check" class="w-3 h-3 text-primary dark:text-primary" />
                         </div>
                         <span class="text-sm flex-1 text-main dark:text-gray-300" :class="{'line-through text-secondary dark:text-gray-500': item.is_done}">{{ item.content }}</span>
                         <button @click="handleDeleteChecklistItem(checklist, item.id)" class="text-secondary opacity-0 group-hover/item:opacity-100 hover:text-red-500 transition-all p-1">
@@ -1138,15 +1154,15 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <div v-if="taskSubtasks.length > 0" class="flex items-center gap-3 mb-4">
                   <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100) }}%</span>
                   <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div class="h-full bg-blue-500 transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
+                    <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
                   </div>
                 </div>
 
                 <div v-if="taskSubtasks && taskSubtasks.length > 0" class="flex flex-col gap-2">
-                  <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-white dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer shadow-sm">
+                  <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-white dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-primary transition-colors group cursor-pointer shadow-sm">
                     <div class="flex items-center gap-3 overflow-hidden">
-                      <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-blue-500 transition-colors">
-                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-blue-500 rounded-full"></div>
+                      <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors">
+                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-primary rounded-full"></div>
                       </div>
                       <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'done'}">{{ sub.title }}</span>
                     </div>
@@ -1157,11 +1173,11 @@ watch(() => props.isOpen, (newIsOpen) => {
                 </div>
               </div>
               
-              <!-- Timestamps under content -->
-              <div class="mt-auto pt-8 flex flex-wrap items-center gap-4 text-xs text-secondary dark:text-gray-500">
+              <!-- Footer -->
+              <div class="mt-8 pt-4 border-t border-dashed border-form-border dark:border-gray-800 text-xs text-secondary dark:text-gray-500 flex flex-wrap gap-4 items-center opacity-70">
                 <span class="flex items-center gap-1">Rapporteur: {{ user?.last_name + ' ' + user?.first_name || 'Moi' }}</span>
-                <span v-if="taskCreatedAt">Créé: {{ new Date(taskCreatedAt).toLocaleDateString() }}</span>
-                <span v-if="taskUpdatedAt">Mis à jour: {{ new Date(taskUpdatedAt).toLocaleDateString() }}</span>
+                <span v-if="taskCreatedAt">Créé: {{ formatDisplayDate(taskCreatedAt) }}</span>
+                <span v-if="taskUpdatedAt">Mis à jour: {{ formatDisplayDate(taskUpdatedAt) }}</span>
               </div>
             </div>
 
@@ -1178,7 +1194,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               <!-- Add Comment Input -->
               <div class="flex flex-col gap-3 mb-8">
                 <div class="relative w-full">
-                  <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-blue-500 rounded-lg p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none shadow-sm transition-colors" rows="3" placeholder="Écrivez un commentaire..."></textarea>
+                  <textarea ref="commentTextarea" v-model="commentText" @input="handleCommentInput" class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 focus:border-primary dark:focus:border-primary rounded-lg p-3 text-sm text-main dark:text-gray-200 focus:outline-none resize-none shadow-sm transition-colors" rows="3" placeholder="Écrivez un commentaire..."></textarea>
                   
                   <!-- Mention Dropdown -->
                   <div v-if="showMentionDropdown" class="absolute top-full mt-1 left-0 w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col max-h-48">
@@ -1196,7 +1212,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   </div>
                 </div>
                 <div class="flex justify-end">
-                  <button @click="sendComment" class="px-4 py-1.5 rounded bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-semibold shadow-sm">
+                  <button @click="sendComment" class="px-4 py-1.5 rounded bg-cyan-600 text-white hover:bg-cyan-600 transition-colors text-sm font-semibold shadow-sm">
                     Envoyer
                   </button>
                 </div>
@@ -1205,7 +1221,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               <!-- Comments List -->
               <div v-if="commentaires && commentaires.length > 0" class="flex flex-col gap-5">
                 <div v-for="comment in commentaires" :key="comment.id" class="flex gap-3">
-                  <div class="w-8 h-8 rounded-full bg-blue-600 shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm mt-0.5">
+                  <div class="w-8 h-8 rounded-full bg-primary shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm mt-0.5">
                     {{ ((comment as any).user?.last_name || 'U').charAt(0).toUpperCase() + ((comment as any).user?.first_name || '').charAt(0).toUpperCase() }}
                   </div>
                   <div class="flex-1 min-w-0">
@@ -1216,7 +1232,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                     
                     <div class="bg-white dark:bg-[#222224] border border-form-border dark:border-gray-800 rounded-lg p-3 shadow-sm relative group">
                       <div v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-blue-500 dark:hover:text-blue-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors rounded shadow-sm" title="Modifier">
+                        <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-cyan-600 dark:hover:text-blue-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors rounded shadow-sm" title="Modifier">
                           <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
                         </button>
                         <button @click="handleDeleteComment(comment.id)" class="p-1.5 text-secondary hover:text-red-500 dark:hover:text-red-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors rounded shadow-sm" title="Supprimer">
@@ -1225,9 +1241,9 @@ watch(() => props.isOpen, (newIsOpen) => {
                       </div>
                       
                       <div v-if="editingCommentId === comment.id">
-                        <textarea v-model="editingCommentText" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 resize-none" rows="2"></textarea>
+                        <textarea v-model="editingCommentText" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary resize-none" rows="2"></textarea>
                         <div class="flex items-center gap-2 mt-2">
-                          <button @click="saveEditComment" class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
+                          <button @click="saveEditComment" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
                           <button @click="cancelEditComment" class="px-3 py-1 text-xs font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors">Annuler</button>
                         </div>
                       </div>

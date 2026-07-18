@@ -15,7 +15,7 @@ const props = defineProps<{
 const emit = defineEmits(['taskClick'])
 
 const topStats = computed(() => [
-  { title: 'TOTAL USERS', value: props.totalUsers.toString(), trendColor: 'text-blue-500' },
+  { title: 'TOTAL USERS', value: props.totalUsers.toString(), trendColor: 'text-primary' },
   { title: 'PROJETS ACTIFS', value: props.activeProjects.toString(), trendColor: 'text-indigo-400' }
 ])
 
@@ -44,7 +44,7 @@ const chartData = computed(() => {
 const categories = {
   tasks: {
     name: 'Tâches Créées',
-    color: '#3b82f6'
+    color: '#0891b2'
   }
 }
 
@@ -99,7 +99,7 @@ const recentTasks = computed(() => {
       
       if (s === 'en cours' || s === 'in_progress') {
         statusBg = 'bg-blue-50 dark:bg-blue-900/30'
-        statusText = 'text-blue-500'
+        statusText = 'text-primary'
       } else if (s === 'terminé' || s === 'done') {
         statusBg = 'bg-emerald-50 dark:bg-emerald-900/30'
         statusText = 'text-emerald-500'
@@ -114,7 +114,7 @@ const recentTasks = computed(() => {
       const user = t.user || t.assignee
       const initials = (user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || '?';
       
-      const userColors = ['bg-blue-500', 'bg-indigo-600', 'bg-[#00A3CB]', 'bg-purple-500', 'bg-emerald-500']
+      const userColors = ['bg-primary', 'bg-indigo-600', 'bg-[#00A3CB]', 'bg-purple-500', 'bg-emerald-500']
       
       return {
         id: t.id,

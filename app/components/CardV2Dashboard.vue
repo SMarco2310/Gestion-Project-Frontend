@@ -52,7 +52,7 @@ const priorityData = computed(() => {
 const priorityCategories = {
   Tâches: {
     name: 'Tâches',
-    color: '#3b82f6'
+    color: '#0891b2'
   }
 }
 

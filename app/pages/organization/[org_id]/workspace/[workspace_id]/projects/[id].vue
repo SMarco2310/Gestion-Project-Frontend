@@ -17,7 +17,7 @@ const { isOwner, user } = useAuth()
 const { getTeams } = useTeams()
 const { activeOrganization, getMembers } = useOrganizations()
 
-const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment } = useProjets()
+const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment, archiveProjet } = useProjets()
 const { getTasks } = useTasks()
 const { addToast } = useToast()
 
@@ -71,8 +71,23 @@ const getFileIcon = (mimeType: string) => {
   return 'heroicons:document'
 }
 
+const { goBack: smartBack } = useSmartBack()
 const goBack = () => {
-  navigateTo(`/organization/${route.params.org_id}/projects`)
+  smartBack(`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/projects`)
+}
+
+const isArchiving = ref(false)
+const handleArchive = async () => {
+  isArchiving.value = true
+  try {
+    await archiveProjet(projectId, true)
+    addToast({ title: 'Projet archivé', message: 'Le projet a été archivé avec succès.', type: 'success' })
+    goBack()
+  } catch (e) {
+    addToast({ title: 'Erreur', message: 'Impossible d\'archiver le projet.', type: 'error' })
+  } finally {
+    isArchiving.value = false
+  }
 }
 
 const isEditing = ref(false)
@@ -87,6 +102,19 @@ const editDescription = ref('')
 const editStartDate = ref('')
 const editEndDate = ref('')
 const editColor = ref('blue')
+
+const getProjectColorClass = (color: string) => {
+  const colors: Record<string, string> = {
+    purple: 'from-purple-400 to-purple-600',
+    blue: 'from-blue-400 to-blue-600',
+    green: 'from-emerald-400 to-emerald-600',
+    rose: 'from-rose-400 to-rose-600',
+    amber: 'from-amber-400 to-amber-600',
+    slate: 'from-slate-400 to-slate-600',
+  }
+  return colors[color] || colors['purple']
+}
+
 
 const totalTasks = ref(0)
 const todoTasks = ref(0)
@@ -107,7 +135,10 @@ const availableTeams = ref<any[]>([])
 const filteredAssignees = computed(() => {
   const query = assignSearchQuery.value.toLowerCase()
   return {
-    members: availableMembers.value.filter(m => m.name.toLowerCase().includes(query) || m.email?.toLowerCase().includes(query)),
+    members: availableMembers.value.filter(m => {
+      const fullName = `${m.first_name || ''} ${m.last_name || ''}`.trim().toLowerCase()
+      return fullName.includes(query) || (m.email?.toLowerCase() || '').includes(query)
+    }),
     teams: availableTeams.value.filter(t => t.name.toLowerCase().includes(query))
   }
 })
@@ -150,27 +181,31 @@ const removeTeam = async (team: any) => {
   assignedTeams.value = assignedTeams.value.filter(t => t.id !== team.id)
   availableTeams.value.push(team)
   if (!isEditing.value && projectId) {
-    await saveInstant()
+    await saveInstant('Équipe retirée', 'L\'équipe a été retirée du projet avec succès.')
   }
 }
 
 const projectStatus = ref('à faire')
 const isStatusDropdownOpen = ref(false)
 
-const saveInstant = async () => {
+const saveInstant = async (customTitle?: string, customMessage?: string) => {
     try {
       await updateProjet(
         Number(projectId),
         projectTitle.value,
         projectDescription.value,
-        projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
-        projectEndDate.value ? String(projectEndDate.value).split('T')[0] || '' : '',
+        projectStartDate.value ? String(projectStartDate.value).split('T')[0]?.split(' ')[0] || '' : '',
+        projectEndDate.value ? String(projectEndDate.value).split('T')[0]?.split(' ')[0] || '' : '',
         projectStatus.value,
         projectColor.value,
         assignedTeams.value.map(t => t.id),
         assignedMembers.value.map(m => m.id)
       )
-      addToast({ title: 'Équipe modifiée', message: 'L\'équipe du projet a été mise à jour.', type: 'success' })
+      addToast({ 
+        title: customTitle || 'Équipe modifiée', 
+        message: customMessage || 'L\'équipe du projet a été mise à jour.', 
+        type: 'success' 
+      })
     } catch(e) {
       addToast({ title: 'Erreur', message: 'Impossible de mettre à jour l\'équipe.', type: 'error' })
     }
@@ -246,8 +281,8 @@ const fetchProject = async (id: number | string | null) => {
 const startEditing = () => {
   editTitle.value = projectTitle.value
   editDescription.value = unescapeHtml(projectDescription.value)
-  editStartDate.value = projectStartDate.value ? (projectStartDate.value.split('T')[0] ?? '') : ''
-  editEndDate.value = projectEndDate.value ? (projectEndDate.value.split('T')[0] ?? '') : ''
+  editStartDate.value = projectStartDate.value ? (projectStartDate.value.split('T')[0]?.split(' ')[0] ?? '') : ''
+  editEndDate.value = projectEndDate.value ? (projectEndDate.value.split('T')[0]?.split(' ')[0] ?? '') : ''
   editColor.value = projectColor.value
   isEditing.value = true
 }
@@ -299,7 +334,7 @@ const executeDeleteProject = async () => {
   if (!projectId) return
   
   try {
-    await deleteProjet(Number(projectId))
+    await deleteProjet(projectId)
     addToast({ title: 'Projet supprimé', message: 'Le projet a été supprimé avec succès.', type: 'success' })
     isDeleteModalOpen.value = false
     goBack()
@@ -308,10 +343,10 @@ const executeDeleteProject = async () => {
   }
 }
 
-const statusConfig: Record<string, { label: string, colorClass: string }> = {
-  'à faire': { label: 'À faire', colorClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' },
-  'en cours': { label: 'En cours', colorClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' },
-  'terminé': { label: 'Terminé', colorClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' }
+const statusConfig: Record<string, { label: string, colorClass: string, dotClass: string }> = {
+  'à faire': { label: 'À faire', colorClass: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400', dotClass: 'bg-orange-500' },
+  'en cours': { label: 'En cours', colorClass: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400', dotClass: 'bg-primary' },
+  'terminé': { label: 'Terminé', colorClass: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400', dotClass: 'bg-emerald-500' }
 }
 
 const isOverdue = computed(() => {
@@ -338,8 +373,8 @@ const updateStatus = async (status: string) => {
       Number(projectId),
       projectTitle.value,
       projectDescription.value,
-      projectStartDate.value ? String(projectStartDate.value).split('T')[0] || '' : '',
-      projectEndDate.value ? String(projectEndDate.value).split('T')[0] || '' : '',
+      projectStartDate.value ? String(projectStartDate.value).split('T')[0]?.split(' ')[0] || '' : '',
+      projectEndDate.value ? String(projectEndDate.value).split('T')[0]?.split(' ')[0] || '' : '',
       status,
       projectColor.value,
       assignedTeams.value.map(t => t.id),
@@ -366,314 +401,249 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-white dark:bg-[#1D1D1D]">
-    <div class="w-full flex flex-col h-full relative">
+  <div class="h-full flex flex-col bg-transparent dark:bg-transparent items-center">
+    <div class="w-full max-w-[1400px] flex flex-col h-full relative">
+      <!-- Top navigation -->
+      <div class="flex gap-2 px-4 md:px-6 lg:px-8 pt-6 pb-2 shrink-0 z-30 relative bg-transparent dark:bg-transparent">
+        <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+          <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
+        </button>
+      </div>
+
       <!-- Header -->
-      <header class="flex items-start justify-between px-6 lg:px-8 pt-6 lg:pt-8 pb-4 shrink-0 z-10 border-b border-form-border dark:border-gray-800">
-        <div class="flex items-center gap-4">
-          <button @click="goBack" class="flex items-center gap-1.5 p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors" title="Retour">
-            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
-            <span class="text-sm font-medium hidden sm:inline">Retour</span>
-          </button>
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-b from-blue-400 to-blue-500 neo-emboss flex items-center justify-center text-white shrink-0 shadow-sm mt-1">
+      <header class="flex flex-col md:flex-row md:items-center justify-between px-4 md:px-6 lg:px-8 py-4 md:py-5 shrink-0 z-30 relative bg-transparent dark:bg-transparent gap-4 md:gap-0">
+        <div class="flex items-start md:items-center gap-4 w-full md:w-auto">
+          <div :class="['w-10 h-10 rounded-lg bg-gradient-to-b flex items-center justify-center text-white shrink-0 shadow-sm mt-1 md:mt-0', getProjectColorClass(isEditing ? editColor : projectColor)]">
             <Icon name="heroicons:briefcase" class="w-5 h-5" />
           </div>
-          <div class="flex-1 pt-1">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[11px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider bg-gray-50 dark:bg-gray-800 px-2 py-0.5 rounded">{{ projectRef }}</span>
-            </div>
-            <h2 v-if="!isEditing" class="text-xl md:text-2xl font-bold text-main dark:text-gray-100 leading-tight">{{ projectTitle }}</h2>
-            <input v-else v-model="editTitle" type="text" class="neo-input w-full text-xl md:text-2xl font-bold text-main dark:text-gray-100 bg-gray-50 dark:bg-black/20 focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 rounded px-2 py-0.5 -ml-2" />
-          </div>
-        </div>
-        
-        <div class="flex items-center gap-1.5 shrink-0 p-1 rounded-lg">
-          <button v-if="!isEditing && canEdit" @click="startEditing" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 rounded transition-colors" title="Modifier">
-            <Icon name="heroicons:pencil" class="w-4 h-4" />
-          </button>
-          <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
-            <Icon name="heroicons:trash" class="w-4 h-4" />
-          </button>
-          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white neo-emboss rounded transition-all text-xs font-bold hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
-          <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs font-bold"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /> Annuler</button>
-        </div>
-      </header>
-
-      <!-- Content Two-Column Layout -->
-      <div class="flex-1 flex flex-col md:flex-row overflow-hidden z-10">
-        
-        <!-- Main Content (Left) -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8 flex flex-col gap-8 bg-white dark:bg-[#1D1D1D]">
-          
-          <!-- Description -->
-          <div>
-            <div class="flex items-center gap-2 mb-3">
-              <Icon name="heroicons:document-text" class="w-5 h-5 text-secondary dark:text-gray-400" />
-              <h3 class="text-base font-bold text-main dark:text-gray-200">Description</h3>
-            </div>
-            <div v-if="!isEditing" @click="startEditing" class="p-4 rounded-xl neo-input bg-gray-50/50 dark:bg-[#222224] text-secondary dark:text-gray-400 text-sm hover:bg-gray-100 dark:hover:bg-[#2A2A2D] cursor-text transition-colors min-h-[100px] shadow-inner prose dark:prose-invert max-w-none focus:outline-none" v-html="unescapeHtml(projectDescription) || 'Ajouter une description...'">
-            </div>
-            <RichTextEditor v-else v-model="editDescription" class="w-full shadow-inner" />
-          </div>
-
-          <!-- Tasks List -->
-          <div>
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <Icon name="heroicons:check-square" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                <h3 class="text-base font-bold text-main dark:text-gray-200">Tâches du projet</h3>
-              </div>
-              <NuxtLink :to="`/organization/${route.params.org_id || activeOrganization?.id}/tasks`" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline">Voir tout le tableau</NuxtLink>
-            </div>
-            
-            <div v-if="projectTasks.length > 0" class="flex flex-col gap-2">
-              <NuxtLink
-                v-for="task in projectTasks.slice(0, 5)" :key="task.id"
-                :to="`/organization/${route.params.org_id || activeOrganization?.id}/tasks/${task.id}`"
-                class="flex items-center justify-between p-3 bg-white dark:bg-[#222224] rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/50 dark:hover:border-blue-500/50 shadow-sm hover:shadow transition-all group cursor-pointer"
-              >
-                <div class="flex items-center gap-3 overflow-hidden">
-                  <div
-                    class="w-2.5 h-2.5 rounded-full shrink-0"
-                    :class="{
-                      'bg-orange-400': task.status === 'not done' || task.status === 'à faire',
-                      'bg-emerald-500': task.status === 'done' || task.status === 'terminé',
-                      'bg-blue-500': task.status !== 'à faire' && task.status !== 'terminé' && task.status !== 'done' && task.status !== 'not done'
-                    }"
-                  ></div>
-                  <span
-                    class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors"
-                    :class="{ 'line-through text-secondary dark:text-gray-500': task.status === 'done' || task.status === 'terminé' }"
-                  >{{ task.title }}</span>
-                </div>
-                <div class="flex items-center gap-3 shrink-0">
-                  <span
-                    class="text-[10px] font-bold px-2 py-0.5 rounded uppercase"
-                    :class="{
-                      'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400': task.status === 'done' || task.status === 'terminé',
-                      'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400': task.status !== 'done' && task.status !== 'terminé'
-                    }"
-                  >{{ task.status === 'done' || task.status === 'terminé' ? 'Terminé' : 'En cours' }}</span>
-                </div>
-              </NuxtLink>
-              <div v-if="projectTasks.length > 5" class="text-center mt-2">
-                <span class="text-xs font-bold text-secondary dark:text-gray-500 bg-gray-50 dark:bg-gray-800/50 px-3 py-1 rounded-full">+ {{ projectTasks.length - 5 }} autres tâches</span>
-              </div>
-            </div>
-            <div v-else class="text-sm text-secondary dark:text-gray-500 p-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center bg-gray-50 dark:bg-transparent">
-              <Icon name="heroicons:inbox" class="w-8 h-8 mx-auto mb-2 opacity-50" />
-              Aucune tâche dans ce projet pour le moment.
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Sidebar (Right) -->
-        <div class="w-full md:w-[320px] lg:w-[380px] shrink-0 flex flex-col overflow-y-auto custom-scrollbar bg-gray-50/50 dark:bg-[#151515] p-6 lg:p-8 gap-8 z-10 border-l border-form-border dark:border-gray-800">
-          
-          <!-- Quick Info Grid -->
-          <div class="flex flex-col gap-4">
-            
-            <!-- Status -->
-            <div>
-              <span class="block text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider mb-1.5">Statut</span>
-              <div class="relative">
-                <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['w-full justify-between px-3 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-1.5 hover:brightness-105 transition-colors shadow-sm', statusConfig[projectStatus]?.colorClass || '']">
-                  {{ statusConfig[projectStatus]?.label || projectStatus }} <Icon name="heroicons:chevron-down" class="w-3.5 h-3.5" />
-                </button>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">{{ projectRef }}</p>
+            <div class="flex items-center justify-between md:justify-start w-full md:w-auto md:flex-shrink-0 gap-2 sm:gap-3 mt-0.5">
+              <h1 v-if="!isEditing" class="text-2xl sm:text-3xl md:text-4xl font-bold text-main dark:text-gray-100 leading-tight truncate">{{ projectTitle }}</h1>
+              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-2xl sm:text-3xl md:text-4xl font-bold text-main dark:text-gray-100 bg-transparent focus:ring-2 focus:ring-primary rounded px-2 py-0.5" />
+              <!-- Status badge inline -->
+              <div class="relative shrink-0" v-if="!isEditing">
+                <button @click="isStatusDropdownOpen = !isStatusDropdownOpen" :class="['px-3 py-1 rounded-full font-bold text-xs flex items-center gap-1 hover:brightness-95 transition-colors w-max', statusConfig[projectStatus]?.colorClass || '']">{{ statusConfig[projectStatus]?.label || projectStatus }}<Icon name="heroicons:chevron-down" class="w-3 h-3" /></button>
                 <div v-if="isStatusDropdownOpen" @click="isStatusDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                <div v-if="isStatusDropdownOpen" class="absolute left-0 right-0 top-full mt-1 bg-card dark:bg-[#252525] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col p-1 gap-1">
-                  <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded-md text-left transition-colors flex items-center justify-between', projectStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800', config.colorClass]">
-                    {{ config.label }}
+                <div v-if="isStatusDropdownOpen" class="absolute right-0 md:left-0 md:right-auto top-full mt-1 bg-white dark:bg-[#252525] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col p-1 gap-1 min-w-[140px]">
+                  <button @click="updateStatus(key as string)" v-for="(config, key) in statusConfig" :key="key" :class="['px-3 py-2 text-xs font-bold rounded-md text-left transition-colors flex items-center justify-between text-main dark:text-gray-300', projectStatus === key ? 'bg-canvas dark:bg-gray-800' : 'hover:bg-canvas dark:hover:bg-gray-800']">
+                    <div class="flex items-center gap-2">
+                      <span class="w-2 h-2 rounded-full" :class="config.dotClass"></span>
+                      {{ config.label }}
+                    </div>
                     <Icon v-if="projectStatus === key" name="heroicons:check" class="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 hide-scrollbar">
+          <button v-if="!isEditing && canEdit" @click="startEditing" class="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 dark:border-gray-700 text-main dark:text-gray-300 bg-white dark:bg-[#2A2A2D] hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-medium shadow-sm">
+            <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
+          </button>
+          <button v-if="!isEditing && canEdit" @click="handleArchive" :disabled="isArchiving" class="flex items-center gap-1.5 px-3 py-1.5 border border-amber-300 dark:border-amber-700/50 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded-lg transition-colors text-sm font-medium shadow-sm disabled:opacity-60">
+            <Icon name="heroicons:archive-box" class="w-4 h-4" /> {{ isArchiving ? '...' : 'Archiver' }}
+          </button>
+          <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+            <Icon name="heroicons:trash" class="w-4 h-4" />
+          </button>
+          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 text-white rounded-lg transition-all text-sm font-bold hover:brightness-110"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
+          <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-bold"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /> Annuler</button>
+        </div>
+      </header>
 
-            <!-- Color Selection (Edit mode) -->
-            <div v-if="isEditing">
-              <span class="block text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider mb-1.5">Couleur du dossier</span>
-              <div class="flex items-center flex-wrap gap-2">
-                <button 
-                  v-for="color in ['purple', 'blue', 'green', 'rose', 'amber', 'slate']" 
-                  :key="color"
-                  @click="editColor = color"
-                  class="w-6 h-6 rounded-full border-2 transition-transform"
-                  :class="[
-                    editColor === color ? 'border-primary dark:border-blue-500 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
-                    {
-                      'bg-purple-400': color === 'purple',
-                      'bg-blue-400': color === 'blue',
-                      'bg-emerald-400': color === 'green',
-                      'bg-rose-400': color === 'rose',
-                      'bg-amber-400': color === 'amber',
-                      'bg-slate-400': color === 'slate'
-                    }
-                  ]"
-                ></button>
+      <!-- Content Two-Column Layout -->
+      <div class="flex-1 flex flex-col md:flex-row overflow-y-auto z-10 px-4 md:px-6 lg:px-8 gap-6 pb-8 pt-4">
+
+        <!-- Main Content (Left) -->
+        <div class="flex-1 flex flex-col gap-5 min-w-0">
+
+          <!-- Description + Progress card -->
+          <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
+            <p class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Description</p>
+            <div v-if="!isEditing" @click="startEditing" class="text-sm text-secondary dark:text-gray-400 cursor-text min-h-[48px] hover:text-main transition-colors prose dark:prose-invert max-w-none" v-html="unescapeHtml(projectDescription) || 'Ajouter une description...'"></div>
+            <RichTextEditor v-else v-model="editDescription" class="w-full" />
+            <!-- Color picker (edit mode) -->
+            <div v-if="isEditing" class="mt-4">
+              <p class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Couleur</p>
+              <div class="flex gap-2">
+                <button v-for="color in ['purple','blue','green','rose','amber','slate']" :key="color" @click="editColor = color" class="w-6 h-6 rounded-full border-2 transition-transform" :class="[editColor===color?'border-cyan-600 scale-110':'border-transparent hover:scale-105',{'bg-purple-400':color==='purple','bg-blue-400':color==='blue','bg-emerald-400':color==='green','bg-rose-400':color==='rose','bg-amber-400':color==='amber','bg-slate-400':color==='slate'}]"></button>
               </div>
             </div>
-
-            <!-- Dates -->
-            <div class="bg-white dark:bg-[#222224] rounded-xl p-3 border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col gap-3">
-              <div class="flex items-center justify-between gap-2">
-                 <div class="flex items-center gap-1.5">
-                   <Icon name="heroicons:calendar" class="w-4 h-4 text-secondary dark:text-gray-400" />
-                   <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Début</span>
-                 </div>
-                 <span v-if="!isEditing" class="text-xs text-main dark:text-gray-300 font-bold">{{ formatDate(projectStartDate) || '-' }}</span>
-                 <input v-else v-model="editStartDate" type="date" class="text-xs bg-gray-50 dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 text-main dark:text-gray-300 focus:outline-none" />
+            <!-- Progress -->
+            <div class="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div class="flex justify-between text-sm mb-1.5 font-medium">
+                <span class="text-main dark:text-gray-200 font-bold">Tâches accomplies ({{ doneTasks }}/{{ totalTasks }})</span>
+                <span class="text-primary dark:text-blue-400 font-bold">{{ tasksProgress }}%</span>
               </div>
-              <div class="w-full h-px bg-gray-100 dark:bg-gray-800"></div>
-              <div class="flex items-center justify-between gap-2">
-                 <div class="flex items-center gap-1.5">
-                   <Icon name="heroicons:flag" class="w-4 h-4 text-secondary dark:text-gray-400" />
-                   <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Échéance</span>
-                 </div>
-                 <div v-if="!isEditing" class="flex items-center gap-1.5">
-                   <div v-if="isOverdue" class="flex items-center justify-center w-4 h-4 bg-red-500 text-white rounded-full shadow-sm animate-pulse" title="En retard">
-                       <Icon name="heroicons:exclamation-triangle" class="w-2.5 h-2.5 mt-[1px]" />
-                   </div>
-                   <span class="text-xs font-bold" :class="isOverdue ? 'text-red-500 dark:text-red-400' : 'text-main dark:text-gray-300'">{{ formatDate(projectEndDate) || '-' }}</span>
-                 </div>
-                 <input v-else v-model="editEndDate" type="date" class="text-xs bg-gray-50 dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-1.5 py-1 text-main dark:text-gray-300 focus:outline-none" />
+              <div class="w-full h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                <div :class="['h-full bg-gradient-to-r transition-all duration-500 rounded-full', getProjectColorClass(projectColor)]" :style="{ width: `${tasksProgress}%` }"></div>
               </div>
             </div>
           </div>
 
-          <!-- Enhanced Progress -->
-          <div>
-            <div class="bg-white dark:bg-[#222224] rounded-xl p-5 border border-form-border dark:border-gray-800 shadow-sm flex flex-col gap-4">
-              <span class="block text-sm text-main dark:text-gray-200 font-bold mb-1">Progression globale</span>
-              
-              <div>
-                <div class="flex justify-between text-sm mb-1.5 font-medium">
-                  <span class="text-secondary dark:text-gray-400">Tâches accomplies ({{ doneTasks }}/{{ totalTasks }})</span>
-                  <span class="text-main dark:text-gray-200">{{ tasksProgress }}%</span>
+          <!-- Tasks card -->
+          <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-main dark:text-gray-200">Tâches du projet</h3>
+              <NuxtLink :to="`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/tasks`" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> AJOUTER</NuxtLink>
+            </div>
+            <div v-if="projectTasks.length > 0" class="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
+              <NuxtLink v-for="task in projectTasks" :key="task.id" :to="`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/tasks/${task.id}`" class="flex items-center justify-between py-3 group cursor-pointer">
+                <div class="flex items-center gap-3 overflow-hidden">
+                  <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="{'bg-emerald-500':task.status==='done'||task.status==='terminé','bg-orange-400':task.status==='à faire'||task.status==='not done','bg-primary':task.status!=='à faire'&&task.status!=='terminé'&&task.status!=='done'&&task.status!=='not done'}"></div>
+                  <span class="text-sm text-main dark:text-gray-300 truncate font-medium" :class="{'line-through text-secondary dark:text-gray-500':task.status==='done'||task.status==='terminé'}">{{ task.title }}</span>
                 </div>
-                <div class="w-full h-2 neo-input bg-[#E5E7EB] dark:bg-[#2A2A2D] rounded-lg overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-600 transition-all duration-500" :class="{ 'rounded-r-lg': tasksProgress < 100 }" :style="{ width: `${tasksProgress}%` }"></div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase" :class="{'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400':task.status==='done'||task.status==='terminé','bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400':task.status==='à faire'||task.status==='not done','bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400':task.status!=='à faire'&&task.status!=='terminé'&&task.status!=='done'&&task.status!=='not done'}">{{ task.status==='done'||task.status==='terminé'?'TERMINÉ':task.status==='à faire'||task.status==='not done'?'À FAIRE':'EN COURS' }}</span>
+                  <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ task.reference_code }}</span>
                 </div>
-              </div>
+              </NuxtLink>
+            </div>
+            <div v-else class="text-sm text-secondary dark:text-gray-500 py-6 text-center">
+              <Icon name="heroicons:inbox" class="w-7 h-7 mx-auto mb-2 opacity-40" />
+              Aucune tâche dans ce projet.
             </div>
           </div>
 
-          <!-- Team -->
-          <div>
-            <div class="flex items-center justify-between mb-2">
-              <span class="block text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Équipe</span>
-              <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1">
-                  <Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter
-                </button>
-                
-                <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
-                <div v-if="isAddDropdownOpen" class="absolute right-0 top-6 mt-1 w-56 bg-card dark:bg-[#252525] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[300px] overflow-hidden">
-                  <div class="p-2 border-b border-form-border dark:border-gray-800 shrink-0">
-                    <input v-model="assignSearchQuery" type="text" placeholder="Rechercher..." class="w-full bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 rounded px-3 py-2 text-sm text-main dark:text-white focus:outline-none focus:ring-1 focus:ring-primary" />
-                  </div>
-                  <div class="overflow-y-auto custom-scrollbar flex-1 p-1">
-                    <div v-if="filteredAssignees.teams.length > 0">
-                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipes</div>
-                      <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
-                        <div class="w-5 h-5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                          <Icon name="heroicons:user-group" class="w-3 h-3" />
-                        </div>
-                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
-                      </button>
-                    </div>
-                    <div v-if="filteredAssignees.members.length > 0" :class="{'mt-1 pt-1 border-t border-form-border dark:border-gray-800': filteredAssignees.teams.length > 0}">
-                      <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Membres</div>
-                      <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
-                        <div class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[9px] shrink-0">
-                          {{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}
-                        </div>
-                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ member.last_name + ' ' + member.first_name }}</span>
-                      </button>
-                    </div>
-                    <div v-if="filteredAssignees.teams.length === 0 && filteredAssignees.members.length === 0" class="p-3 text-center text-xs text-secondary dark:text-gray-500">
-                      Aucun résultat
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="flex flex-col gap-2">
-              <!-- Teams -->
-              <div v-if="assignedTeams.length > 0" class="flex flex-wrap gap-1.5 mb-1">
-                  <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-md text-xs font-bold">
-                    <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
-                    {{ team.name }}
-                    <button @click="removeTeam(team)" class="hover:text-blue-900 dark:hover:text-blue-200 ml-0.5">
-                      <Icon name="heroicons:x-mark" class="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-              </div>
-              
-              <!-- Members Stack & List -->
-              <div v-if="assignedMembers.length > 0" class="flex flex-col gap-2">
-                <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group bg-white dark:bg-[#222224] p-1.5 pr-2 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
-                  <div class="flex items-center gap-2.5 cursor-pointer flex-1 overflow-hidden" @click="navigateTo(`/profile/${member.id}`)">
-                      <div :class="['w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-[10px] shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
-                        <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
-                        <span v-else>{{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}</span>
-                      </div>
-                      <div class="flex flex-col truncate">
-                          <span class="text-xs font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ member.last_name + ' ' + member.first_name }}</span>
-                          <span class="text-[10px] text-secondary dark:text-gray-500 truncate leading-none">{{ member.role || 'Membre' }}</span>
-                      </div>
-                  </div>
-                  <button @click.stop="removeMember(member)" class="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
-                    <Icon name="heroicons:x-mark" class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              
-              <div v-if="assignedTeams.length === 0 && assignedMembers.length === 0" class="text-xs text-secondary dark:text-gray-500 italic p-3 border border-dashed border-gray-200 dark:border-gray-800 rounded-lg text-center bg-white dark:bg-transparent">
-                Aucun membre assigné
-              </div>
-            </div>
-          </div>
-          <!-- Attachments -->
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="block text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Pièces jointes</span>
-              <button @click="triggerFileInput" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
+          <!-- Attachments card -->
+          <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-bold text-main dark:text-gray-200">Pièces jointes</h3>
+              <button @click="triggerFileInput" :disabled="isUploading" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
                 <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
-                <Icon v-else name="heroicons:plus" class="w-3 h-3" /> 
-                {{ isUploading ? 'Ajout...' : 'Ajouter' }}
+                <Icon v-else name="heroicons:plus" class="w-3 h-3" />
+                {{ isUploading ? 'Ajout...' : 'AJOUTER' }}
               </button>
               <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
             </div>
-            
             <div v-if="projectAttachments.length > 0" class="flex flex-col gap-2">
-              <div v-for="attachment in projectAttachments" :key="attachment.id" class="group flex items-center justify-between p-2 bg-white dark:bg-[#222224] rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm transition-colors hover:border-primary/30">
-                <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `http://localhost:8000/storage/${attachment.file_path}`" target="_blank" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
-                  <div class="w-8 h-8 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <div v-for="attachment in projectAttachments" :key="attachment.id" class="group flex items-center justify-between p-3 bg-gray-50 dark:bg-[#1A1A1D] rounded-xl border border-gray-100 dark:border-gray-800 hover:border-primary/30 transition-colors">
+                <a :href="attachment.file_path.startsWith('http')?attachment.file_path:`http://localhost:8000/storage/${attachment.file_path}`" target="_blank" class="flex items-center gap-3 overflow-hidden flex-1">
+                  <div class="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
                     <Icon :name="getFileIcon(attachment.mime_type)" class="w-4 h-4" />
                   </div>
                   <div class="flex flex-col min-w-0">
-                    <span class="text-xs font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ attachment.file_name }}</span>
-                    <span class="text-[10px] text-secondary dark:text-gray-500">{{ Math.round(attachment.size / 1024) }} KB</span>
+                    <span class="text-sm font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ attachment.file_name }}</span>
+                    <span class="text-xs text-secondary dark:text-gray-500">{{ attachment.size > 1024*1024 ? (attachment.size/(1024*1024)).toFixed(1)+' Mo' : Math.round(attachment.size/1024)+' Ko' }}</span>
                   </div>
                 </a>
-                <button v-if="canEdit" @click.stop="deleteAttachment(attachment)" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
-                  <Icon name="heroicons:trash" class="w-3.5 h-3.5" />
+                <button v-if="canEdit" @click.stop="deleteAttachment(attachment)" class="p-1.5 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                  <Icon name="heroicons:trash" class="w-4 h-4" />
                 </button>
               </div>
             </div>
-            <div v-else class="text-xs text-secondary dark:text-gray-500 italic p-4 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl text-center bg-white dark:bg-transparent flex flex-col items-center gap-2">
-              <Icon name="heroicons:paper-clip" class="w-6 h-6 opacity-40" />
+            <div v-else class="text-sm text-secondary dark:text-gray-500 py-6 text-center flex flex-col items-center gap-2">
+              <Icon name="heroicons:paper-clip" class="w-7 h-7 opacity-40" />
               Aucune pièce jointe
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar (Right) -->
+        <div class="w-full md:w-[300px] lg:w-[340px] shrink-0 flex flex-col gap-5">
+
+          <!-- Team card -->
+          <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <p class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipe du projet</p>
+              <div class="relative">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter</button>
+                <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
+                <div v-if="isAddDropdownOpen" class="absolute right-0 top-6 mt-1 w-56 bg-white dark:bg-[#252525] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[280px] overflow-hidden">
+                  <div class="p-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                    <input v-model="assignSearchQuery" type="text" placeholder="Rechercher..." class="w-full bg-gray-50 dark:bg-[#151515] border border-gray-200 dark:border-gray-800 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                  </div>
+                  <div class="overflow-y-auto flex-1 p-1">
+                    <div v-if="filteredAssignees.teams.length > 0">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary uppercase tracking-wider">Équipes</div>
+                      <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                        <div class="w-5 h-5 rounded bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center shrink-0"><Icon name="heroicons:user-group" class="w-3 h-3" /></div>
+                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.members.length > 0" :class="{'mt-1 pt-1 border-t border-gray-100 dark:border-gray-800':filteredAssignees.teams.length>0}">
+                      <div class="px-2 py-1 text-[10px] font-bold text-secondary uppercase tracking-wider">Membres</div>
+                      <button v-for="member in filteredAssignees.members" :key="member.id" @click="assignMember(member)" class="w-full text-left px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                        <div class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center font-bold text-[9px] shrink-0">{{ (member?.last_name||'U').charAt(0).toUpperCase()+(member?.first_name||'').charAt(0).toUpperCase() }}</div>
+                        <span class="text-xs font-medium text-main dark:text-gray-300 truncate">{{ member.last_name+' '+member.first_name }}</span>
+                      </button>
+                    </div>
+                    <div v-if="filteredAssignees.teams.length===0&&filteredAssignees.members.length===0" class="p-3 text-center text-xs text-secondary">Aucun résultat</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="assignedTeams.length > 0" class="flex flex-wrap gap-1.5 mb-3">
+              <div v-for="team in assignedTeams" :key="'t-'+team.id" class="flex items-center gap-1.5 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-md text-xs font-bold">
+                <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />{{ team.name }}
+                <button @click="removeTeam(team)" class="ml-0.5 hover:text-blue-900"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
+                <div class="flex items-center gap-3 cursor-pointer flex-1 overflow-hidden" @click="navigateTo(`/profile/${member.id}`)">
+                  <div :class="['w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden shrink-0 border-2 border-white dark:border-gray-800',!member.profile_picture?['bg-orange-500','bg-teal-500','bg-primary','bg-rose-500','bg-emerald-500','bg-purple-500'][idx%6]:'bg-gray-200']">
+                    <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http')?member.profile_picture:`http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
+                    <span v-else>{{ (member?.last_name||'U').charAt(0).toUpperCase()+(member?.first_name||'').charAt(0).toUpperCase() }}</span>
+                  </div>
+                  <div class="flex flex-col truncate">
+                    <span class="text-sm font-bold text-main dark:text-gray-200 truncate group-hover:text-primary transition-colors">{{ member.last_name+' '+member.first_name }}</span>
+                    <span class="text-xs text-secondary dark:text-gray-500">{{ member.role||'Membre' }}</span>
+                  </div>
+                </div>
+                <button @click.stop="removeMember(member)" class="p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-secondary hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                </button>
+              </div>
+              <div v-if="assignedTeams.length===0&&assignedMembers.length===0" class="text-xs text-secondary dark:text-gray-500 italic py-2 text-center">Aucun membre assigné</div>
+            </div>
+          </div>
+
+          <!-- Dates card -->
+          <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Début</span>
+                <div v-if="isEditing" class="relative">
+                  <Icon name="heroicons:calendar" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
+                  <input 
+                    v-model="editStartDate"
+                    type="date"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                  />
+                </div>
+                <div v-else class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-[#1A1A1D]/50 rounded-lg border border-gray-100 dark:border-gray-800/50">
+                  <Icon name="heroicons:calendar" class="w-4 h-4 text-secondary dark:text-gray-500" />
+                  <span class="text-sm font-medium" :class="projectStartDate ? 'text-main dark:text-gray-300' : 'text-secondary dark:text-gray-500 italic'">{{ projectStartDate ? formatDate(projectStartDate) : 'Non défini' }}</span>
+                </div>
+              </div>
+              <div class="flex flex-col gap-2">
+                <span class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                  Fin prévue
+                  <span v-if="isOverdue && !isEditing" class="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded-full">En retard</span>
+                </span>
+                <div v-if="isEditing" class="relative">
+                  <Icon name="heroicons:calendar" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none" />
+                  <input 
+                    v-model="editEndDate"
+                    type="date"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                  />
+                </div>
+                <div v-else class="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-[#1A1A1D]/50 rounded-lg border border-gray-100 dark:border-gray-800/50">
+                  <Icon name="heroicons:calendar" class="w-4 h-4 text-secondary dark:text-gray-500" />
+                  <span class="text-sm font-medium" :class="projectEndDate ? (isOverdue ? 'text-red-500' : 'text-main dark:text-gray-300') : 'text-secondary dark:text-gray-500 italic'">{{ projectEndDate ? formatDate(projectEndDate) : 'Non défini' }}</span>
+                </div>
+              </div>
             </div>
           </div>
 
         </div>
       </div>
     </div>
-    
+
     <!-- Delete Project Modal -->
     <DeleteProjectModal
       :is-open="isDeleteModalOpen"

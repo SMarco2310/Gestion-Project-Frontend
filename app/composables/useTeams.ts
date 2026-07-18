@@ -1,8 +1,9 @@
 export interface Team {
-  id: number;
+  id: string | number;
   name: string;
   description?: string;
-  organization_id: number;
+  reference_code?: string;
+  organization_id: string | number;
   created_at: string;
   updated_at: string;
 }

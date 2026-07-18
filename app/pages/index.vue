@@ -18,7 +18,7 @@ const chartData = [
 const categories = {
   Activity: {
     name: 'Activité Globale',
-    color: '#3b82f6'
+    color: '#0891b2'
   }
 }
 
@@ -37,15 +37,15 @@ const xFormatter = (i: number) => chartData[i]?.month || ''
         </div>
         
         <div class="hidden md:flex items-center gap-8">
-          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors border-b-2 border-primary pb-1">Product</a>
-          <a href="#features" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Features</a>
-          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Resources</a>
-          <a href="#" class="text-sm font-medium text-slate-600 hover:text-primary transition-colors">Pricing</a>
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-cyan-600 transition-colors border-b-2 border-cyan-600 pb-1">Product</a>
+          <a href="#features" class="text-sm font-medium text-slate-600 hover:text-cyan-600 transition-colors">Features</a>
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-cyan-600 transition-colors">Resources</a>
+          <a href="#" class="text-sm font-medium text-slate-600 hover:text-cyan-600 transition-colors">Pricing</a>
         </div>
 
         <div class="flex items-center gap-4">
-          <NuxtLink to="/auth/login" class="text-sm font-semibold text-slate-700 hover:text-primary transition-colors">Se connecter</NuxtLink>
-          <NuxtLink to="/auth/signup" class="text-sm font-semibold bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-primary/30 hover:-translate-y-0.5">Commencer</NuxtLink>
+          <NuxtLink to="/auth/login" class="text-sm font-semibold text-slate-700 hover:text-cyan-600 transition-colors">Se connecter</NuxtLink>
+          <NuxtLink to="/auth/signup" class="text-sm font-semibold bg-cyan-600 hover:bg-cyan-600 text-white px-6 py-2.5 rounded-full transition-all shadow-md hover:shadow-primary/30 hover:-translate-y-0.5">Commencer</NuxtLink>
         </div>
       </div>
     </nav>
@@ -62,7 +62,7 @@ const xFormatter = (i: number) => chartData[i]?.month || ''
         </p>
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-3.5 bg-primary hover:bg-blue-600 text-white rounded-full font-semibold text-base transition-all shadow-lg shadow-blue-600/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+          <NuxtLink to="/auth/signup" class="w-full sm:w-auto px-8 py-3.5 bg-cyan-600 hover:bg-cyan-600 text-white rounded-full font-semibold text-base transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 flex items-center justify-center gap-2">
             Démarrer gratuitement
             <Icon name="heroicons:arrow-right" class="w-4 h-4" />
           </NuxtLink>
@@ -92,7 +92,7 @@ const xFormatter = (i: number) => chartData[i]?.month || ''
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
           <!-- Feature 1 -->
           <div class="p-8 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-            <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center mb-6">
+            <div class="w-10 h-10 rounded-lg bg-blue-50 text-primary flex items-center justify-center mb-6">
               <Icon name="heroicons:building-office-2" class="w-5 h-5" />
             </div>
             <h3 class="text-lg font-bold text-slate-900 mb-3">Multi-Organisations</h3>

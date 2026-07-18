@@ -116,7 +116,7 @@ const formatDate = (dateString?: string) => {
             </div>
             <div class="flex gap-4 w-full md:w-auto justify-end">
                 <button  @click="handleCancel" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Annuler</button>
-                <button @click="HandleProfileUpdate" class="px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium transition-all neo-emboss active:neo-inset hover:brightness-110">Enregistrer</button>
+                <button @click="HandleProfileUpdate" class="px-5 py-2 bg-cyan-600 text-white rounded-md text-sm font-medium transition-all neo-emboss active:neo-inset hover:brightness-110">Enregistrer</button>
             </div>
         </header>
 
@@ -204,7 +204,7 @@ const formatDate = (dateString?: string) => {
                 </div>
                 
                 <div class="space-y-2">
-                    <button @click="colorMode.preference = 'light'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'light' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'light'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'light' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:sun" class="w-5 h-5 text-amber-500" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Mode clair</span>
@@ -212,7 +212,7 @@ const formatDate = (dateString?: string) => {
                         <Icon v-if="colorMode.preference === 'light'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
                     </button>
                     
-                    <button @click="colorMode.preference = 'dark'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'dark' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'dark'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'dark' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:moon" class="w-5 h-5 text-indigo-400" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Mode sombre</span>
@@ -220,7 +220,7 @@ const formatDate = (dateString?: string) => {
                         <Icon v-if="colorMode.preference === 'dark'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
                     </button>
                     
-                    <button @click="colorMode.preference = 'system'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'system' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'system'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'system' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:computer-desktop" class="w-5 h-5 text-secondary dark:text-gray-400" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Système</span>

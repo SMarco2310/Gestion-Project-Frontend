@@ -86,7 +86,7 @@ const prevPage = () => {
             class="w-10 h-10 flex items-center justify-center rounded-xl font-medium transition-all"
             :class="[
               currentPage === page 
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 neo-emboss' 
+                ? 'bg-cyan-600 text-white shadow-md shadow-primary/20 neo-emboss' 
                 : 'text-secondary hover:bg-gray-100 dark:hover:bg-gray-800 dark:text-gray-400 dark:hover:text-white border border-transparent hover:border-form-border dark:hover:border-gray-800'
             ]"
           >

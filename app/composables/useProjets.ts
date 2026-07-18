@@ -14,6 +14,7 @@ interface Projet{
   updated_at: string,
   id: number|string|any,
   is_archived?: boolean,
+  teams?: any[],
 }
 
 export default function useProjets() {
@@ -28,13 +29,18 @@ export default function useProjets() {
     const getProjets = async ()=>{
         try{
             const { $api } = useNuxtApp();
+            const route = useRoute();
             const { activeOrganization } = useOrganizations();
             const { activeWorkspace } = useWorkspaces();
+            
+            const wsId = activeWorkspace.value?.id || route?.params?.workspace_id;
+            const orgId = activeOrganization.value?.id || route?.params?.org_id;
+
             let query = '';
-            if (activeWorkspace.value?.id) {
-                query = `?workspace_id=${activeWorkspace.value.id}`;
-            } else if (activeOrganization.value?.id) {
-                query = `?organization_id=${activeOrganization.value.id}`;
+            if (wsId) {
+                query = `?workspace_id=${wsId}`;
+            } else if (orgId) {
+                query = `?organization_id=${orgId}`;
             }
             const data = await $api<any>(`/projets${query}`,{
                 method:'GET'
@@ -50,6 +56,9 @@ export default function useProjets() {
 
     // get projet
     const getProjet = async (id:number|string|any)=>{
+        if (!id || id === 'NaN' || isNaN(Number(id))) {
+             return null;
+        }
         try{
             const { $api } = useNuxtApp();
             const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
@@ -101,6 +110,9 @@ export default function useProjets() {
     // update projet
 
     const updateProjet = async (id:number,name:string,description:string,start_date:string|Date|null,end_date:string|Date|null,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
+        if (!id || isNaN(Number(id))) {
+             throw new Error('Invalid Project ID');
+        }
         try{
             const { $api } = useNuxtApp();
             const body = {

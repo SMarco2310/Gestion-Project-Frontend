@@ -131,7 +131,8 @@ const bodyThemeClasses = computed(() => {
 
 <template>
     <!-- ProjetCard Component -->
-    <div id="project-card" class="relative flex flex-col w-full group transition-transform duration-300 hover:-translate-y-1" @click="emit('cardClick', props.id)">
+    <!-- ProjetCard Component -->
+    <div id="project-card" class="relative flex flex-col w-full group transition-transform duration-300 hover:-translate-y-1" :class="isDropdownOpen ? 'z-[100]' : 'z-10'" @click="emit('cardClick', props.id)">
         
         <!-- Flat Folder Shape -->
         <div class="relative w-full pt-[18px] cursor-pointer">

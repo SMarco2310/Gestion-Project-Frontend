@@ -47,7 +47,10 @@ const handleCreateProjectSubmit = async (payload: any) => {
       payload.description,
       payload.status,
       payload.start_date,
-      payload.end_date
+      payload.end_date,
+      payload.color || 'blue',
+      payload.team_ids,
+      payload.user_ids
     )
     await getProjets()
     isCreateProjectModalOpen.value = false
@@ -207,7 +210,7 @@ const epics = computed(() => {
       reference_code: project.reference_code || String(project.id),
       title: project.name,
       progress,
-      badgeBg: progress > 65 ? 'bg-blue-500/10' : 'bg-orange-500/10',
+      badgeBg: progress > 65 ? 'bg-primary/10' : 'bg-orange-500/10',
       badgeText: progress > 65 ? 'text-blue-400' : 'text-orange-400',
       barColor: progress > 65 ? 'bg-[#A6C4FF]' : 'bg-[#FFB78C]',
     }
@@ -255,6 +258,38 @@ const recentCommentsData = computed(() => {
     }))
 })
 
+const topProjects = computed(() => {
+  return (projets.value || [])
+    .filter((p: any) => !p.is_archived)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3)
+})
+
+const getProjectMetrics = (projectId: number | string) => {
+  const projectTasks = tasks.value.filter(t => String(t.projet_id) === String(projectId))
+  const totalTasks = projectTasks.length
+  const doneTasks = projectTasks.filter(t => isDone(t.status)).length
+  const todoTasks = projectTasks.filter(t => !isDone(t.status)).length
+  const inProgressTasks = 0
+  const tasksProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+  return { totalTasks, doneTasks, inProgressTasks, todoTasks, tasksProgress }
+}
+
+const getProjectUsers = (p: any) => {
+  const usersMap = new Map()
+  if (p.users && Array.isArray(p.users)) {
+    p.users.forEach((u: any) => usersMap.set(u.id, u))
+  }
+  if (p.teams && Array.isArray(p.teams)) {
+    p.teams.forEach((t: any) => {
+      if (t.members && Array.isArray(t.members)) {
+        t.members.forEach((u: any) => usersMap.set(u.id, u))
+      }
+    })
+  }
+  return Array.from(usersMap.values())
+}
+
 onMounted(async () => {
   const orgId = route.params.org_id as string
   const wsId = route.params.workspace_id as string
@@ -290,7 +325,7 @@ onMounted(async () => {
             <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Dashboard</h1>
             <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Bienvenue sur votre tableau de bord, {{ userName }}</p>
           </div>
-          <button @click="isCreateProjectModalOpen = true" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-600/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
+          <button @click="isCreateProjectModalOpen = true" class="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
             <Icon name="heroicons:plus" class="w-4 h-4" />
             Créer un projet
           </button>
@@ -311,7 +346,6 @@ onMounted(async () => {
         />
     </section>
     <br>
-    
     <section>
         <!-- Stats Cards with graphs -->
         <CardV2Dashboard
@@ -325,6 +359,36 @@ onMounted(async () => {
           @taskClick="handleTaskClick"
         />
     </section>
+    <br>
+
+
+    <section v-if="topProjects.length > 0">
+        <div class="flex items-center justify-between mb-4 mt-2">
+            <h2 class="text-xl font-bold text-main dark:text-gray-200">Projets récents</h2>
+            <NuxtLink :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects`" class="text-[10px] font-bold text-[#0891b2] uppercase tracking-widest hover:underline">
+                Tous les projets
+            </NuxtLink>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+            <ProjetCard
+              v-for="p in topProjects" :key="p.id"
+              :id="p.id"
+              :user_id="(p as any).user_id"
+              :reference_code="p.reference_code"
+              :name="p.name"
+              :description="p.description"
+              :status="(p as any).status || 'à faire'"
+              :color="p.color"
+              :is_archived="p.is_archived"
+              :end_date="(p as any).end_date || ''"
+              :metrics="getProjectMetrics(p.id)"
+              :users="getProjectUsers(p)"
+              @cardClick="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects/${p.id}`)"
+            />
+        </div>
+    </section>
+    
+    
     
     <CreateProjectModal
       :is-open="isCreateProjectModalOpen"

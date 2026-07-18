@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-
 definePageMeta({
     layout: "custom",
 });
@@ -15,14 +14,30 @@ const config = useRuntimeConfig();
 const apiBase = config.public.apiBase as string;
 
 const userProfile = ref<any>(null);
+const assignedTasks = ref<any[]>([]);
 const isLoading = ref(true);
 const { activeOrganization } = useOrganizations();
+const { activeWorkspace } = useWorkspaces();
 
-const goBack = () => {
-    if (activeOrganization.value?.id) {
-        navigateTo(`/organization/${activeOrganization.value.id}`);
+const navigateToTask = (task: any) => {
+    const oId = activeOrganization.value?.id || route.params.org_id;
+    const wId = task.workspace_id || task.projet?.workspace_id || activeWorkspace.value?.id || route.params.workspace_id;
+    
+    if (oId && wId) {
+        navigateTo(`/organization/${oId}/workspace/${wId}/tasks/${task.id}`);
     } else {
-        navigateTo('/organizations');
+        const { addToast } = useToast();
+        addToast({ type: 'error', title: 'Erreur', message: 'Espace de travail introuvable pour cette tâche.' });
+    }
+}
+
+const { goBack: smartBack } = useSmartBack()
+const goBack = () => {
+    const orgId = activeOrganization.value?.id || route.params.org_id;
+    if (orgId) {
+        smartBack(`/organization/${orgId}`);
+    } else {
+        smartBack('/organizations');
     }
 }
 
@@ -33,16 +48,21 @@ const handleVerifyEmail = () => {
         title: 'E-mail de confirmation envoyé',
         message: 'Veuillez vérifier votre boîte de réception pour confirmer votre adresse e-mail.'
     })
-    // Note: Backend endpoint integration required here
 }
 
 onMounted(async () => {
     try {
         const id = route.params.id;
-        const data = await $api<any>(`/users/${id}`, { method: 'GET' });
-        userProfile.value = data.user || data;
-
-        console.log(userProfile.value)
+        const [profileData, tasksData] = await Promise.all([
+            $api<any>(`/users/${id}`, { method: 'GET' }),
+            $api<any>(`/taches?assignee_id=${id}`, { method: 'GET' }).catch(() => [])
+        ]);
+        
+        userProfile.value = profileData.user || profileData;
+        
+        // Extract tasks safely
+        const rawTasks = Array.isArray(tasksData) ? tasksData : (tasksData.taches ?? tasksData.data?.data ?? tasksData.data ?? tasksData.tasks ?? []);
+        assignedTasks.value = rawTasks;
     } catch (e) {
         console.error("Failed to load user profile");
     } finally {
@@ -55,25 +75,34 @@ const formatDate = (dateString?: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('fr-FR', {
     day: 'numeric',
-    month: 'long',
+    month: 'short',
     year: 'numeric'
   });
 }
 
+const isDone = (status: string) => ['terminé', 'terminée', 'done', 'achevé'].includes(status.toLowerCase());
+
+const getStatusBadge = (status: string) => {
+  if (isDone(status)) {
+    return { bg: 'bg-emerald-500/10 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400', label: 'TERMINÉ', dot: 'bg-emerald-500' }
+  } else if (['en révision', 'in review', 'review'].includes(status.toLowerCase())) {
+    return { bg: 'bg-[#E0E7FF] dark:bg-[#E0E7FF]', text: 'text-[#4338CA] dark:text-[#4338CA]', label: 'EN RÉVISION', dot: 'bg-[#6366F1]' }
+  } else if (['en cours', 'in progress'].includes(status.toLowerCase())) {
+    return { bg: 'bg-primary/10 dark:bg-primary/20', text: 'text-primary dark:text-blue-400', label: 'EN COURS', dot: 'bg-primary' }
+  } else {
+    return { bg: 'bg-[#FFEDD5] dark:bg-[#FFEDD5]', text: 'text-[#C2410C] dark:text-[#C2410C]', label: 'À FAIRE', dot: 'bg-[#F59E0B]' }
+  }
+}
 
 </script>
 
 <template>
-    <div class="w-full pt-4 pb-10">
+    <div class="w-full pt-4 pb-12 px-4 md:px-6 lg:px-8">
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-main dark:text-gray-200">Profil Utilisateur</h1>
-                <p class="text-secondary dark:text-gray-400 mt-1">Consultez les informations de ce membre.</p>
-            </div>
-            <div class="flex gap-4 w-full md:w-auto justify-end">
-                <button @click="goBack()" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Retour</button>
-            </div>
+        <header class="mb-6">
+            <button @click="goBack()" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+                <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
+            </button>
         </header>
 
         <div v-if="isLoading" class="flex justify-center items-center py-20">
@@ -81,72 +110,102 @@ const formatDate = (dateString?: string) => {
         </div>
 
         <!-- Main Content -->
-        <div v-else-if="userProfile" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div v-else-if="userProfile" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- Avatar Card -->
-            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
-                <div class="relative mb-4 mt-2">
-                    <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner">
-                        <img :src="userProfile?.profile_picture ? apiBase.replace('api','') + userProfile.profile_picture : `https://api.dicebear.com/7.x/initials/svg?seed=${userProfile?.last_name ?? 'U'}&chars=1`" alt="User Avatar" class="w-full h-full object-cover" />
+            <!-- Left Column: Profile Card -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                <!-- Top Card -->
+                <div class="bg-card dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-3xl p-8 flex flex-col shadow-sm relative overflow-hidden">
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="relative mb-4">
+                            <!-- Outer Ring -->
+                            <div class="w-24 h-24 rounded-[32px] overflow-hidden bg-white ring-2 ring-primary/30 flex items-center justify-center shadow-lg p-1.5">
+                                <div class="w-full h-full rounded-[24px] overflow-hidden bg-[#EEF2FF] flex items-center justify-center">
+                                    <img v-if="userProfile?.profile_picture" :src="userProfile.profile_picture.startsWith('http') ? userProfile.profile_picture : apiBase.replace('/api', '') + userProfile.profile_picture" alt="User Avatar" class="w-full h-full object-cover" />
+                                    <span v-else class="text-3xl font-bold text-primary">
+                                        {{ (userProfile?.last_name || 'U').charAt(0).toUpperCase() + (userProfile?.first_name || '').charAt(0).toUpperCase() }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h2 class="text-xl font-bold text-main dark:text-gray-200 text-center tracking-tight">{{ userProfile?.last_name }} {{ userProfile?.first_name }}</h2>
+                        <p class="text-sm font-medium text-secondary dark:text-gray-400 mt-1">{{ userProfile?.role || 'Ingénieure produit' }}</p>
+                    </div>
+                    
+                    <div class="w-full border-t border-form-border dark:border-gray-800/80 my-6"></div>
+                    
+                    <div class="flex justify-between w-full">
+                        <div>
+                            <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-1.5">Inscrit le</p>
+                            <p class="text-main dark:text-gray-300 text-[13px] font-mono tracking-wide">{{ formatDate(userProfile?.created_at) }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-1.5">Fuseau</p>
+                            <p class="text-main dark:text-gray-300 text-[13px] font-mono tracking-wide">UTC+00:00</p>
+                        </div>
                     </div>
                 </div>
-                <h2 class="text-xl font-bold text-main dark:text-gray-200 text-center">{{ (userProfile?.last_name || 'U').charAt(0).toUpperCase() + (userProfile?.first_name || '').charAt(0).toUpperCase() }}</h2>
-                <div class="inline-flex items-center gap-1.5 px-2 py-1 mt-2 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-bold uppercase tracking-wider mb-6">
-                    {{ userProfile?.role || 'Membre' }}
-                </div>
-                
-                <div class="w-full border-t border-form-border dark:border-gray-700/60 my-2"></div>
-                
-                <div class="flex justify-between w-full mt-4 px-2">
+
+                <!-- Bottom Card: Contact / Team info -->
+                <div class="bg-card dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-3xl p-8 flex flex-col shadow-sm">
+                    <div class="mb-6">
+                        <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-2">Équipe</p>
+                        <p class="text-main dark:text-gray-200 text-sm font-bold">{{ userProfile?.team?.name || 'Ingénierie' }}</p>
+                    </div>
                     <div>
-                        <p class="text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1">Inscrit le</p>
-                        <p class="text-main dark:text-gray-200 text-sm whitespace-nowrap">{{ formatDate(userProfile?.created_at) }}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-1 whitespace-nowrap">Fuseau horaire</p>
-                        <p class="text-main dark:text-gray-200 text-sm whitespace-nowrap">UTC-08:00</p>
+                        <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-2">Adresse e-mail</p>
+                        <p class="text-secondary dark:text-gray-400 text-sm">{{ userProfile?.email }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Personal Info Card -->
-            <div class="lg:col-span-2 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-lg">
-                <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-8">Informations personnelles</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div>
-                        <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom complet</label>
-                        <div class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm shadow-inner">
-                            {{ userProfile?.last_name + " " + userProfile?.first_name }}
-                        </div>
+            <!-- Right Column: Content Cards -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                <!-- About Box -->
+                <div class="bg-card dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-3xl p-8 shadow-sm">
+                    <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-4 tracking-tight">À propos</h3>
+                    <p class="text-sm text-secondary dark:text-gray-400 leading-relaxed max-w-3xl">
+                        {{ userProfile?.bio || "Ingénieure produit chez Neo Start Technology. Passionnée par les systèmes distribués et l'expérience développeur." }}
+                    </p>
+                </div>
+
+                <!-- Assigned Tasks Box -->
+                <div class="bg-card dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-3xl shadow-sm overflow-hidden flex flex-col flex-1">
+                    <div class="p-6 border-b border-form-border dark:border-gray-800/50 flex justify-between items-center">
+                        <h3 class="text-sm font-bold text-main dark:text-gray-200 tracking-tight">Tâches assignées</h3>
+                        <span class="text-xs font-bold text-secondary dark:text-gray-500">{{ assignedTasks.length }}</span>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse e-mail</label>
-                        <div class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm shadow-inner flex justify-between items-center gap-2">
-                            <span class="truncate">{{ userProfile?.email }}</span>
-                            
-                            <span v-if="userProfile?.email_verified_at" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
-                                Vérifié
-                            </span>
-                            <div v-else class="flex items-center gap-2">
-                                <span class="text-[10px] font-bold text-yellow-600 dark:text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-0.5 rounded uppercase tracking-wider whitespace-nowrap">
-                                    Non vérifié
-                                </span>
-                                <button v-if="user?.id === userProfile?.id" @click="handleVerifyEmail" class="text-xs font-bold text-primary hover:text-blue-600 dark:hover:text-blue-400 underline whitespace-nowrap ml-2">
-                                    Confirmer l'e-mail
-                                </button>
+                    
+                    <div class="p-4 flex-1">
+                        <div v-if="assignedTasks.length > 0" class="flex flex-col gap-2">
+                            <div 
+                                v-for="task in assignedTasks" 
+                                :key="task.id"
+                                @click="navigateToTask(task)"
+                                class="flex items-center justify-between p-4 rounded-2xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors group cursor-pointer"
+                            >
+                                <div class="flex items-center gap-4">
+                                    <div class="w-1.5 h-1.5 rounded-full" :class="getStatusBadge(task.status).dot"></div>
+                                    <span class="text-sm font-medium text-main dark:text-gray-300 group-hover:text-primary transition-colors line-clamp-1 max-w-md">{{ task.title }}</span>
+                                </div>
+                                <div class="flex items-center gap-4 shrink-0">
+                                    <span class="px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase" :class="[getStatusBadge(task.status).bg, getStatusBadge(task.status).text]">
+                                        {{ getStatusBadge(task.status).label }}
+                                    </span>
+                                    <span class="text-xs font-mono text-secondary dark:text-gray-500">{{ task.reference_code || `TSK-${String(task.id).padStart(3, '0')}` }}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div>
-                    <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Bio</label>
-                    <div class="w-full min-h-[100px] bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm whitespace-pre-wrap shadow-inner">
-                        {{ userProfile?.bio || 'Aucune bio renseignée.' }}
+                        <div v-else class="py-12 flex flex-col items-center justify-center text-secondary dark:text-gray-500">
+                            <Icon name="heroicons:clipboard-document-list" class="w-8 h-8 mb-3 opacity-50" />
+                            <p class="text-sm">Aucune tâche assignée.</p>
+                        </div>
                     </div>
                 </div>
             </div>
+
         </div>
         
         <div v-else class="text-center py-20 text-secondary dark:text-gray-500">

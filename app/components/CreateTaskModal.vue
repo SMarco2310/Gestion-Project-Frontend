@@ -38,7 +38,7 @@ const { $api } = useNuxtApp()
 const isAssigneeDropdownOpen = ref(false)
 const isStatusDropdownOpen = ref(false)
 const orgMembers = ref<any[]>([])
-const avatarColors = ['bg-blue-500', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
 
 const kanbanColumns = computed(() => {
   return activeOrganization.value?.kanban_columns?.length 
@@ -66,7 +66,7 @@ const statusConfig = computed(() => {
     } else if (lowerCol === 'à faire' || lowerCol === 'to do') {
       colorClass = 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500'
     } else if (lowerCol === 'en cours' || lowerCol === 'in progress') {
-      colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500'
+      colorClass = 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-primary'
     } else if (lowerCol === 'terminé' || lowerCol === 'done') {
       colorClass = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500'
     }
@@ -200,7 +200,7 @@ const submit = async () => {
                   v-model="form.title" 
                   type="text" 
                   class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 transition-all"
-                  :class="errors.title ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-blue-500'"
+                  :class="errors.title ? 'focus:ring-red-500' : 'focus:ring-primary dark:focus:ring-primary'"
                   placeholder="Que faut-il faire ?"
                   @keydown.enter="submit"
                 />
@@ -243,7 +243,7 @@ const submit = async () => {
                           <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
                             {{ statusConfig[col]?.label || col }}
                           </span>
-                          <Icon v-if="form.board_column === col" name="ph:check" class="w-4 h-4 text-primary dark:text-blue-500" />
+                          <Icon v-if="form.board_column === col" name="ph:check" class="w-4 h-4 text-primary dark:text-primary" />
                         </li>
                       </ul>
                     </div>
@@ -260,7 +260,7 @@ const submit = async () => {
                       { value: 'élevé', label: 'ÉLEVÉ' }
                     ]"
                     placeholder="Priorité"
-                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer uppercase text-xs font-bold flex justify-between items-center"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all cursor-pointer uppercase text-xs font-bold flex justify-between items-center"
                   />
                 </div>
 
@@ -270,7 +270,7 @@ const submit = async () => {
                     v-model="form.tag_id"
                     :options="tags.map(t => ({ value: t.id, label: t.name }))"
                     placeholder="Sélectionner"
-                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all cursor-pointer text-xs font-bold flex justify-between items-center"
+                    buttonClass="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all cursor-pointer text-xs font-bold flex justify-between items-center"
                   />
                 </div>
               </div>
@@ -285,7 +285,7 @@ const submit = async () => {
                       v-model="form.due_date" 
                       type="date" 
                       :min="minDate"
-                      class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 transition-all"
+                      class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
                     />
                   </div>
                 </div>
@@ -349,7 +349,7 @@ const submit = async () => {
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-blue-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
+            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
               <Icon name="heroicons:plus" class="w-4 h-4" />
               Créer
             </button>

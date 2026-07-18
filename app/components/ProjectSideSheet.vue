@@ -27,7 +27,7 @@ const close = () => {
   }
 }
 
-const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment } = useProjets()
+const { getProjet, updateProjet, deleteProjet, uploadProjectAttachment, deleteProjectAttachment, archiveProjet } = useProjets()
 const { getTasks } = useTasks()
 const { addToast } = useToast()
 
@@ -113,7 +113,10 @@ const availableTeams = ref<any[]>([])
 const filteredAssignees = computed(() => {
   const query = assignSearchQuery.value.toLowerCase()
   return {
-    members: availableMembers.value.filter(m => m.name.toLowerCase().includes(query) || m.email.toLowerCase().includes(query)),
+    members: availableMembers.value.filter(m => {
+      const fullName = `${m.first_name || ''} ${m.last_name || ''}`.trim().toLowerCase()
+      return fullName.includes(query) || (m.email?.toLowerCase() || '').includes(query)
+    }),
     teams: availableTeams.value.filter(t => t.name.toLowerCase().includes(query))
   }
 })
@@ -257,8 +260,8 @@ const saveEdit = async () => {
       props.projectId,
       editTitle.value,
       editDescription.value,
-      editStartDate.value ? String(editStartDate.value).split('T')[0] || '' : '',
-      editEndDate.value ? String(editEndDate.value).split('T')[0] || '' : '',
+      editStartDate.value ? String(editStartDate.value).split('T')[0]?.split(' ')[0] || '' : '',
+      editEndDate.value ? String(editEndDate.value).split('T')[0]?.split(' ')[0] || '' : '',
       projectStatus.value,
       editColor.value,
       assignedTeams.value.map(t => t.id),
@@ -282,6 +285,30 @@ const cancelEdit = () => {
 }
 
 
+const isArchiving = ref(false)
+
+const handleArchive = async () => {
+  if (!props.projectId) return
+  isArchiving.value = true
+  try {
+    await archiveProjet(props.projectId, true)
+    addToast({ title: 'Projet archivé', message: 'Le projet a été archivé avec succès.', type: 'success' })
+    emit('close')
+  } catch (e) {
+    addToast({ title: 'Erreur', message: 'Impossible d\'archiver le projet.', type: 'error' })
+  } finally {
+    isArchiving.value = false
+  }
+}
+
+const navigateToFullPage = () => {
+  const orgId = route.params.org_id || activeOrganization.value?.id
+  const workspaceId = route.params.workspace_id
+  if (orgId && workspaceId && props.projectId) {
+    navigateTo(`/organization/${orgId}/workspace/${workspaceId}/projects/${props.projectId}`)
+    emit('close')
+  }
+}
 
 const isDeleteModalOpen = ref(false)
 
@@ -333,7 +360,7 @@ const projectStatus = ref('en cours')
 
 const statusConfig: Record<string, { label: string; colorClass: string }> = {
   'à faire': { label: 'À FAIRE', colorClass: 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-500' },
-  'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-500' },
+  'en cours': { label: 'EN COURS', colorClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-primary' },
   'terminé': { label: 'TERMINÉ', colorClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-500' }
 }
 
@@ -425,19 +452,32 @@ const updateStatus = async (status: string) => {
             <div class="flex-1">
               <p class="text-xs font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">{{ projectRef }}</p>
               <h2 v-if="!isEditing" class="text-lg font-bold text-main dark:text-gray-200 leading-tight">{{ projectTitle }}</h2>
-              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-lg font-bold text-main dark:text-gray-200 bg-transparent focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 rounded px-2 py-0.5 -ml-2" />
+              <input v-else v-model="editTitle" type="text" class="neo-input w-full text-lg font-bold text-main dark:text-gray-200 bg-transparent focus:ring-2 focus:ring-primary dark:focus:ring-primary rounded px-2 py-0.5 -ml-2" />
             </div>
           </div>
           
           <div class="flex items-center gap-1 shrink-0">
+            <!-- Expand to full page -->
+            <button v-if="!isEditing" @click="navigateToFullPage" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Ouvrir la page complète">
+              <Icon name="heroicons:arrows-pointing-out" class="w-5 h-5" />
+            </button>
+            <!-- Edit -->
             <button v-if="!isEditing && canEdit" @click="startEditing" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Modifier">
               <Icon name="heroicons:pencil" class="w-5 h-5" />
             </button>
-            <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
-              <Icon name="heroicons:trash" class="w-6 h-6" />
+            <!-- Archive -->
+            <button v-if="!isEditing && canEdit" @click="handleArchive" :disabled="isArchiving" class="flex items-center gap-1.5 px-2.5 py-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded transition-colors text-xs font-bold disabled:opacity-60" title="Archiver">
+              <Icon name="heroicons:archive-box" class="w-4 h-4" />
+              <span>{{ isArchiving ? '...' : 'Archiver' }}</span>
             </button>
-            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-blue-600 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
+            <!-- Delete -->
+            <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" title="Supprimer">
+              <Icon name="heroicons:trash" class="w-5 h-5" />
+            </button>
+            <!-- Save/Cancel when editing -->
+            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-cyan-600 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
             <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> Annuler</button>
+            <!-- Close -->
             <button @click="close" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors">
               <Icon name="heroicons:x-mark" class="w-6 h-6" />
             </button>
@@ -480,7 +520,7 @@ const updateStatus = async (status: string) => {
                 @click="editColor = color"
                 class="w-8 h-8 rounded-full border-2 transition-transform"
                 :class="[
-                  editColor === color ? 'border-primary dark:border-blue-500 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                  editColor === color ? 'border-cyan-600 dark:border-cyan-600 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
                   {
                     'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
                     'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
@@ -519,7 +559,7 @@ const updateStatus = async (status: string) => {
                 v-for="task in projectTasks" :key="task.id"
                 :to="`/organization/${route.params.org_id || activeOrganization?.id}/workspace/${route.params.workspace_id}/tasks/${task.id}`"
                 @click="close"
-                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-blue-500 transition-colors group cursor-pointer"
+                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-cyan-600 dark:hover:border-cyan-600 transition-colors group cursor-pointer"
               >
                 <div class="flex items-center gap-3 overflow-hidden">
                   <div
@@ -562,7 +602,7 @@ const updateStatus = async (status: string) => {
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Pièces jointes</h3>
-              <button @click="triggerFileInput" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
+              <button @click="triggerFileInput" class="text-xs font-bold text-cyan-600 dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
                 <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
                 <Icon v-else name="heroicons:plus" class="w-3 h-3" /> 
                 {{ isUploading ? 'Ajout...' : 'Ajouter' }}
@@ -573,7 +613,7 @@ const updateStatus = async (status: string) => {
             <div v-if="projectAttachments.length > 0" class="flex flex-col gap-2">
               <div v-for="attachment in projectAttachments" :key="attachment.id" class="group flex items-center justify-between p-3 bg-white dark:bg-[#222224] rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm transition-colors hover:border-primary/30">
                 <a :href="attachment.file_path.startsWith('http') ? attachment.file_path : `http://localhost:8000/storage/${attachment.file_path}`" target="_blank" class="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer">
-                  <div class="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <div class="w-10 h-10 rounded bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center shrink-0">
                     <Icon :name="getFileIcon(attachment.mime_type)" class="w-5 h-5" />
                   </div>
                   <div class="flex flex-col min-w-0">
@@ -596,7 +636,7 @@ const updateStatus = async (status: string) => {
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
               <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-primary dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-cyan-600 dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
                   <Icon name="heroicons:plus" class="w-4 h-4" />
                   Ajouter
                 </button>
@@ -610,7 +650,7 @@ const updateStatus = async (status: string) => {
                     <div v-if="filteredAssignees.teams.length > 0">
                       <div class="px-2 py-1 text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipes</div>
                       <button v-for="team in filteredAssignees.teams" :key="team.id" @click="assignTeam(team)" class="w-full text-left px-2 py-1.5 rounded hover:bg-canvas dark:hover:bg-gray-800 flex items-center gap-2 group transition-colors">
-                        <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                        <div class="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center shrink-0">
                           <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
                         </div>
                         <span class="text-sm font-medium text-main dark:text-gray-300 truncate">{{ team.name }}</span>
@@ -651,7 +691,7 @@ const updateStatus = async (status: string) => {
               <!-- Assigned Members -->
               <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
                 <div class="flex items-center gap-3 cursor-pointer" @click="navigateTo(`/profile/${member.id}`)">
-                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-blue-500', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
+                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-primary', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
                       <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                       <span v-else>{{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}</span>
                     </div>
@@ -671,21 +711,39 @@ const updateStatus = async (status: string) => {
             </div>
           </div>          
           
-          <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex justify-start items-center gap-8 pb-4">
-            <div class="flex flex-col gap-1">
-               <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de début</span>
-               <span v-if="!isEditing" class="text-sm text-main dark:text-gray-300 font-medium">{{ formatDate(projectStartDate) || 'Non définie' }}</span>
-               <input v-else v-model="editStartDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+          <div class="mt-8 pt-4 border-t border-form-border dark:border-gray-800 flex flex-col gap-4 pb-4">
+            <div class="flex flex-col gap-2">
+              <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de début</span>
+              <div class="relative">
+                <Icon name="heroicons:calendar" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none z-10" />
+                <input 
+                  v-if="isEditing"
+                  v-model="editStartDate"
+                  type="date"
+                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                />
+                <div v-else class="w-full bg-[#F4F5F7]/50 dark:bg-[#1A1A1D]/50 text-main dark:text-gray-400 rounded-lg pl-9 pr-3 py-2 text-sm flex items-center h-[38px] border border-transparent">
+                  {{ projectStartDate ? formatDate(projectStartDate) : 'Non définie' }}
+                </div>
+              </div>
             </div>
-            <div class="flex flex-col gap-1">
-               <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider">Date de fin prévue</span>
-               <div v-if="!isEditing" class="flex items-center gap-2">
-                 <div v-if="isOverdue" class="flex items-center justify-center w-6 h-6 bg-red-500 text-white rounded-full shadow-sm animate-pulse" title="En retard">
-                     <Icon name="heroicons:exclamation-triangle" class="w-3.5 h-3.5 mt-[1px]" />
-                 </div>
-                 <span class="text-sm text-main dark:text-gray-300 font-medium" :class="isOverdue ? 'text-red-500 dark:text-red-400 font-bold' : ''">{{ formatDate(projectEndDate) || 'Non définie' }}</span>
-               </div>
-               <input v-else v-model="editEndDate" type="date" class="text-sm bg-[#F4F5F7] dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded px-2 py-1 text-main dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+            <div class="flex flex-col gap-2">
+              <span class="text-[10px] text-secondary dark:text-gray-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                Date de fin prévue
+                <span v-if="isOverdue" class="text-[9px] font-bold text-red-500 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded-full">En retard</span>
+              </span>
+              <div class="relative">
+                <Icon name="heroicons:calendar" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-secondary dark:text-gray-500 pointer-events-none z-10" />
+                <input 
+                  v-if="isEditing"
+                  v-model="editEndDate"
+                  type="date"
+                  class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                />
+                <div v-else class="w-full bg-[#F4F5F7]/50 dark:bg-[#1A1A1D]/50 text-main dark:text-gray-400 rounded-lg pl-9 pr-3 py-2 text-sm flex items-center h-[38px] border border-transparent">
+                  {{ projectEndDate ? formatDate(projectEndDate) : 'Non définie' }}
+                </div>
+              </div>
             </div>
           </div>
           

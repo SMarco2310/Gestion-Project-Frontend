@@ -234,7 +234,7 @@ const calendarOptions = computed(() => ({
 </script>
 
 <template>
-  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4 max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8">
+  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4 max-w-full mx-auto w-full px-4 sm:px-6 lg:px-8">
     <header class="pb-4 flex justify-between items-center">
       <div class="py-2 pb-5">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Planning</h1>
@@ -343,7 +343,7 @@ const calendarOptions = computed(() => ({
                     @click="openCreateProject"
                     class="px-4 py-2.5 text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1D1D1D] transition-colors flex items-center gap-2 font-bold text-main dark:text-gray-300"
                   >
-                    <Icon name="heroicons:briefcase" class="w-4 h-4 text-blue-500" />
+                    <Icon name="heroicons:briefcase" class="w-4 h-4 text-primary" />
                     Projet
                   </div>
                   <div 
@@ -405,7 +405,7 @@ const calendarOptions = computed(() => ({
                  }"
             >
               <div v-if="arg.event.extendedProps.status === 'done'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
-              <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+              <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
               <div v-else class="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0 border border-gray-500"></div>
               <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
             </div>
@@ -435,7 +435,7 @@ const calendarOptions = computed(() => ({
               <div class="mt-auto pt-2" v-if="arg.event.extendedProps.status">
                 <div class="inline-flex items-center gap-1 px-2 py-0.5 bg-white/70 dark:bg-black/30 rounded-full text-[9px] font-bold uppercase tracking-wider">
                   <Icon name="heroicons:check-circle" class="w-3 h-3 text-emerald-500" v-if="arg.event.extendedProps.status === 'done'" />
-                  <Icon name="heroicons:clock" class="w-3 h-3 text-blue-500" v-else-if="arg.event.extendedProps.status === 'en cours'" />
+                  <Icon name="heroicons:clock" class="w-3 h-3 text-primary" v-else-if="arg.event.extendedProps.status === 'en cours'" />
                   <Icon name="heroicons:minus-circle" class="w-3 h-3 text-gray-400" v-else />
                   {{ arg.event.extendedProps.status }}
                 </div>

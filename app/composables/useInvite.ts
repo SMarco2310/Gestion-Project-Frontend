@@ -1,17 +1,17 @@
 export interface Invitation {
-  id: number
+  id: string | number
   email: string
   token: string
-  organization_id: number
-  team_id?: number
-  projet_id?: number
+  organization_id: string | number
+  team_id?: string | number
+  projet_id?: string | number
   role: string
   status: string
   expires_at: string
-  organization?: { id: number; name: string }
-  team?: { id: number; name: string }
-  projet?: { id: number; name: string }
-  inviter?: { id: number; name: string }
+  organization?: { id: string | number; name: string }
+  team?: { id: string | number; name: string }
+  projet?: { id: string | number; name: string }
+  inviter?: { id: string | number; name: string }
 }
 
 export default function useInvite() {

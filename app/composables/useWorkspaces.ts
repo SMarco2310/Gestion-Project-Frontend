@@ -3,7 +3,7 @@ import { ref } from 'vue'
 export default function useWorkspaces() {
   const { $api } = useNuxtApp()
   const activeWorkspace = useState<any>('activeWorkspace', () => null)
-  const workspaces = ref<any[]>([])
+  const workspaces = useState<any[]>('workspaces', () => [])
 
   const getWorkspaces = async (orgId: string) => {
     try {
@@ -45,7 +45,12 @@ export default function useWorkspaces() {
         method: 'PUT',
         body: updates,
       })
-      return response.data?.workspace || response.workspace || response.data
+      const updated = response.data?.workspace || response.workspace || response.data
+      const index = workspaces.value.findIndex((w: any) => w.id === id)
+      if (index !== -1) {
+        workspaces.value[index] = { ...workspaces.value[index], ...updated }
+      }
+      return updated
     } catch (error) {
       console.error('Failed to update workspace:', error)
       throw error

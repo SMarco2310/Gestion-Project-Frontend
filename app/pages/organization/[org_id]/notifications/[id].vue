@@ -54,12 +54,17 @@ const handleDelete = async () => {
   }
 }
 
+const { activeWorkspace, workspaces } = useWorkspaces();
+
 const handleActionClick = () => {
   if (notification.value) {
-    if (notification.value.data.task_id) {
-      navigateTo(`/organization/${route.params.org_id}/tasks/${notification.value.data.task_id}`)
-    } else if (notification.value.data.projet_id) {
-      navigateTo(`/organization/${route.params.org_id}/projects/${notification.value.data.projet_id}`)
+    const orgId = route.params.org_id;
+    const wsId = notification.value.data.workspace_id || activeWorkspace.value?.id || workspaces.value[0]?.id;
+    
+    if (notification.value.data.task_id && wsId) {
+      navigateTo(`/organization/${orgId}/workspace/${wsId}/tasks/${notification.value.data.task_id}`)
+    } else if (notification.value.data.projet_id && wsId) {
+      navigateTo(`/organization/${orgId}/workspace/${wsId}/projects/${notification.value.data.projet_id}`)
     }
   }
 }
@@ -87,7 +92,7 @@ const handleActionClick = () => {
         <Icon name="heroicons:exclamation-triangle" class="w-16 h-16 mb-4 opacity-50 text-yellow-500" />
         <p class="text-lg font-medium">Notification introuvable</p>
         <p class="text-sm mt-1 opacity-75">Elle a peut-être été supprimée.</p>
-        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="mt-6 text-primary hover:underline">
+        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="mt-6 text-cyan-600 hover:underline">
           Retour aux notifications
         </button>
       </div>
@@ -124,7 +129,7 @@ const handleActionClick = () => {
             <button 
               v-if="notification.data.task_id || notification.data.projet_id"
               @click="handleActionClick" 
-              class="bg-blue-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
+              class="bg-cyan-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
             >
               <Icon :name="notification.data.task_id ? 'heroicons:clipboard-document-list' : 'heroicons:folder'" class="w-5 h-5" />
               <span>Voir {{ notification.data.task_id ? 'la tâche' : 'le projet' }}</span>

@@ -18,6 +18,7 @@ export default function useNotification() {
   const notifications = useState<(Notification | any)[]>('notifications', () => [])
   const unreadCount = useState<number>('unread_count', () => 0)
   const loading = useState<boolean>('notifications_loading', () => false)
+  const hasInitialFetch = useState<boolean>('has_initial_notif_fetch', () => false)
 
   const { $api } = useNuxtApp()
 
@@ -46,8 +47,21 @@ export default function useNotification() {
   const fetchUnreadCount = async () => {
     try {
       const data = await $api<{ unread_count: number }>('/notifications/unread-count', { method: 'GET' })
-      unreadCount.value = data.unread_count
-      return data.unread_count
+      const newCount = data.unread_count
+
+      if (hasInitialFetch.value && newCount > unreadCount.value) {
+        try {
+          const audio = new Audio('/notification.mp3')
+          audio.volume = 0.5
+          audio.play().catch(e => console.warn('Audio play failed (maybe blocked by browser):', e))
+        } catch (err) {
+          console.error('Audio initialization failed:', err)
+        }
+      }
+
+      hasInitialFetch.value = true
+      unreadCount.value = newCount
+      return newCount
     } catch (error) {
       console.error('Failed to fetch unread count:', error)
       throw error
@@ -133,7 +147,7 @@ export default function useNotification() {
   /**
    * Start polling for unread count every `intervalMs` milliseconds (default 30s).
    */
-  const startPolling = (intervalMs = 10000) => {
+  const startPolling = (intervalMs = 30000) => {
     stopPolling()
     pollInterval = setInterval(() => {
       fetchUnreadCount().catch(() => { })

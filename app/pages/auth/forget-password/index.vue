@@ -120,7 +120,7 @@ const handleSubmit = async () => {
             <!-- Step 2: Success Message -->
             <div v-else key="success" class="flex flex-col items-center justify-center text-center py-10">
               <div class="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-8 neo-emboss">
-                <Icon name="heroicons:envelope-open" class="w-12 h-12 text-blue-600 dark:text-blue-400" />
+                <Icon name="heroicons:envelope-open" class="w-12 h-12 text-primary dark:text-blue-400" />
               </div>
               
               <h2 class="text-3xl sm:text-4xl font-bold text-black dark:text-white mb-4">Email envoyé !</h2>

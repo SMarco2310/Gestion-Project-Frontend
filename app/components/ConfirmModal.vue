@@ -35,7 +35,7 @@ const confirm = () => {
           
           <!-- Header -->
           <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
-            <div class="flex items-center gap-2 text-primary dark:text-blue-500">
+            <div class="flex items-center gap-2 text-primary dark:text-primary">
               <Icon name="heroicons:information-circle" class="w-6 h-6" />
               <h2 class="text-xl font-bold">{{ title }}</h2>
             </div>

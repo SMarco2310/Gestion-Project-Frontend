@@ -19,7 +19,7 @@ const getColorClass = (type: string) => {
     case 'success': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20'
     case 'error': return 'text-red-500 bg-red-500/10 border-red-500/20'
     case 'warning': return 'text-amber-500 bg-amber-500/10 border-amber-500/20'
-    case 'info': return 'text-primary dark:text-blue-500 bg-blue-500/10 border-blue-500/20'
+    case 'info': return 'text-primary dark:text-primary bg-primary/10 border-primary/20'
     default: return 'text-gray-500 bg-gray-500/10 border-gray-500/20'
   }
 }

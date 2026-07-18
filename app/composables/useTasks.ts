@@ -8,7 +8,7 @@ interface Tache {
   status: string
   board_column?: string
   priority: string
-  tag_ids?: number[] | null
+  tag_ids?: (string | number)[] | null
   tags?: any[] | null
   projet_id?: number | string | null
   projet?: { id?: number | string; reference_code?: string; name?: string; end_date?: string; } | null
@@ -23,6 +23,7 @@ interface Tache {
   assignee?: any | null
   checklists?: any[]
   attachments?: any[]
+  user?: any | null
 }
 
 interface TaskPayload {
@@ -65,7 +66,7 @@ export default function useTasks() {
     sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
     commentaires_count: task.commentaires_count ?? 0,
     due_date: task.due_date ?? '',
-    created_at: task.created_at ?? '',
+    created_at: task.created_at ?? new Date().toISOString(),
     updated_at: task.updated_at ?? '',
     banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
     assignee_id: task.assignee_id ?? null,
@@ -79,10 +80,11 @@ export default function useTasks() {
     error.value = null
 
     try {
+      const route = useRoute()
       const { activeOrganization } = useOrganizations()
       const { activeWorkspace } = useWorkspaces()
-      const orgId = activeOrganization.value?.id
-      const wsId = activeWorkspace.value?.id
+      const orgId = activeOrganization.value?.id || route?.params?.org_id
+      const wsId = activeWorkspace.value?.id || route?.params?.workspace_id
       
       let query = ''
       if (projectId) {

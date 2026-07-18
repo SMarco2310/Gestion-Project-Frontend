@@ -51,7 +51,7 @@ const handleLinkAccount = async () => {
   <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-[#151515]">
     <div class="w-full max-w-md bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
       <div class="text-center mb-8">
-        <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-4">
+        <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center mx-auto mb-4">
           <Icon name="heroicons:link" class="w-6 h-6" />
         </div>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Associer votre compte</h2>

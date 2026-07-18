@@ -52,7 +52,7 @@ const handleColumnReorder = async () => {
   }
 }
 
-const boardItems = ref<Record<string, any[]>>({'Inbox': []})
+const boardItems = ref<Record<string, any[]>>({})
 
 const selectedTaskId = ref<string | null>(null)
 const isCreateTaskModalOpen = ref(false)
@@ -285,7 +285,7 @@ const mapTaskToBoardItem = (task: any) => ({
   bannerImage: task.banner_image || undefined,
   assignee: task.assignee ? {
     initials: (task.assignee.last_name || '?').charAt(0).toUpperCase() + (task.assignee.first_name || '').charAt(0).toUpperCase(),
-    colorClass: 'bg-blue-500',
+    colorClass: 'bg-primary',
     profilePicture: task.assignee.profile_picture ? (task.assignee.profile_picture.startsWith('http') ? task.assignee.profile_picture : `http://localhost:8000${task.assignee.profile_picture}`) : null
   } : {
     icon: 'ph:user',
@@ -396,19 +396,15 @@ const syncBoardItems = () => {
   kanbanColumns.value.forEach((col: string) => {
     newBoardItems[col] = []
   })
-  
-  if (!newBoardItems['Inbox']) {
-    newBoardItems['Inbox'] = []
-  }
 
-  const firstCol = kanbanColumns.value.includes('Inbox') ? 'Inbox' : (kanbanColumns.value[0] || 'Inbox')
+  const firstCol = kanbanColumns.value[0] || ''
 
   filteredTasks.value.forEach((task) => {
     // If the task has a board_column, place it there. Otherwise fallback to its status.
     let targetCol = task.board_column || task.status
     
     // If the target column doesn't exist on the board anymore, push it to the first column
-    if (!kanbanColumns.value.includes(targetCol) && targetCol !== 'Inbox') {
+    if (!kanbanColumns.value.includes(targetCol)) {
       targetCol = firstCol
     }
     
@@ -427,15 +423,21 @@ watch([filteredTasks, kanbanColumns], () => {
 
 onMounted(async () => {
   const wsId = route.params.workspace_id as string
-  if (!activeWorkspace.value || String(activeWorkspace.value.id) !== wsId) {
-    const ws = await getWorkspace(wsId).catch(() => null)
-    if (ws) setActiveWorkspace(ws)
-  }
-
-  await Promise.all([
+  
+  const promises: Promise<any>[] = [
     getTasks(),
     getProjets()
-  ])
+  ]
+
+  if (!activeWorkspace.value || String(activeWorkspace.value.id) !== wsId) {
+    promises.push(
+      getWorkspace(wsId).then((ws) => {
+        if (ws) setActiveWorkspace(ws)
+      }).catch(() => null)
+    )
+  }
+
+  await Promise.all(promises)
   syncBoardItems()
 })
 </script>
@@ -450,7 +452,7 @@ onMounted(async () => {
     <div id="search-bar" class="py-4 lg:py-6 flex flex-row justify-between lg:justify-end items-center gap-2 md:gap-4 w-full lg:w-auto">
             <div class="relative flex items-center flex-1 md:flex-none">
                 <Icon name="heroicons:magnifying-glass" class="w-5 h-5 text-secondary dark:text-gray-400 absolute left-4 pointer-events-none" />
-                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500 w-full md:w-64 lg:w-96">
+                <input v-model="filterText" type="text" placeholder="Rechercher" class="bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-gray-300 placeholder-form-placeholder px-4 py-2.5 rounded-md pl-11 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary w-full md:w-64 lg:w-96">
             </div>
             <FilterDropdown 
               :showProjects="true" 
@@ -462,7 +464,7 @@ onMounted(async () => {
               @update:filters="handleFilterUpdate"
               class="shrink-0" 
             />
-            <button @click="isCreateTaskModalOpen = true" class="shrink-0 bg-blue-600 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+            <button @click="isCreateTaskModalOpen = true" class="shrink-0 bg-cyan-600 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
               <Icon name="heroicons:plus" class="w-5 h-5" />
               <span class="px-2 font-medium hidden md:inline">Ajouter une tâche</span>
             </button>
@@ -470,16 +472,7 @@ onMounted(async () => {
   </header>
     <!-- Main Board Area -->
     <div class="flex flex-1 min-h-0 pb-4 gap-4 md:gap-6 overflow-hidden">
-      <!-- Inbox Sidebar -->
-      <TaskInboxSidebar 
-        v-if="boardItems['Inbox']"
-        v-model:items="boardItems['Inbox']"
-        @createTask="handleSidebarCreateTask"
-        @taskClick="handleTaskClick"
-        @taskMoved="handleTaskMoved($event, 'Inbox')"
-        @toggleStatus="handleToggleStatus"
-        class="shrink-0"
-      />
+
       <!-- Kanban Board Columns -->
       <draggable 
         v-model="localColumns"

@@ -200,7 +200,7 @@ const confirmDelete = async () => {
     </div>
 
     <!-- Header Section -->
-    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 ">
       <div class="flex flex-col gap-2">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Paramètres de l'Organisation</h1>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Modifiez les informations de votre organisation.</p>

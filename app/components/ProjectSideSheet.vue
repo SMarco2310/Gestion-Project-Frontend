@@ -191,6 +191,22 @@ const formatDate = (dateString: string) => {
 
 const fetchProject = async (id: number | string | null) => {
   if (!id) return
+  
+  // Fast path: Pre-fill from existing store so it renders instantly
+  const { projets } = useProjets()
+  if (projets.value && projets.value.length > 0) {
+    const existing = projets.value.find((p: any) => String(p.id) === String(id))
+    if (existing) {
+      projectTitle.value = existing.name || 'Sans titre'
+      projectDescription.value = existing.description || 'Ajouter une description...'
+      projectRef.value = existing.reference_code || `PRJ-${String(id).substring(0, 8)}`
+      projectCreatorId.value = (existing as any).user_id || null
+      projectStartDate.value = (existing as any).start_date || ''
+      projectEndDate.value = (existing as any).end_date || ''
+      projectColor.value = (existing as any).color || 'blue'
+    }
+  }
+
   try {
     const projet = await getProjet(id)
     if (projet) {
@@ -382,10 +398,8 @@ const getTodayDate = () => {
 }
 
 const updateStatus = async (status: string) => {
-  if (status === 'terminé' && doneTasks.value === 0) {
-    addToast({ title: 'Action impossible', message: 'Impossible de terminer un projet qui n\'a aucune tâche terminée.', type: 'error' })
-    isStatusDropdownOpen.value = false
-    return
+  if (status === 'terminé' && doneTasks.value === 0 && totalTasks.value > 0) {
+    addToast({ title: 'Attention', message: 'Le projet est terminé bien qu\'aucune tâche ne le soit.', type: 'info' })
   }
 
   projectStatus.value = status
@@ -636,7 +650,7 @@ const updateStatus = async (status: string) => {
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
               <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="px-3 py-1.5 bg-canvas dark:bg-[#1A1A1D] text-cyan-600 dark:text-blue-400 font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1.5 text-xs border border-form-border dark:border-gray-800 shadow-sm">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 dark:text-blue-400 hover:underline flex items-center gap-1">
                   <Icon name="heroicons:plus" class="w-4 h-4" />
                   Ajouter
                 </button>

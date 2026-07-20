@@ -9,8 +9,8 @@ import useProjets from '~/composables/useProjets'
 import useOrganizations from '~/composables/useOrganizations'
 import CreateTaskModal from '~/components/CreateTaskModal.vue'
 import CreateProjectModal from '~/components/CreateProjectModal.vue'
+import ProjectSideSheet from '~/components/ProjectSideSheet.vue'
 import TaskModal from '~/components/TaskModal.vue'
-import ProjectModal from '~/components/ProjectModal.vue'
 
 definePageMeta({
   layout: 'custom',
@@ -58,8 +58,9 @@ const isAddEventDropdownOpen = ref(false)
 const isTaskModalOpen = ref(false)
 const selectedTaskId = ref<string | null>(null)
 
-const isProjectSheetOpen = ref(false)
+const isProjectSideSheetOpen = ref(false)
 const selectedProjectId = ref<string | null>(null)
+const selectedProjectObj = ref<any>(null)
 
 const openCreateTask = () => {
   isAddEventDropdownOpen.value = false
@@ -156,7 +157,8 @@ const calendarEvents = computed(() => {
       textColor: '#ffffff',
       extendedProps: {
         type: 'project',
-        description: projet.description
+        description: projet.description,
+        sourceData: projet
       }
     }
   })
@@ -210,9 +212,9 @@ const calendarOptions = computed(() => ({
       selectedTaskId.value = taskId
       isTaskModalOpen.value = true
     } else if (type === 'project') {
-      const projectId = clickInfo.event.id.replace('p-', '')
-      selectedProjectId.value = projectId
-      isProjectSheetOpen.value = true
+      selectedProjectId.value = clickInfo.event.id.replace('p-', '')
+      selectedProjectObj.value = clickInfo.event.extendedProps.sourceData
+      isProjectSideSheetOpen.value = true
     }
   },
   drop: async (info: any) => {
@@ -463,11 +465,13 @@ const calendarOptions = computed(() => ({
       @close="isTaskModalOpen = false"
       @update="getTasks"
     />
-    <ProjectModal
-      :is-open="isProjectSheetOpen"
+    <ProjectSideSheet
+      :is-open="isProjectSideSheetOpen"
       :project-id="selectedProjectId"
-      @close="isProjectSheetOpen = false"
+      :project="selectedProjectObj"
+      @close="isProjectSideSheetOpen = false"
       @update="getProjets"
+      @project-deleted="getProjets"
     />
   </div>
 </template>

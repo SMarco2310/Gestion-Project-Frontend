@@ -150,7 +150,7 @@ const submit = async () => {
       leave-to-class="opacity-0 scale-95"
     >
       <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="close">
-        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-lg rounded-xl flex flex-col overflow-hidden" role="dialog" aria-modal="true">
+        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-lg max-h-full rounded-xl flex flex-col overflow-hidden" role="dialog" aria-modal="true">
           
           <!-- Header -->
           <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
@@ -197,7 +197,7 @@ const submit = async () => {
               </div>
 
               <!-- Dates -->
-              <div class="flex gap-4">
+              <div class="flex flex-col sm:flex-row gap-4">
                 <div class="flex-1">
                   <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Date de début</label>
                   <div class="relative">
@@ -230,7 +230,7 @@ const submit = async () => {
                 <div class="flex items-center justify-between mb-3">
                   <span class="block text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipe du projet</span>
                   <div class="relative">
-                    <button @click.prevent="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
+                    <button @click.prevent="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 flex items-center gap-1 hover:underline">
                       <Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter
                     </button>
                     <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>

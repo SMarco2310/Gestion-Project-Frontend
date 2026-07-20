@@ -370,12 +370,12 @@ const isItemOverdue = (item: any) => {
       >
         <template #item="{ element: item }">
           <div 
-            class="task-card neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group overflow-hidden flex flex-col"
+            class="task-card neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl cursor-pointer hover:brightness-105 transition-all group flex flex-col"
             :class="isItemOverdue(item) ? 'ring-1 ring-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' : ''"
             @click="emit('taskClick', item.id)"
           >
             <!-- Banner Image -->
-            <div v-if="item.bannerImage" class="w-full h-28 shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div v-if="item.bannerImage" class="w-full h-28 shrink-0 overflow-hidden bg-gray-100 dark:bg-gray-800 rounded-t-xl">
               <img :src="item.bannerImage" class="w-full h-full object-cover" alt="Task banner" />
             </div>
 

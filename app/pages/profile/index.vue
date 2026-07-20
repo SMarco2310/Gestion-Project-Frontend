@@ -107,7 +107,7 @@ const formatDate = (dateString?: string) => {
       </button>
     </div>
 
-    <div class="w-full max-w-5xl" :class="isFromOrg ? 'pt-16 pb-10' : ''">
+    <div class="w-full" :class="isFromOrg ? 'pt-16 pb-10 max-w-7xl' : ''">
         <!-- Header -->
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center pb-8 gap-4">
             <div>
@@ -124,7 +124,7 @@ const formatDate = (dateString?: string) => {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
             <!-- Avatar Card -->
-            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-lg">
+            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-sm">
                     <div class="relative mb-4 mt-2 group">
                         <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner relative">
                             <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="User Avatar" class="w-full h-full object-cover" />

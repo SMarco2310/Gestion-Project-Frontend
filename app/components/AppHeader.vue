@@ -317,7 +317,7 @@ const handleCreateWorkspace = async () => {
                     <!-- Overlay for closing -->
                     <div v-if="isProfileOpen" @click="isProfileOpen = false" class="fixed inset-0 z-40"></div>
                     <!-- Dropdown Menu -->
-                    <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-72 bg-[#F5F4F1] dark:bg-[#1D1D1D] rounded-[24px] shadow-xl border border-gray-200 dark:border-gray-800 z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
+                    <div v-if="isProfileOpen" class="absolute right-0 mt-2 w-72 bg-[#ffffff] dark:bg-[#1D1D1D] rounded-[24px] shadow-xl border border-gray-200 dark:border-gray-800 z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
                         
                         <!-- Top Profile Section -->
                         <div class="flex items-center gap-4 p-5 pb-4">
@@ -331,7 +331,7 @@ const handleCreateWorkspace = async () => {
                             </div>
                         </div>
 
-                        <div class="w-full h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-40px)]"></div>
+                        <div class="h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-40px)]"></div>
 
                         <!-- Menu Items -->
                         <div class="p-3 flex flex-col gap-1">
@@ -352,7 +352,7 @@ const handleCreateWorkspace = async () => {
                             </div>
                         </div>
 
-                        <div class="w-full h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-40px)]"></div>
+                        <div class="h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-40px)]"></div>
 
                         <!-- Logout -->
                         <div class="p-3">
@@ -417,7 +417,7 @@ const handleCreateWorkspace = async () => {
                 </button>
 
                 <!-- Organization Bubble Menu -->
-                <div v-if="isOrgMenuExpanded" class="absolute top-[85px] md:top-[105px] left-2 right-2 md:left-3 md:right-auto md:w-[290px] bg-[#F5F4F1] dark:bg-[#1C2128] border border-gray-200 dark:border-gray-800 rounded-[24px] shadow-2xl z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
+                <div v-if="isOrgMenuExpanded" class="absolute top-[85px] md:top-[105px] left-2 right-2 md:left-3 md:right-auto md:w-[290px] bg-[#ffffff] dark:bg-[#1C2128] border border-gray-200 dark:border-gray-800 rounded-[24px] shadow-2xl z-50 flex flex-col overflow-hidden animate-fade-in-up" style="animation-duration: 0.2s;">
                     
                     <div class="p-3 max-h-[40vh] overflow-y-auto custom-scrollbar">
                         <div class="px-2 py-1 text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-2 mt-1">Vos Workspaces</div>
@@ -452,7 +452,7 @@ const handleCreateWorkspace = async () => {
                         </div>
                     </div>
 
-                    <div class="w-full h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-32px)]"></div>
+                    <div class="h-px bg-gray-200 dark:bg-gray-800 mx-auto w-[calc(100%-32px)]"></div>
 
                     <div class="p-3 max-h-[40vh] overflow-y-auto custom-scrollbar mb-1">
                         <div class="px-2 py-1 text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest mb-2 mt-1">Vos Organisations</div>

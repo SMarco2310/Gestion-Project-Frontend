@@ -168,13 +168,13 @@ const getAvatarStyle = (name: string) => {
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center py-20">
-      <Icon name="eos-icons:loading" class="w-10 h-10 text-primary animate-spin" />
+      <Icon name="eos-icons:loading" class="w-10 h-10 text-cyan-600 animate-spin" />
     </div>
 
     <!-- Teams Grid -->
     <div v-else-if="teams.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
       
-      <div v-for="(team, index) in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-cyan-600/30 dark:hover:border-cyan-600/30 hover:shadow-sm transition-all group flex flex-col min-h-[280px] h-full cursor-pointer shadow-sm" :class="activeDropdownId === team.id ? 'relative z-50' : 'relative z-10'">
+      <div v-for="(team, index) in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-cyan-600/30 dark:hover:border-cyan-600/30 hover:shadow-sm transition-all group flex flex-col min-h-[280px] h-full cursor-pointer shadow-sm" :class="activeDropdownId === team.id ? 'relative z-50' : 'relative z-10'">
         
         <!-- Top bar -->
         <div class="flex justify-between items-start mb-4">
@@ -198,9 +198,9 @@ const getAvatarStyle = (name: string) => {
         
         <!-- Icon and Status -->
         <div class="flex flex-col mb-4 gap-2.5">
-          <Icon name="heroicons:user-group" class="w-10 h-10 text-white drop-shadow-md dark:text-gray-600/50 mb-2" />
+          <Icon name="heroicons:user-group" class="w-10 h-10 text-cyan-600 drop-shadow-sm dark:text-cyan-500/50 mb-2" />
           <div class="flex items-center gap-2">
-            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'bg-primary' : 'bg-red-500'"></div>
+            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'bg-cyan-600' : 'bg-red-500'"></div>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono tracking-wide">Actif &middot; {{ team.members_count || 0 }} membres</span>
           </div>
         </div>
@@ -234,7 +234,7 @@ const getAvatarStyle = (name: string) => {
     </div>
     <!-- Empty State -->
     <div v-else class="flex flex-col items-center justify-center py-20 px-4">
-      <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
+      <div class="w-16 h-16 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center mb-4">
         <Icon name="heroicons:user-group" class="w-8 h-8" />
       </div>
       <h3 class="text-xl font-bold text-main dark:text-white mb-2">Aucune équipe</h3>
@@ -257,7 +257,7 @@ const getAvatarStyle = (name: string) => {
         <div class="p-6 space-y-4">
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'équipe</label>
-            <input v-model="newTeamName" type="text" placeholder="Ex: Développeurs Backend" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            <input v-model="newTeamName" type="text" placeholder="Ex: Développeurs Backend" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-600/50" />
           </div>
           <div>
             <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
@@ -308,7 +308,7 @@ const getAvatarStyle = (name: string) => {
                 <div v-if="isSelectOpen" class="absolute z-50 w-full mt-2 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-form-border dark:border-gray-800 py-1 max-h-60 overflow-auto custom-scrollbar">
                   <div v-for="t in orgTeams" :key="t.id" @click="selectedOrgTeam = t.id; isSelectOpen = false" class="px-4 py-3 mx-1 my-0.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
                     <span class="text-main dark:text-white font-medium">{{ t.name }}</span>
-                    <Icon v-if="selectedOrgTeam === t.id" name="heroicons:check" class="w-5 h-5 text-primary dark:text-primary" />
+                    <Icon v-if="selectedOrgTeam === t.id" name="heroicons:check" class="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
                 </div>
               </Transition>

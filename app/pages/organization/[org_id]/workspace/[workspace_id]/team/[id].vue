@@ -328,7 +328,7 @@ const confirmDeleteTeamClick = () => {
     </div>
 
     <!-- Main Hero Banner -->
-    <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 md:p-12 mb-8 border border-gray-200 dark:border-gray-800 relative">
+    <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 md:p-12 mb-8  border border-gray-200 dark:border-gray-800 relative shadow-sm">
       <div class="absolute top-6 left-8 px-3 py-1 bg-black/10 dark:bg-white/10 text-main dark:text-gray-300 rounded-full text-[11px] font-bold tracking-wider uppercase">
         {{ team.reference_code || 'EQ-XX' }}
       </div>
@@ -348,7 +348,7 @@ const confirmDeleteTeamClick = () => {
         </div>
         
         <div class="flex items-center gap-3">
-          <button @click="openEditModal" class="px-5 py-2.5 bg-[#F5F4F1] dark:bg-[#1A1A1D] border border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-main dark:text-white font-medium rounded-xl transition-all flex items-center gap-2 text-sm shadow-sm">
+          <button @click="openEditModal" class="px-5 py-2.5 bg-[#ffffff] dark:bg-[#1A1A1D] border border-gray-300 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-main dark:text-white font-medium rounded-xl transition-all flex items-center gap-2 text-sm shadow-sm">
             <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
           </button>
           <button @click="confirmDeleteTeamClick" class="w-10 h-10 border border-red-200 dark:border-red-900/30 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all flex items-center justify-center bg-white dark:bg-[#1D1D1D] shadow-sm">
@@ -365,13 +365,13 @@ const confirmDeleteTeamClick = () => {
       <div class="lg:col-span-7 flex flex-col gap-6">
         
         <!-- Description Panel -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-sm">
           <h3 class="text-[11px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase mb-4">Description</h3>
           <div class="text-main dark:text-gray-300 text-[15px] leading-relaxed" v-html="team.description || 'Aucune description fournie.'"></div>
         </div>
 
         <!-- Projects Panel -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-sm">
           <h3 class="text-lg font-bold text-main dark:text-white mb-6">Projets de l'équipe</h3>
           <div class="space-y-4">
             <div v-if="teamProjects.length === 0" class="text-sm text-secondary dark:text-gray-500">Aucun projet associé à cette équipe.</div>
@@ -396,13 +396,13 @@ const confirmDeleteTeamClick = () => {
       </div>
 
       <!-- Right Column -->
-      <div class="lg:col-span-5 flex flex-col gap-6">
+      <div class="lg:col-span-5 flex flex-col gap-6 ">
         
         <!-- Members Panel -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-sm">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-[11px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase">Membres</h3>
-            <button @click="isAddMemberModalOpen = true" class="text-[11px] font-bold text-[#10B981] flex items-center gap-1 hover:brightness-110">
+            <button @click="isAddMemberModalOpen = true" class="text-[11px] font-bold text-cyan-600 flex items-center gap-1 hover:brightness-110">
               <Icon name="heroicons:plus" class="w-3 h-3" /> AJOUTER
             </button>
           </div>
@@ -432,7 +432,7 @@ const confirmDeleteTeamClick = () => {
         </div>
 
         <!-- Metadata Panel -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-sm">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <h3 class="text-[11px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase mb-2">Créée le</h3>

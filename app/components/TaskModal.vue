@@ -91,7 +91,13 @@ const setTask = async (id: string | number | null) => {
       taskTitle.value = task.title || 'Sans titre'
       taskDescription.value = task.description || 'Ajouter une description...'
       if (task.status) taskStatus.value = task.status
-      if (task.board_column) taskBoardColumn.value = task.board_column
+      if (task.board_column) {
+        if (kanbanColumns.value.includes(task.board_column)) {
+          taskBoardColumn.value = task.board_column
+        } else {
+          taskBoardColumn.value = kanbanColumns.value[0] || 'À FAIRE'
+        }
+      }
       if (task.priority) taskPriority.value = task.priority
       taskReference.value = task.reference_code || `T-${String(task.id).padStart(2, '0')}`
       taskTagIds.value = task.tag_ids || []
@@ -894,7 +900,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       <span :class="['px-2 py-0.5 rounded text-[10px] font-bold uppercase shadow-sm', statusConfig[col]?.colorClass]" :style="statusConfig[col]?.style">
                         {{ statusConfig[col]?.label || col }}
                       </span>
-                      <Icon v-if="taskBoardColumn === col" name="heroicons:check" class="w-4 h-4 text-primary dark:text-primary" />
+                      <Icon v-if="taskBoardColumn === col" name="ph:check" class="w-4 h-4 text-primary dark:text-primary" />
                     </button>
                   </div>
                 </div>

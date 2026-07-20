@@ -226,6 +226,24 @@ const formatDate = (dateString: string) => {
 
 const fetchProject = async (id: number | string | null) => {
   if (!id) return
+  
+  const { projets } = useProjets()
+  if (projets.value && projets.value.length > 0) {
+    const existing = projets.value.find((p: any) => String(p.id) === String(id))
+    if (existing) {
+      projectTitle.value = existing.name || 'Sans titre'
+      projectDescription.value = existing.description || 'Ajouter une description...'
+      projectRef.value = existing.reference_code || `PRJ-${String(id).substring(0, 8)}`
+      projectCreatorId.value = (existing as any).user_id || null
+      projectStartDate.value = (existing as any).start_date || ''
+      projectEndDate.value = (existing as any).end_date || ''
+      projectColor.value = (existing as any).color || 'blue'
+    }
+  } else {
+    projectTitle.value = 'Chargement...'
+    projectRef.value = '...'
+  }
+
   try {
     const projet = await getProjet(id)
     if (projet) {
@@ -275,6 +293,8 @@ const fetchProject = async (id: number | string | null) => {
     }
   } catch (error) {
     console.error('Failed to fetch project details:', error)
+    projectTitle.value = 'Erreur de chargement'
+    projectRef.value = 'ERREUR'
   }
 }
 
@@ -401,10 +421,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-transparent dark:bg-transparent items-center">
+  <div class="h-full flex flex-col bg-transparent dark:bg-transparent items-center -mt-4">
     <div class="w-full max-w-[1400px] flex flex-col h-full relative">
       <!-- Top navigation -->
-      <div class="flex gap-2 px-4 md:px-6 lg:px-8 pt-6 pb-2 shrink-0 z-30 relative bg-transparent dark:bg-transparent">
+      <div class="flex gap-2 px-4 md:px-6 lg:px-8 pb-2 shrink-0 z-30 relative bg-transparent dark:bg-transparent">
         <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
           <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
         </button>

@@ -1,3 +1,83 @@
+<script setup>
+import { useEditor } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import { watch, onBeforeUnmount } from 'vue'
+
+const props = defineProps({
+  modelValue: {
+    type: String,
+    default: '',
+  },
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+const editor = useEditor({
+  content: props.modelValue,
+  extensions: [
+    StarterKit,
+  ],
+  onUpdate: ({ editor }) => {
+    emit('update:modelValue', editor.getHTML())
+  },
+  editorProps: {
+    attributes: {
+      class: 'focus:outline-none min-h-[120px]',
+    },
+  },
+})
+
+// Sync value from outside if changed externally
+watch(() => props.modelValue, (value) => {
+  if (editor.value) {
+    const isSame = editor.value.getHTML() === value
+    if (isSame) {
+      return
+    }
+    editor.value.commands.setContent(value, false)
+  }
+})
+
+onBeforeUnmount(() => {
+  editor.value?.destroy()
+})
+</script>
+
+<style>
+/* Tiptap specific styling overrides for prose */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+.ProseMirror {
+  min-height: 120px;
+}
+.ProseMirror p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+.ProseMirror ul,
+.ProseMirror ol {
+  padding-left: 1.25rem;
+}
+.ProseMirror pre {
+  background: #1A1A1D;
+  color: #E2E8F0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+.ProseMirror code {
+  color: #0891b2;
+  background-color: rgba(43, 196, 191, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+}
+</style>
+
+
 <template>
   <div class="rich-text-editor border border-form-border dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-[#151515] focus-within:ring-2 focus-within:ring-primary/50 transition-all flex flex-col">
     <!-- Toolbar -->
@@ -110,81 +190,3 @@
   </div>
 </template>
 
-<script setup>
-import { useEditor } from '@tiptap/vue-3'
-import StarterKit from '@tiptap/starter-kit'
-import { watch, onBeforeUnmount } from 'vue'
-
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: '',
-  },
-})
-
-const emit = defineEmits(['update:modelValue'])
-
-const editor = useEditor({
-  content: props.modelValue,
-  extensions: [
-    StarterKit,
-  ],
-  onUpdate: ({ editor }) => {
-    emit('update:modelValue', editor.getHTML())
-  },
-  editorProps: {
-    attributes: {
-      class: 'focus:outline-none min-h-[120px]',
-    },
-  },
-})
-
-// Sync value from outside if changed externally
-watch(() => props.modelValue, (value) => {
-  if (editor.value) {
-    const isSame = editor.value.getHTML() === value
-    if (isSame) {
-      return
-    }
-    editor.value.commands.setContent(value, false)
-  }
-})
-
-onBeforeUnmount(() => {
-  editor.value?.destroy()
-})
-</script>
-
-<style>
-/* Tiptap specific styling overrides for prose */
-.ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  color: #adb5bd;
-  pointer-events: none;
-  height: 0;
-}
-.ProseMirror {
-  min-height: 120px;
-}
-.ProseMirror p {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-.ProseMirror ul,
-.ProseMirror ol {
-  padding-left: 1.25rem;
-}
-.ProseMirror pre {
-  background: #1A1A1D;
-  color: #E2E8F0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-}
-.ProseMirror code {
-  color: #0891b2;
-  background-color: rgba(43, 196, 191, 0.1);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-}
-</style>

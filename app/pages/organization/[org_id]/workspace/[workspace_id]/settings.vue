@@ -148,7 +148,7 @@ const makeActive = () => {
     </div>
 
     <!-- Header Block -->
-    <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-6 border border-gray-200/50 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 shadow-sm">
+    <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-6 border border-gray-200/50 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-8 shadow-sm">
       <div class="flex items-center gap-6">
          <div class="w-20 h-20 rounded-[24px] flex items-center justify-center text-white font-bold text-4xl shadow-sm shrink-0 transition-colors duration-300" :style="{ backgroundColor: selectedColor }">
             {{ form.name ? form.name.charAt(0).toUpperCase() : 'W' }}
@@ -175,7 +175,7 @@ const makeActive = () => {
       <div class="lg:col-span-8 space-y-6">
         
         <!-- Informations Form -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
           <h2 class="text-xl font-bold text-main dark:text-white mb-6">Informations</h2>
           
           <form @submit.prevent="handleSave" class="space-y-6">
@@ -211,7 +211,7 @@ const makeActive = () => {
         </div>
 
         <!-- Membres -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
            <div class="flex items-center justify-between mb-6">
              <h2 class="text-xl font-bold text-main dark:text-white">Membres</h2>
              <span class="text-xs text-secondary dark:text-gray-500 font-mono tracking-wider">{{ workspaceMembers.length }}</span>
@@ -234,7 +234,7 @@ const makeActive = () => {
         </div>
 
         <!-- Équipes -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
            <div class="flex items-center justify-between mb-6">
              <h2 class="text-xl font-bold text-main dark:text-white">Équipes</h2>
              <span class="text-xs text-secondary dark:text-gray-500 font-mono tracking-wider">{{ workspaceTeams.length }}</span>
@@ -267,7 +267,7 @@ const makeActive = () => {
       <div class="lg:col-span-4 space-y-6">
         
         <!-- Aperçu -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
            <h2 class="text-lg font-bold text-main dark:text-white mb-6">Aperçu</h2>
            <div class="flex items-center gap-8 mb-8">
               <div>
@@ -283,7 +283,7 @@ const makeActive = () => {
         </div>
 
         <!-- Organisations -->
-        <div class="bg-[#F5F4F1] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
+        <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-[32px] p-8 border border-gray-200/50 dark:border-gray-800 shadow-sm">
            <div class="flex items-center justify-between mb-5">
              <h2 class="text-lg font-bold text-main dark:text-white">Organisation</h2>
              <span class="text-xs text-secondary dark:text-gray-500 font-mono">1</span>

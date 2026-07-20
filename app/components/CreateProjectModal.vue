@@ -153,8 +153,11 @@ const submit = async () => {
         <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-lg max-h-full rounded-xl flex flex-col overflow-hidden" role="dialog" aria-modal="true">
           
           <!-- Header -->
-          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
-            <h2 class="text-xl font-bold text-main dark:text-white">Créer un nouveau projet</h2>
+          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
+            <div class="flex items-center gap-2 text-main dark:text-white">
+              <Icon name="heroicons:folder-plus" class="w-6 h-6 text-primary dark:text-primary" />
+              <h2 class="text-xl font-bold">Créer un nouveau projet</h2>
+            </div>
             <button @click="close" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
               <Icon name="heroicons:x-mark" class="w-6 h-6" />
             </button>
@@ -328,7 +331,7 @@ const submit = async () => {
           </div>
 
           <!-- Footer Actions -->
-          <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 z-10 relative">
+          <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>

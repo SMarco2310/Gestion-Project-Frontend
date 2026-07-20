@@ -31,10 +31,10 @@ const confirm = () => {
       leave-to-class="opacity-0 scale-95"
     >
       <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="close">
-        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md rounded-xl flex flex-col overflow-hidden shadow-2xl" role="dialog" aria-modal="true">
+        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl" role="dialog" aria-modal="true">
           
           <!-- Header -->
-          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
+          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
             <div class="flex items-center gap-2 text-primary dark:text-primary">
               <Icon name="heroicons:information-circle" class="w-6 h-6" />
               <h2 class="text-xl font-bold">{{ title }}</h2>
@@ -50,7 +50,7 @@ const confirm = () => {
           </div>
 
           <!-- Footer Actions -->
-          <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative">
+          <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               {{ cancelText || 'Annuler' }}
             </button>

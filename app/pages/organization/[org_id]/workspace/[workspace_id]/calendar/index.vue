@@ -324,7 +324,7 @@ const calendarOptions = computed(() => ({
               <template #trigger>
                 <button class="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-bold text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors pointer-events-none">
                   <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4" />
-                  Filter
+                  Filtrer
                   <span v-if="activeFilterCount > 0" class="w-5 h-5 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
                 </button>
               </template>

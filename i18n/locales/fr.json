@@ -1,0 +1,38 @@
+{
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "tasks": "Tâches",
+    "calendar": "Planning",
+    "team": "Équipe",
+    "notifications": "Notifications",
+    "settings": "Paramètres",
+    "logout": "Déconnexion"
+  },
+  "calendar": {
+    "title": "Planning",
+    "view_month": "Ce mois",
+    "view_today": "Aujourd'hui",
+    "filter_all": "Tous",
+    "filter_projects": "Projets",
+    "filter_tasks": "Tâches",
+    "button_today": "Auj.",
+    "button_filter": "Filtrer",
+    "button_add": "Ajouter",
+    "add_project": "Projet",
+    "add_task": "Tâche"
+  },
+  "header": {
+    "your_workspaces": "Vos Workspaces",
+    "create_workspace": "Créer un workspace",
+    "manage_workspaces": "Gérer les workspaces",
+    "your_organizations": "Vos Organisations",
+    "org_settings": "Paramètres de l'organisation",
+    "create_org": "Créer une organisation",
+    "switch_org": "Changer d'organisation",
+    "profile": "Voir le profil",
+    "theme": "Thème",
+    "theme_dark": "Sombre",
+    "theme_light": "Clair"
+  }
+}

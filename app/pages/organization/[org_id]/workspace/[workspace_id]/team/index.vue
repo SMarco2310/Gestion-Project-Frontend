@@ -246,29 +246,40 @@ const getAvatarStyle = (name: string) => {
     </div>
 
     <!-- Create Modal (Static) -->
-    <div v-if="isCreateModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
-        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
-          <h3 class="text-xl font-bold text-main dark:text-white">Créer une équipe</h3>
-          <button @click="isCreateModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+    <div v-if="isCreateModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="isCreateModalOpen = false">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl" role="dialog" aria-modal="true">
+        <!-- Header -->
+        <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
+          <div class="flex items-center gap-2 text-main dark:text-white">
+            <Icon name="heroicons:user-group" class="w-6 h-6 text-primary dark:text-primary" />
+            <h2 class="text-xl font-bold">Créer une équipe</h2>
+          </div>
+          <button @click="isCreateModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
             <Icon name="heroicons:x-mark" class="w-6 h-6" />
           </button>
         </div>
-        <div class="p-6 space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'équipe</label>
-            <input v-model="newTeamName" type="text" placeholder="Ex: Développeurs Backend" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-600/50" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description</label>
-            <RichTextEditor v-model="newTeamDesc" class="w-full" />
+
+        <!-- Body -->
+        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+          <div class="flex flex-col gap-5">
+            <div>
+              <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Nom de l'équipe <span class="text-red-500">*</span></label>
+              <input v-model="newTeamName" type="text" placeholder="Ex: Développeurs Backend" class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all" />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Description</label>
+              <RichTextEditor v-model="newTeamDesc" class="w-full" />
+            </div>
           </div>
         </div>
-        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
-          <button @click="isCreateModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+
+        <!-- Footer Actions -->
+        <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
+          <button @click="isCreateModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleCreateTeam" class="px-4 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-600 transition-colors">
+          <button @click="handleCreateTeam" :disabled="!newTeamName.trim()" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+            <Icon name="heroicons:plus" class="w-4 h-4" />
             Créer
           </button>
         </div>
@@ -276,54 +287,65 @@ const getAvatarStyle = (name: string) => {
     </div>
 
     <!-- Attach Modal -->
-    <div v-if="isAttachModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
-        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
-          <h3 class="text-xl font-bold text-main dark:text-white">Associer une équipe</h3>
-          <button @click="isAttachModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+    <div v-if="isAttachModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="isAttachModalOpen = false">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl" role="dialog" aria-modal="true">
+        <!-- Header -->
+        <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
+          <div class="flex items-center gap-2 text-main dark:text-white">
+            <Icon name="heroicons:link" class="w-6 h-6 text-primary dark:text-primary" />
+            <h2 class="text-xl font-bold">Associer une équipe</h2>
+          </div>
+          <button @click="isAttachModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
             <Icon name="heroicons:x-mark" class="w-6 h-6" />
           </button>
         </div>
-        <div class="p-6 space-y-4">
-          <div v-if="orgTeams.length > 0">
-            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Sélectionnez une équipe de l'organisation</label>
-            <div class="relative">
-              <button @click="isSelectOpen = !isSelectOpen" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-600/50 flex justify-between items-center text-left transition-colors cursor-pointer">
-                <span :class="{'text-gray-400': !selectedOrgTeam}">
-                  {{ selectedOrgTeam ? orgTeams.find(t => t.id === selectedOrgTeam)?.name : 'Choisir une équipe...' }}
-                </span>
-                <Icon name="heroicons:chevron-down" class="w-5 h-5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': isSelectOpen }" />
-              </button>
-              
-              <div v-if="isSelectOpen" @click="isSelectOpen = false" class="fixed inset-0 z-40"></div>
-              
-              <Transition
-                enter-active-class="transition duration-100 ease-out"
-                enter-from-class="transform scale-95 opacity-0"
-                enter-to-class="transform scale-100 opacity-100"
-                leave-active-class="transition duration-75 ease-in"
-                leave-from-class="transform scale-100 opacity-100"
-                leave-to-class="transform scale-95 opacity-0"
-              >
-                <div v-if="isSelectOpen" class="absolute z-50 w-full mt-2 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-form-border dark:border-gray-800 py-1 max-h-60 overflow-auto custom-scrollbar">
-                  <div v-for="t in orgTeams" :key="t.id" @click="selectedOrgTeam = t.id; isSelectOpen = false" class="px-4 py-3 mx-1 my-0.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
-                    <span class="text-main dark:text-white font-medium">{{ t.name }}</span>
-                    <Icon v-if="selectedOrgTeam === t.id" name="heroicons:check" class="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+        
+        <!-- Body -->
+        <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+          <div v-if="orgTeams.length > 0" class="flex flex-col gap-5">
+            <div>
+              <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Sélectionnez une équipe de l'organisation <span class="text-red-500">*</span></label>
+              <div class="relative">
+                <button @click="isSelectOpen = !isSelectOpen" class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary flex justify-between items-center text-left transition-all cursor-pointer">
+                  <span :class="{'text-gray-500': !selectedOrgTeam}">
+                    {{ selectedOrgTeam ? orgTeams.find(t => t.id === selectedOrgTeam)?.name : 'Choisir une équipe...' }}
+                  </span>
+                  <Icon name="heroicons:chevron-down" class="w-5 h-5 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': isSelectOpen }" />
+                </button>
+                
+                <div v-if="isSelectOpen" @click="isSelectOpen = false" class="fixed inset-0 z-40"></div>
+                
+                <Transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div v-if="isSelectOpen" class="absolute z-50 w-full mt-2 bg-card dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-form-border dark:border-gray-800 py-1 max-h-60 overflow-auto custom-scrollbar">
+                    <div v-for="t in orgTeams" :key="t.id" @click="selectedOrgTeam = t.id; isSelectOpen = false" class="px-4 py-3 mx-1 my-0.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer flex items-center justify-between transition-colors">
+                      <span class="text-main dark:text-white font-medium">{{ t.name }}</span>
+                      <Icon v-if="selectedOrgTeam === t.id" name="heroicons:check" class="w-5 h-5 text-primary dark:text-primary" />
+                    </div>
                   </div>
-                </div>
-              </Transition>
+                </Transition>
+              </div>
             </div>
           </div>
-          <div v-else class="text-center py-6">
-            <Icon name="heroicons:information-circle" class="w-12 h-12 text-gray-400 mx-auto mb-2" />
-            <p class="text-secondary dark:text-gray-400">Aucune autre équipe disponible dans l'organisation.</p>
+          <div v-else class="text-center py-6 flex flex-col gap-2 items-center">
+            <Icon name="heroicons:information-circle" class="w-12 h-12 text-secondary dark:text-gray-500 mx-auto" />
+            <p class="text-sm font-medium text-secondary dark:text-gray-400">Aucune autre équipe disponible dans l'organisation.</p>
           </div>
         </div>
-        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
-          <button @click="isAttachModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+        
+        <!-- Footer Actions -->
+        <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
+          <button @click="isAttachModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleAttachTeam" :disabled="!selectedOrgTeam" class="px-4 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button @click="handleAttachTeam" :disabled="!selectedOrgTeam" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+            <Icon name="heroicons:link" class="w-4 h-4" />
             Associer
           </button>
         </div>

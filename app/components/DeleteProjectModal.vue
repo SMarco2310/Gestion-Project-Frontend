@@ -40,7 +40,7 @@ const confirm = () => {
       leave-to-class="opacity-0 scale-95"
     >
       <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="close">
-        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md rounded-xl flex flex-col overflow-hidden shadow-2xl border border-red-500/20" role="dialog" aria-modal="true">
+        <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl border border-red-500/20" role="dialog" aria-modal="true">
           
           <!-- Header -->
           <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)]">
@@ -54,7 +54,7 @@ const confirm = () => {
           </div>
 
           <!-- Body / Form -->
-          <div class="p-6">
+          <div class="p-6 overflow-y-auto custom-scrollbar">
             <p class="text-sm text-secondary dark:text-gray-300 mb-4 leading-relaxed">
               Cette action est <span class="font-bold text-main dark:text-white">irréversible</span>. 
               Cela supprimera définitivement le projet <span class="font-bold text-main dark:text-white">{{ projectName }}</span> ainsi que toutes les tâches et données associées.

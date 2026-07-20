@@ -209,6 +209,10 @@ const handleClickOutside = (event: MouseEvent) => {
     isCreating.value = false
     // newTaskTitle.value = '' // uncomment if we want to clear text on click away
   }
+  
+  if (activeDropdownId.value) {
+    activeDropdownId.value = null
+  }
 }
 
 onMounted(() => {
@@ -394,11 +398,8 @@ const isItemOverdue = (item: any) => {
                       <Icon name="heroicons:ellipsis-horizontal" class="w-5 h-5 text-secondary dark:text-gray-400" />
                   </div>
                   
-                  <!-- Overlay for closing -->
-                  <div v-if="activeDropdownId === item.id" @click.stop="activeDropdownId = null" class="fixed inset-0 z-40"></div>
-                  
                   <!-- Dropdown Menu -->
-                  <div v-if="activeDropdownId === item.id" class="absolute right-0 mt-1 w-36 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
+                  <div v-if="activeDropdownId === item.id" @click.stop class="absolute right-0 mt-1 w-36 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
                       <button @click.stop="activeDropdownId = null; emit('editTask', item.id)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
                           <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
                       </button>

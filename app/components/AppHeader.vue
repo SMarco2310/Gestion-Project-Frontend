@@ -24,7 +24,7 @@ const {
 } = useNotification()
 
 const orgId = computed(() => route.params.org_id || activeOrganization.value?.id)
-const workspaceId = computed(() => route.params.workspace_id || activeWorkspace.value?.id)
+const workspaceId = computed(() => route.params.workspace_id || activeWorkspace.value?.id || workspaces.value?.[0]?.id)
 
 const sortedWorkspaces = computed(() => {
   if (!workspaces.value) return []
@@ -592,54 +592,63 @@ const handleCreateWorkspace = async () => {
         </aside>
 
         <!-- Create Workspace Modal -->
-        <div v-if="isCreateWorkspaceModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm transition-opacity">
-          <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden transform transition-all animate-fade-in-up">
-            <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
-              <h3 class="text-xl font-bold text-main dark:text-white">Nouvel Espace de Travail</h3>
-              <button @click="isCreateWorkspaceModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+        <div v-if="isCreateWorkspaceModalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="isCreateWorkspaceModalOpen = false">
+          <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl" role="dialog" aria-modal="true">
+            <!-- Header -->
+            <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
+              <div class="flex items-center gap-2 text-main dark:text-white">
+                <Icon name="heroicons:squares-2x2" class="w-6 h-6 text-primary dark:text-primary" />
+                <h2 class="text-xl font-bold">Nouvel Espace de Travail</h2>
+              </div>
+              <button @click="isCreateWorkspaceModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
                 <Icon name="heroicons:x-mark" class="w-6 h-6" />
               </button>
             </div>
             
-            <div class="p-6 space-y-5">
-              <div v-if="createWorkspaceError" class="p-3 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-sm font-medium border border-red-100 dark:border-red-900/30">
-                {{ createWorkspaceError }}
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Nom de l'espace</label>
-                <input 
-                  v-model="newWorkspaceForm.name" 
-                  type="text" 
-                  placeholder="Ex: Marketing, Développement..."
-                  class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-                />
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">Description (optionnel)</label>
-                <textarea
-                  v-model="newWorkspaceForm.description" 
-                  rows="3"
-                  class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
-                ></textarea>
+            <!-- Body -->
+            <div class="p-6 flex-1 overflow-y-auto custom-scrollbar">
+              <div class="flex flex-col gap-5">
+                <div v-if="createWorkspaceError" class="p-3 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-lg text-sm font-medium border border-red-100 dark:border-red-900/30">
+                  {{ createWorkspaceError }}
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Nom de l'espace <span class="text-red-500">*</span></label>
+                  <input 
+                    v-model="newWorkspaceForm.name" 
+                    type="text" 
+                    placeholder="Ex: Marketing, Développement..."
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-main dark:text-gray-300 mb-1.5">Description (optionnel)</label>
+                  <textarea
+                    v-model="newWorkspaceForm.description" 
+                    rows="3"
+                    class="w-full bg-[#F4F5F7] dark:bg-[#1A1A1D] neo-input text-main dark:text-white placeholder-secondary dark:placeholder-gray-500 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary transition-all"
+                  ></textarea>
+                </div>
               </div>
             </div>
 
-            <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50 dark:bg-black/10">
+            <!-- Footer Actions -->
+            <div class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
               <button 
                 @click="isCreateWorkspaceModalOpen = false" 
                 :disabled="isSubmittingWorkspace"
-                class="px-5 py-2.5 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors disabled:opacity-50"
+                class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors"
               >
                 Annuler
               </button>
               <button 
                 @click="handleCreateWorkspace" 
                 :disabled="isSubmittingWorkspace || !newWorkspaceForm.name.trim()"
-                class="px-5 py-2.5 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
-                <Icon v-if="isSubmittingWorkspace" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
+                <Icon v-if="isSubmittingWorkspace" name="heroicons:arrow-path" class="w-4 h-4 animate-spin" />
+                <Icon v-else name="heroicons:plus" class="w-4 h-4" />
                 Créer
               </button>
             </div>

@@ -108,28 +108,23 @@ const submit = async () => {
       >
         <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm" @click.self="close">
           <div 
-            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-white/20 dark:border-white/5"
+            class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] w-full max-w-md max-h-full rounded-xl flex flex-col overflow-hidden shadow-2xl border border-white/20 dark:border-white/5"
             role="dialog"
             aria-modal="true"
           >
-            <!-- Header -->
-            <header class="flex items-center justify-between px-6 py-5 border-b border-form-border dark:border-gray-800">
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-b from-blue-400 to-blue-500 neo-emboss flex items-center justify-center text-white">
-                  <Icon name="heroicons:lock-closed" class="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 class="text-lg font-bold text-main dark:text-gray-200">Changer le mot de passe</h2>
-                  <p class="text-xs text-secondary dark:text-gray-400 mt-0.5">Sécurisez votre compte</p>
-                </div>
-              </div>
-              <button @click="close" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded-lg transition-colors">
-                <Icon name="heroicons:x-mark" class="w-6 h-6" />
-              </button>
-            </header>
+          <!-- Header -->
+          <div class="px-6 py-4 flex justify-between items-center shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] z-10 relative shrink-0">
+            <div class="flex items-center gap-2 text-main dark:text-white">
+              <Icon name="heroicons:lock-closed" class="w-6 h-6 text-primary dark:text-primary" />
+              <h2 class="text-xl font-bold">Changer le mot de passe</h2>
+            </div>
+            <button @click="close" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5">
+              <Icon name="heroicons:x-mark" class="w-6 h-6" />
+            </button>
+          </div>
 
             <!-- Body -->
-            <div class="p-6 flex flex-col gap-5">
+            <div class="p-6 flex flex-col gap-5 overflow-y-auto custom-scrollbar">
 
               <!-- Success state -->
               <div v-if="isSuccess" class="flex flex-col items-center justify-center text-center py-6">
@@ -193,15 +188,21 @@ const submit = async () => {
 
             </div>
 
-            <!-- Footer -->
-            <footer v-if="!isSuccess" class="px-6 py-5 bg-canvas dark:bg-[#1A1A1D] border-t border-form-border dark:border-gray-800 flex items-center justify-end gap-3 rounded-b-2xl">
-              <button @click="close" class="px-5 py-2.5 text-sm font-bold text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200 transition-colors">Annuler</button>
-              <button @click="submit" :disabled="loading" class="px-5 py-2.5 text-sm font-bold text-white bg-cyan-600 rounded-lg neo-emboss active:neo-inset hover:brightness-110 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                <svg v-if="loading" class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" /><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                <Icon v-else name="heroicons:check" class="w-5 h-5" />
-                {{ loading ? 'Mise à jour...' : 'Mettre à jour' }}
-              </button>
-            </footer>
+          <!-- Footer Actions -->
+          <div v-if="!isSuccess" class="px-6 py-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.2)] flex justify-end gap-3 bg-gray-50 dark:bg-[#222224] z-10 relative shrink-0">
+            <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
+              Annuler
+            </button>
+            <button 
+              @click="submit" 
+              :disabled="loading"
+              class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:bg-cyan-700 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Icon v-if="loading" name="heroicons:arrow-path" class="w-4 h-4 animate-spin" />
+              <Icon v-else name="heroicons:check" class="w-4 h-4" />
+              {{ loading ? 'Mise à jour...' : 'Mettre à jour' }}
+            </button>
+          </div>
 
           </div>
         </div>

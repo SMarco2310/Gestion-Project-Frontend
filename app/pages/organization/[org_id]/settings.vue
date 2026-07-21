@@ -174,18 +174,29 @@ const handleSaveReminders = async () => {
   }
 }
 
-const confirmDelete = async () => {
+const isDeleteModalOpen = ref(false)
+const deleteConfirmationText = ref('')
+const expectedConfirmationText = computed(() => activeOrganization.value?.name || '')
+
+const openDeleteModal = () => {
   if (!activeOrganization.value) return;
-  if (confirm("Êtes-vous sûr de vouloir supprimer cette organisation ? Cette action est irréversible.")) {
-    try {
-      await deleteOrganization(activeOrganization.value.id)
-      setActiveOrganization(null)
-      addToast({ type: 'success', title: 'Succès', message: 'Organisation supprimée.' })
-      navigateTo('/organizations')
-    } catch (err) {
-      console.error('Error deleting org', err)
-      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'organisation.' })
-    }
+  deleteConfirmationText.value = ''
+  isDeleteModalOpen.value = true
+}
+
+const executeDelete = async () => {
+  if (!activeOrganization.value) return;
+  if (deleteConfirmationText.value !== expectedConfirmationText.value) return;
+  
+  try {
+    await deleteOrganization(activeOrganization.value.id)
+    setActiveOrganization(null)
+    isDeleteModalOpen.value = false
+    addToast({ type: 'success', title: 'Succès', message: 'Organisation supprimée.' })
+    navigateTo('/organizations')
+  } catch (err) {
+    console.error('Error deleting org', err)
+    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'organisation.' })
   }
 }
 </script>
@@ -380,7 +391,7 @@ const confirmDelete = async () => {
             <p class="text-sm text-secondary dark:text-gray-400 mb-6">
               La suppression d'une organisation est permanente. Tous les projets, tâches et équipes associés seront supprimés.
             </p>
-            <button @click="confirmDelete" class="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+            <button @click="openDeleteModal" class="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-xl border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
               Supprimer l'organisation
             </button>
           </div>
@@ -421,6 +432,37 @@ const confirmDelete = async () => {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Delete Organization Modal -->
+    <div v-if="isDeleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div class="bg-card dark:bg-[#1D1D1D] rounded-2xl w-full max-w-md border border-form-border dark:border-gray-800 shadow-xl overflow-hidden">
+        <div class="p-6 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
+          <h3 class="text-xl font-bold text-red-600 dark:text-red-400">Supprimer l'organisation</h3>
+          <button @click="isDeleteModalOpen = false" class="text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white">
+            <Icon name="heroicons:x-mark" class="w-6 h-6" />
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-secondary dark:text-gray-400">
+            Cette action est irréversible. Tous les projets, tâches et équipes associés seront supprimés.
+          </p>
+          <div>
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">
+              Veuillez taper <span class="font-bold text-main dark:text-white">{{ expectedConfirmationText }}</span> pour confirmer.
+            </label>
+            <input v-model="deleteConfirmationText" type="text" class="w-full px-4 py-3 rounded-xl bg-canvas dark:bg-[#151515] border border-form-border dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50" />
+          </div>
+        </div>
+        <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3">
+          <button @click="isDeleteModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
+            Annuler
+          </button>
+          <button @click="executeDelete" :disabled="deleteConfirmationText !== expectedConfirmationText" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-red-500/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto disabled:opacity-50 disabled:cursor-not-allowed">
+            Supprimer
+          </button>
+        </div>
       </div>
     </div>
 

@@ -153,19 +153,24 @@ const removeMember = async (memberId: number) => {
 
     <!-- Organization Info Card -->
     <div v-if="activeOrganization" class="bg-white dark:bg-[#1D1D1D] rounded-2xl p-6 border border-form-border dark:border-gray-800 mb-8 shadow-sm">
-      <div class="flex items-start gap-4">
-        <div class="w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center font-bold text-2xl uppercase shrink-0 overflow-hidden">
-          <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : 'http://localhost:8000' + activeOrganization.logo" class="w-full h-full object-cover" />
-          <span v-else>{{ activeOrganization?.name?.substring(0, 2)?.toUpperCase() || 'NT' }}</span>
-        </div>
-        <div>
-          <h2 class="text-2xl font-bold text-main dark:text-white">{{ activeOrganization?.name || 'Organisation' }}</h2>
-          <p class="text-secondary dark:text-gray-400 mt-1">{{ activeOrganization.description || 'Aucune description disponible.' }}</p>
-          <div class="mt-4 flex items-center gap-4 text-sm text-secondary dark:text-gray-500">
-            <span class="flex items-center gap-1"><Icon name="heroicons:calendar" class="w-4 h-4" /> Créé en {{ activeOrganization.created_at ? new Date(activeOrganization.created_at).toLocaleDateString('fr-FR') : '-' }}</span>
-            <span class="flex items-center gap-1"><Icon name="heroicons:users" class="w-4 h-4" /> {{ members.length }} Membres</span>
+      <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div class="flex items-start gap-4">
+          <div class="w-16 h-16 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center font-bold text-2xl uppercase shrink-0 overflow-hidden">
+            <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : 'http://localhost:8000' + activeOrganization.logo" class="w-full h-full object-cover" />
+            <span v-else>{{ activeOrganization?.name?.substring(0, 2)?.toUpperCase() || 'NT' }}</span>
+          </div>
+          <div>
+            <h2 class="text-2xl font-bold text-main dark:text-white">{{ activeOrganization?.name || 'Organisation' }}</h2>
+            <p class="text-secondary dark:text-gray-400 mt-1">{{ activeOrganization.description || 'Aucune description disponible.' }}</p>
+            <div class="mt-4 flex items-center gap-4 text-sm text-secondary dark:text-gray-500">
+              <span class="flex items-center gap-1"><Icon name="heroicons:calendar" class="w-4 h-4" /> Créé en {{ activeOrganization.created_at ? new Date(activeOrganization.created_at).toLocaleDateString('fr-FR') : '-' }}</span>
+              <span class="flex items-center gap-1"><Icon name="heroicons:users" class="w-4 h-4" /> {{ members.length }} Membres</span>
+            </div>
           </div>
         </div>
+        <NuxtLink :to="`/organization/${$route.params.org_id}/settings`" class="px-5 py-2.5 bg-gray-50 dark:bg-[#1A1A1D] border border-gray-200 dark:border-gray-700 hover:bg-white dark:hover:bg-gray-800 text-main dark:text-white font-medium rounded-xl transition-all flex items-center gap-2 text-sm shadow-sm shrink-0 h-min">
+          <Icon name="heroicons:cog-6-tooth" class="w-4 h-4" /> Paramètres
+        </NuxtLink>
       </div>
     </div>
 

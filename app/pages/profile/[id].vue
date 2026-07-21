@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 definePageMeta({
     layout: "custom",
@@ -18,6 +18,15 @@ const assignedTasks = ref<any[]>([]);
 const isLoading = ref(true);
 const { activeOrganization } = useOrganizations();
 const { activeWorkspace } = useWorkspaces();
+
+const filteredTeams = computed(() => {
+    if (!userProfile.value?.teams) return [];
+    const currentOrgId = activeOrganization.value?.id || route.params.org_id;
+    if (currentOrgId) {
+        return userProfile.value.teams.filter((team: any) => team.organization_id === currentOrgId);
+    }
+    return userProfile.value.teams;
+});
 
 const navigateToTask = (task: any) => {
     const oId = activeOrganization.value?.id || route.params.org_id;
@@ -151,8 +160,14 @@ const getStatusBadge = (status: string) => {
                 <!-- Bottom Card: Contact / Team info -->
                 <div class="bg-card dark:bg-[#1A1A1D] border border-form-border dark:border-gray-800 rounded-3xl p-8 flex flex-col shadow-sm">
                     <div class="mb-6">
-                        <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-2">Équipe</p>
-                        <p class="text-main dark:text-gray-200 text-sm font-bold">{{ userProfile?.team?.name || 'Ingénierie' }}</p>
+                        <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-2">{{ filteredTeams.length > 1 ? 'Équipes' : 'Équipe' }}</p>
+                        <div v-if="filteredTeams.length > 0" class="flex flex-wrap gap-2 mt-1">
+                            <div v-for="team in filteredTeams" :key="team.id" class="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 rounded-lg text-xs font-bold">
+                                <Icon name="heroicons:user-group" class="w-3.5 h-3.5" />
+                                {{ team.name }}
+                            </div>
+                        </div>
+                        <p v-else class="text-secondary dark:text-gray-500 text-sm italic">Aucune équipe</p>
                     </div>
                     <div>
                         <p class="text-[9px] font-bold text-secondary dark:text-gray-500 uppercase tracking-widest mb-2">Adresse e-mail</p>

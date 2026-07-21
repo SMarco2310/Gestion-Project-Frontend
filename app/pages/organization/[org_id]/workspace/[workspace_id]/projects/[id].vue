@@ -191,7 +191,7 @@ const isStatusDropdownOpen = ref(false)
 const saveInstant = async (customTitle?: string, customMessage?: string) => {
     try {
       await updateProjet(
-        Number(projectId),
+        projectId,
         projectTitle.value,
         projectDescription.value,
         projectStartDate.value ? String(projectStartDate.value).split('T')[0]?.split(' ')[0] || '' : '',
@@ -320,7 +320,7 @@ const saveEdit = async () => {
   
   try {
     await updateProjet(
-      Number(projectId), 
+      projectId, 
       editTitle.value, 
       editDescription.value,
       editStartDate.value,
@@ -390,7 +390,7 @@ const updateStatus = async (status: string) => {
 
   try {
     await updateProjet(
-      Number(projectId),
+      projectId,
       projectTitle.value,
       projectDescription.value,
       projectStartDate.value ? String(projectStartDate.value).split('T')[0]?.split(' ')[0] || '' : '',

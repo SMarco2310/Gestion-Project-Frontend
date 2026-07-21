@@ -10,6 +10,10 @@ interface User {
   updated_at: string
   profile_picture?: string
   role?: string // e.g. 'owner', 'member', 'admin'
+  reminder_days_before_start?: number
+  reminder_time_start?: string
+  reminder_days_before_end?: number
+  reminder_time_end?: string
 }
 
 export default function useAuth() {
@@ -102,7 +106,7 @@ export default function useAuth() {
     }
   }
 
-  const updateProfile = async (firstName: string, lastName: string, email: string, bio: string) => {
+  const updateProfile = async (firstName: string, lastName: string, email: string, bio: string, reminders?: any) => {
     if (!token.value) {
       return null
     }
@@ -112,7 +116,7 @@ export default function useAuth() {
     try {
       const data = await $api<{ user: User; message: string }>('/users/profile', {
         method: 'PUT',
-        body: { first_name: firstName, last_name: lastName, email, bio },
+        body: { first_name: firstName, last_name: lastName, email, bio, ...(reminders || {}) },
         headers: {Authorization: `Bearer ${token.value}`},
       })
 

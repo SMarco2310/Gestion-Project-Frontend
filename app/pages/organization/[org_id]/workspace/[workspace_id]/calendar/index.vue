@@ -11,6 +11,7 @@ import CreateTaskModal from '~/components/CreateTaskModal.vue'
 import CreateProjectModal from '~/components/CreateProjectModal.vue'
 import ProjectSideSheet from '~/components/ProjectSideSheet.vue'
 import TaskModal from '~/components/TaskModal.vue'
+import { stringify } from 'node:querystring'
 
 definePageMeta({
   layout: 'custom',
@@ -18,7 +19,7 @@ definePageMeta({
 
 const route = useRoute()
 const { tasks, getTasks, updateTask } = useTasks()
-const { projets, getProjets } = useProjets()
+const { projets, getProjets, updateProjet, getProjet } = useProjets()
 const { activeOrganization } = useOrganizations()
 
 const calendarRef = ref<any>(null)
@@ -26,6 +27,10 @@ let draggableInstance: any = null
 
 const currentTitle = ref('')
 const activeFilter = ref('All')
+
+// const handleColorChange =()=>{
+
+// }
 
 // Navigation methods
 const goPrev = () => calendarRef.value?.getApi().prev()
@@ -137,6 +142,29 @@ const calendarEvents = computed(() => {
       }
     })
 
+    const getColor = ((color:string)=>{
+        
+       if (color === 'purple'){
+        return 'bg-[#F2F0F9] dark:bg-[#2A2938]'
+      }
+      else if (color === 'blue')
+        {
+          return 'bg-blue-100 dark:bg-blue-900/40'
+        }else if (color === 'green'){
+          return 'bg-emerald-100 dark:bg-emerald-900/40'
+        }
+         else if (color === 'rose'){
+          return 'bg-rose-100 dark:bg-rose-900/40'
+         }
+         else if (color === 'amber'){
+          return 'bg-amber-100 dark:bg-amber-900/40'
+         }
+         else if  (color === 'slate'){
+          return 'bg-slate-200 dark:bg-slate-700'
+         }    
+
+    })
+
   const projectEvents = projets.value
     .filter((projet: any) => {
       if (activeFilters.value.projects.length > 0 && !activeFilters.value.projects.includes(projet.id)) return false
@@ -152,13 +180,13 @@ const calendarEvents = computed(() => {
       start: projet.start_date,
       end: endDate.toISOString().split('T')[0],
       allDay: true,
-      backgroundColor: '#8b5cf6', // Violet color for projects
+      backgroundColor: 'transparent',
       borderColor: '#7c3aed',
-      textColor: '#ffffff',
       extendedProps: {
         type: 'project',
         description: projet.description,
-        sourceData: projet
+        sourceData: projet,
+        colorClass: getColor(String(projet.color)) || 'bg-blue-400 dark:bg-blue-900/40'
       }
     }
   })
@@ -229,6 +257,77 @@ const calendarOptions = computed(() => ({
       const taskId = info.event.id.replace('t-', '')
       await updateTask(taskId, { due_date: info.event.startStr })
       // No refetch needed, local UI handles the drop successfully
+    } else if (info.event.extendedProps.type === 'project') {
+      const projectId = info.event.id.replace('p-', '')
+      const fullProjet = await getProjet(projectId)
+      if (!fullProjet) {
+        info.revert()
+        return
+      }
+      
+      const startDate = info.event.startStr ? info.event.startStr.split('T')[0] : ''
+      let endDate = info.event.endStr ? info.event.endStr.split('T')[0] : ''
+      
+      if (endDate) {
+          const d = new Date(endDate)
+          d.setDate(d.getDate() - 1)
+          endDate = d.toISOString().split('T')[0]
+      } else {
+          endDate = startDate
+      }
+      
+      try {
+        await updateProjet(
+            projectId,
+            fullProjet.name,
+            fullProjet.description,
+            startDate,
+            endDate || fullProjet.end_date,
+            fullProjet.status,
+            fullProjet.color,
+            (fullProjet.teams || []).map((t:any) => t.id),
+            (fullProjet.users || []).map((u:any) => u.id)
+        )
+      } catch(e) {
+        info.revert()
+      }
+    }
+  },
+  eventResize: async (info: any) => {
+    if (info.event.extendedProps.type === 'project') {
+      const projectId = info.event.id.replace('p-', '')
+      const fullProjet = await getProjet(projectId)
+      if (!fullProjet) {
+        info.revert()
+        return
+      }
+      
+      const startDate = info.event.startStr ? info.event.startStr.split('T')[0] : ''
+      let endDate = info.event.endStr ? info.event.endStr.split('T')[0] : ''
+      
+      if (endDate) {
+          const d = new Date(endDate)
+          d.setDate(d.getDate() - 1)
+          endDate = d.toISOString().split('T')[0]
+      } else {
+          endDate = startDate
+      }
+      
+      try {
+        await updateProjet(
+            projectId,
+            fullProjet.name,
+            fullProjet.description,
+            startDate,
+            endDate || fullProjet.end_date,
+            fullProjet.status,
+            fullProjet.color,
+            (fullProjet.teams || []).map((t:any) => t.id),
+            (fullProjet.users || []).map((u:any) => u.id)
+        )
+      } catch(e) {
+        info.revert()
+      }
     }
   }
 }))
@@ -236,9 +335,9 @@ const calendarOptions = computed(() => ({
 </script>
 
 <template>
-  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pt-4 pb-12 md:pb-4 max-w-full mx-auto w-full px-4 sm:px-6 lg:px-8">
+  <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pb-12 md:pb-4 max-w-full mx-auto w-full">
     <header class="pb-4 flex justify-between items-center">
-      <div class="py-2 pb-5">
+      <div class="pb-5">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Planning</h1>
       </div>
     </header>
@@ -254,7 +353,7 @@ const calendarOptions = computed(() => ({
             <div class="relative flex items-center bg-gray-50 dark:bg-black/20 p-1 rounded-full border border-gray-100 dark:border-gray-800 w-max isolate">
               <!-- Bouncy Slider Background -->
               <div 
-                class="absolute top-1 bottom-1 rounded-full bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                class="absolute top-1 bottom-1 rounded-full bg-[#0891b2] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
                 :class="{
                   'left-1 w-[64px]': activeFilter === 'All',
                   'left-[68px] w-[96px]': activeFilter === 'Projects',
@@ -325,7 +424,7 @@ const calendarOptions = computed(() => ({
                 <button class="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-bold text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors pointer-events-none">
                   <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4" />
                   Filtrer
-                  <span v-if="activeFilterCount > 0" class="w-5 h-5 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
+                  <span v-if="activeFilterCount > 0" class="w-5 h-5 bg-[#0891b2] neo-emboss text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
                 </button>
               </template>
             </FilterDropdown>
@@ -333,7 +432,7 @@ const calendarOptions = computed(() => ({
             <div class="relative z-30 add-event-dropdown">
               <button 
                 @click="isAddEventDropdownOpen = !isAddEventDropdownOpen"
-                class="flex items-center gap-2 px-5 py-2 bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-[0_4px_10px_rgba(0,0,0,0.15),inset_0_2px_3px_rgba(255,255,255,0.2),inset_0_-2px_3px_rgba(0,0,0,0.4)] text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all"
+                class="flex items-center gap-2 px-5 py-2 bg-[#0891b2] neo-emboss text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all"
               >
                 <Icon name="heroicons:plus" class="w-4 h-4 drop-shadow-md" />
                 <span class="tracking-wide drop-shadow-sm">Ajouter</span>
@@ -366,7 +465,7 @@ const calendarOptions = computed(() => ({
             <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
                 v-if="arg.isToday"
-                class="bg-gradient-to-b from-[#3a3a3c] to-[#1c1c1e] ring-1 ring-[#141415] shadow-md text-white px-1.5 md:px-5 py-1 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[20px] md:min-w-0"
+                class="bg-[#0891b2] neo-emboss shadow-md text-white px-1.5 md:px-5 py-1 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[20px] md:min-w-0"
               >
                 <span class="md:hidden uppercase">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'narrow' }) : arg.date.getDate() }}</span>
                 <span class="hidden md:inline">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'long' }) : arg.date.getDate() + ' - ' + arg.date.toLocaleDateString('fr-FR', { weekday: 'short' }) }}</span>
@@ -389,8 +488,8 @@ const calendarOptions = computed(() => ({
 
           <template v-slot:eventContent="arg">
             <!-- Project Event -->
-            <div v-if="arg.event.extendedProps.type === 'project'" class="w-full h-full min-h-[22px] px-1.5 py-0.5 flex items-center rounded-md overflow-hidden shadow-sm" :style="{ backgroundColor: arg.event.backgroundColor, color: arg.event.textColor }">
-              <template v-if="arg.isStart">
+            <div v-if="arg.event.extendedProps.type === 'project'" class="w-full h-full min-h-[22px] px-1.5 py-0.5 flex items-center rounded-md overflow-hidden shadow-sm" :class="[arg.event.extendedProps.colorClass, 'text-gray-900 dark:text-gray-100']" :style="{ borderLeft: '3px solid ' + arg.event.borderColor }">
+              <template v-if="arg.isStart || arg.view.type === 'dayGridMonth'">
                 <Icon name="heroicons:briefcase" class="w-3.5 h-3.5 mr-1.5 opacity-90 shrink-0" />
                 <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
               </template>

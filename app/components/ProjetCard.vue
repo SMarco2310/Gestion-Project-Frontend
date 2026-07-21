@@ -212,7 +212,7 @@ const bodyThemeClasses = computed(() => {
                                  class="w-7 h-7 rounded-full overflow-hidden bg-white/20 flex items-center justify-center shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)] border border-white/20 text-white backdrop-blur-sm relative"
                                  :style="{ zIndex: 10 - index }"
                                  :title="u.first_name + ' ' + u.last_name">
-                                <img v-if="u.profile_picture" :src="u.profile_picture" class="w-full h-full object-cover" />
+                                <img v-if="u.profile_picture" :src="u.profile_picture.startsWith('http') ? u.profile_picture : `http://localhost:8000${u.profile_picture}`" class="w-full h-full object-cover" />
                                 <span v-else class="text-[10px] font-bold">{{(u.last_name || '').charAt(0).toUpperCase() + (u.first_name || '').charAt(0).toUpperCase()}}</span>
                             </div>
                             <div v-if="props.users.length > 3" 

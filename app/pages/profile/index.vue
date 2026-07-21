@@ -24,12 +24,21 @@ const lastName = ref(user.value?.last_name ?? '');
 const email = ref(user.value?.email ?? '');
 const bio = ref(user.value?.bio ?? '');
 
+const reminderDaysBeforeStart = ref(user.value?.reminder_days_before_start ?? 2);
+const reminderTimeStart = ref(user.value?.reminder_time_start ? user.value.reminder_time_start.substring(0, 5) : '08:00');
+const reminderDaysBeforeEnd = ref(user.value?.reminder_days_before_end ?? 2);
+const reminderTimeEnd = ref(user.value?.reminder_time_end ? user.value.reminder_time_end.substring(0, 5) : '08:00');
+
 watch(() => user.value, (newUser) => {
   if (newUser) {
     firstName.value = newUser.first_name;
     lastName.value = newUser.last_name;
     email.value = newUser.email;
     bio.value = newUser.bio || '';
+    reminderDaysBeforeStart.value = newUser.reminder_days_before_start ?? 2;
+    reminderTimeStart.value = newUser.reminder_time_start ? newUser.reminder_time_start.substring(0, 5) : '08:00';
+    reminderDaysBeforeEnd.value = newUser.reminder_days_before_end ?? 2;
+    reminderTimeEnd.value = newUser.reminder_time_end ? newUser.reminder_time_end.substring(0, 5) : '08:00';
   }
 }, { immediate: true });
 
@@ -41,7 +50,12 @@ const HandleProfileUpdate = async ()=>{
         if(firstName.value==''&& lastName.value=='' && email.value==''){
         return
         }
-        await updateProfile(firstName.value, lastName.value, email.value, bio.value);
+        await updateProfile(firstName.value, lastName.value, email.value, bio.value, {
+            reminder_days_before_start: reminderDaysBeforeStart.value,
+            reminder_time_start: reminderTimeStart.value,
+            reminder_days_before_end: reminderDaysBeforeEnd.value,
+            reminder_time_end: reminderTimeEnd.value
+        });
         addToast({ title: 'Profil mis à jour', message: 'Vos informations ont été enregistrées avec succès.', type: 'success' })
 
     } catch (error) {
@@ -121,10 +135,12 @@ const formatDate = (dateString?: string) => {
         </header>
 
         <!-- Main Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            <!-- Avatar Card -->
-            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-sm">
+            <!-- Left Column -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Avatar Card -->
+                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col items-center shadow-sm">
                     <div class="relative mb-4 mt-2 group">
                         <div class="w-24 h-24 rounded-2xl overflow-hidden bg-canvas dark:bg-[#161618] ring-1 ring-form-border dark:ring-gray-700 shadow-inner relative">
                             <img :src="user?.profile_picture ? (user.profile_picture.startsWith('http') ? user.profile_picture : apiBase.replace('/api', '') + user.profile_picture) : `https://api.dicebear.com/7.x/initials/svg?seed=${(user?.last_name || '').charAt(0).toUpperCase() + (user?.first_name || '').charAt(0).toUpperCase() || 'U'}&chars=2`" alt="User Avatar" class="w-full h-full object-cover" />
@@ -150,36 +166,9 @@ const formatDate = (dateString?: string) => {
                         </div>
                     </div>
                 </div>
-            <!-- Personal Info Card -->
-            <div class="lg:col-span-2 lg:row-span-2 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-lg">
-                <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-8">Informations personnelles</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Prénom</label>
-                            <input type="text" v-model="firstName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom</label>
-                            <input type="text" v-model="lastName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse e-mail</label>
-                            <input type="email" v-model="email" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Bio</label>
-                        <RichTextEditor v-model="bio" class="w-full" />
-                    </div>
-                </div>
 
             <!-- Security Card -->
-            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-lg">
+            <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-sm">
                 <div class="flex items-center gap-2 mb-4 px-1">
                     <Icon name="heroicons:shield-check" class="w-5 h-5 text-secondary dark:text-gray-300" />
                     <h3 class="font-bold text-main dark:text-gray-200">Sécurité</h3>
@@ -197,7 +186,7 @@ const formatDate = (dateString?: string) => {
             </div>
 
             <!-- Appearance Card -->
-            <div class="lg:col-span-1 bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-lg">
+            <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-sm">
                 <div class="flex items-center gap-2 mb-4 px-1">
                     <Icon name="heroicons:paint-brush" class="w-5 h-5 text-secondary dark:text-gray-300" />
                     <h3 class="font-bold text-main dark:text-gray-200">Apparence</h3>
@@ -228,6 +217,75 @@ const formatDate = (dateString?: string) => {
                         <Icon v-if="colorMode.preference === 'system'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
                     </button>
                 </div>
+            </div>
+            
+        </div>
+
+            <!-- Right Column -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Personal Info Card -->
+                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-sm">
+                    <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-8">Informations personnelles</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Prénom</label>
+                            <input type="text" v-model="firstName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Nom</label>
+                            <input type="text" v-model="lastName" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <div>
+                            <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Adresse e-mail</label>
+                            <input type="email" v-model="email" class="w-full bg-canvas dark:bg-[#161616] border border-form-border dark:border-gray-700 rounded-lg px-4 py-3 text-main dark:text-gray-300 text-sm focus:outline-none focus:border-primary dark:focus:border-gray-500 focus:ring-1 focus:ring-primary dark:focus:ring-gray-500 transition-all shadow-inner" />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[10px] font-bold text-secondary dark:text-gray-400 uppercase tracking-wider mb-2 ml-1">Bio</label>
+                        <RichTextEditor v-model="bio" class="w-full" />
+                    </div>
+                </div>
+
+                <!-- Reminders Card -->
+                <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-7 shadow-sm">
+                    <h3 class="text-lg font-bold text-main dark:text-gray-200 mb-2">Paramètres des rappels</h3>
+                <p class="text-sm text-secondary dark:text-gray-400 mb-8">Configurez les moments où vous souhaitez recevoir des rappels automatiques pour vos projets et tâches approchant de leur échéance.</p>
+                
+                <div class="space-y-4">
+                  <!-- Reminder Before Start -->
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-form-border dark:border-gray-800 bg-canvas dark:bg-[#151515] transition-colors relative group shadow-sm">
+                    <div class="flex-1 flex items-center gap-3">
+                      <input type="number" min="0" v-model="reminderDaysBeforeStart" class="w-16 px-3 py-2 rounded-lg bg-white dark:bg-[#2D2D2F] border border-form-border dark:border-gray-700 text-main dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner" />
+                      <span class="text-sm font-bold text-main dark:text-gray-200">jours avant le début du projet/tâche</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-1">Heure d'envoi</span>
+                        <input type="time" v-model="reminderTimeStart" class="px-3 py-2 rounded-lg bg-white dark:bg-[#2D2D2F] border border-form-border dark:border-gray-700 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Reminder Before End -->
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-form-border dark:border-gray-800 bg-canvas dark:bg-[#151515] transition-colors relative group shadow-sm">
+                    <div class="flex-1 flex items-center gap-3">
+                      <input type="number" min="0" v-model="reminderDaysBeforeEnd" class="w-16 px-3 py-2 rounded-lg bg-white dark:bg-[#2D2D2F] border border-form-border dark:border-gray-700 text-main dark:text-white text-center focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner" />
+                      <span class="text-sm font-bold text-main dark:text-gray-200">jours avant la fin du projet/tâche</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-1">Heure d'envoi</span>
+                        <input type="time" v-model="reminderTimeEnd" class="px-3 py-2 rounded-lg bg-white dark:bg-[#2D2D2F] border border-form-border dark:border-gray-700 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-inner" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
         </div>
         

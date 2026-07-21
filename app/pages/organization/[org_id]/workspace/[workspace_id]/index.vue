@@ -207,6 +207,7 @@ const epics = computed(() => {
     const progress = total ? Math.round((done / total) * 100) : 0
 
     return {
+      id: project.id,
       reference_code: project.reference_code || String(project.id),
       title: project.name,
       progress,

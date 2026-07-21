@@ -56,7 +56,7 @@ export default function useProjets() {
 
     // get projet
     const getProjet = async (id:number|string|any)=>{
-        if (!id || id === 'NaN' || isNaN(Number(id))) {
+        if (!id || id === 'NaN') {
              return null;
         }
         try{
@@ -109,8 +109,8 @@ export default function useProjets() {
 
     // update projet
 
-    const updateProjet = async (id:number,name:string,description:string,start_date:string|Date|null,end_date:string|Date|null,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
-        if (!id || isNaN(Number(id))) {
+    const updateProjet = async (id:number|string|any,name:string,description:string,start_date:string|Date|null,end_date:string|Date|null,status:string,color:string = 'purple', team_ids:number[]=[], user_ids:number[]=[])=>{
+        if (!id || id === 'NaN') {
              throw new Error('Invalid Project ID');
         }
         try{
@@ -125,7 +125,7 @@ export default function useProjets() {
                 team_ids: team_ids,
                 user_ids: user_ids
             };
-            // console.log('Sending payload:', body);
+            console.log('Sending payload:', body);
             const data = await $api<{projet:Projet,success:boolean} | any>(`/projets/${id}`,{
                 method:'PUT',
                 body: body

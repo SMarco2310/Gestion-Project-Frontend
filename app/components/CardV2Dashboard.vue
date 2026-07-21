@@ -9,7 +9,7 @@ const props = defineProps<{
   statusMetrics: Array<{ label: string; percentage: string; colorClass: string; colorCode: string; rawPercent: number }>
   projectTaskStats?: Array<{ name: string; Total: number; Complété: number }>
   priorities: Array<{ label: string; count: number; icon: string; iconColor: string; barColor: string; percent: number }>
-  epics: Array<{ reference_code: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
+  epics: Array<{ id: number | string; reference_code: string; title: string; progress: number; badgeBg: string; badgeText: string; barColor: string }>
   upcomingTasks?: Array<any>
   recentComments?: Array<any>
 }>()
@@ -76,7 +76,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
   <div class="flex flex-col gap-6">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
       <!-- Project Tasks Overview -->
-      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px]">
+      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
         <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-2">Tâches par Projet</h3>
         
         <div class="flex-1 w-full relative">
@@ -100,7 +100,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
       </div>
 
       <!-- Priority Breakdown -->
-      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px]">
+      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
         <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-2">Priority Breakdown</h3>
         
         <div class="flex-1 w-full relative">
@@ -120,19 +120,17 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
       </div>
 
       <!-- Epic Progress -->
-      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px]">
+      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-sm font-semibold text-main dark:text-gray-200">Epic Progress</h3>
-          <button class="text-secondary dark:text-gray-400 hover:text-main dark:hover:text-gray-200">
-            <Icon name="ph:dots-three" class="text-lg" />
-          </button>
         </div>
 
         <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
-          <div 
+          <NuxtLink 
             v-for="epic in epics" 
             :key="epic.reference_code"
-            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5"
+            :to="`/organization/${orgId}/workspace/${route.params.workspace_id}/project/${epic.id}`"
+            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5 hover:border-primary/50 transition-colors cursor-pointer group block"
           >
             <div class="flex items-center gap-3">
               <span :class="['text-[10px] font-bold px-2 py-0.5 rounded', epic.badgeBg, epic.badgeText]">
@@ -149,7 +147,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
                 :style="{ width: `${epic.progress}%` }"
               ></div>
             </div>
-          </div>
+          </NuxtLink>
           <div v-if="epics.length === 0" class="text-sm text-secondary text-center py-4">
             Aucun projet en cours.
           </div>
@@ -158,9 +156,9 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
     </div>
 
     <!-- Second Row -->
-    <div class="w-full max-w-[50%]">
+    <div class="w-full max-w-[65%]">
       <!-- Upcoming Deadlines -->
-      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[320px]">
+      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-sm font-semibold text-main dark:text-gray-200 flex items-center gap-2">
             <Icon name="ph:calendar-blank" class="w-4 h-4 text-orange-400" />

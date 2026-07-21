@@ -537,7 +537,7 @@ const updateStatus = async (status: string) => {
                   editColor === color ? 'border-cyan-600 dark:border-cyan-600 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
                   {
                     'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
-                    'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
+                    'bg-blue-400 dark:bg-blue-900/40': color === 'blue',
                     'bg-emerald-100 dark:bg-emerald-900/40': color === 'green',
                     'bg-rose-100 dark:bg-rose-900/40': color === 'rose',
                     'bg-amber-100 dark:bg-amber-900/40': color === 'amber',

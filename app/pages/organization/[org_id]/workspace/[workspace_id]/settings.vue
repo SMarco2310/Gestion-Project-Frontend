@@ -108,25 +108,58 @@ const handleSave = async () => {
 }
 
 const isDeleteModalOpen = ref(false)
+const deleteConfirmationText = ref('')
+const deleteTimeout = ref<any>(null)
+const isDeleting = ref(false)
 
 const confirmDelete = () => {
+  deleteConfirmationText.value = ''
   isDeleteModalOpen.value = true
+}
+
+const cancelDelete = () => {
+  if (deleteTimeout.value) {
+    clearTimeout(deleteTimeout.value)
+    deleteTimeout.value = null
+  }
+  isDeleting.value = false
+  addToast({ type: 'info', title: 'Annulé', message: 'La suppression a été annulée.' })
 }
 
 const executeDeleteWorkspace = async () => {
   if (!currentWorkspace.value) return;
-  try {
-    await deleteWorkspace(currentWorkspace.value.id)
-    if (isActiveWorkspace.value) {
-      setActiveWorkspace(null)
+  if (deleteConfirmationText.value !== currentWorkspace.value.name) return;
+  
+  isDeleteModalOpen.value = false
+  isDeleting.value = true
+  
+  addToast({ 
+    type: 'warning', 
+    title: 'Suppression en attente', 
+    message: 'L\'espace sera supprimé dans 5 secondes.',
+    duration: 5000,
+    action: {
+      label: 'Annuler',
+      onClick: cancelDelete
     }
-    isDeleteModalOpen.value = false
-    addToast({ type: 'success', title: 'Succès', message: 'Espace supprimé.' })
-    navigateTo(`/organization/${activeOrganization.value?.id || ''}`)
-  } catch (err) {
-    console.error('Error deleting workspace', err)
-    addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'espace.' })
-  }
+  })
+
+  deleteTimeout.value = setTimeout(async () => {
+    if (!isDeleting.value) return;
+    try {
+      await deleteWorkspace(currentWorkspace.value.id)
+      if (isActiveWorkspace.value) {
+        setActiveWorkspace(null)
+      }
+      addToast({ type: 'success', title: 'Succès', message: 'Espace supprimé.' })
+      navigateTo(`/organization/${activeOrganization.value?.id || ''}`)
+    } catch (err) {
+      console.error('Error deleting workspace', err)
+      addToast({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer l\'espace.' })
+    } finally {
+      isDeleting.value = false
+    }
+  }, 5000)
 }
 
 const makeActive = () => {
@@ -289,12 +322,17 @@ const makeActive = () => {
              <span class="text-xs text-secondary dark:text-gray-500 font-mono">1</span>
            </div>
            
-           <div class="bg-white dark:bg-[#252525] rounded-xl p-3 flex items-center gap-3 border border-gray-100 dark:border-gray-700 shadow-sm">
-              <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden" :class="!activeOrganization?.logo ? 'bg-cyan-50 text-primary dark:bg-cyan-900/30 dark:text-cyan-400' : 'bg-transparent'">
-                <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
-                <span v-else>{{ activeOrganization?.name ? activeOrganization.name.charAt(0).toUpperCase() : 'N' }}</span>
-              </div>
-             <span class="font-bold text-sm text-main dark:text-gray-200 truncate">{{ activeOrganization?.name || 'Neo Start Technology' }}</span>
+           <div class="bg-white dark:bg-[#252525] rounded-xl p-3 flex items-center justify-between gap-3 border border-gray-100 dark:border-gray-700 shadow-sm group">
+             <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden" :class="!activeOrganization?.logo ? 'bg-cyan-50 text-primary dark:bg-cyan-900/30 dark:text-cyan-400' : 'bg-transparent'">
+                  <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
+                  <span v-else>{{ activeOrganization?.name ? activeOrganization.name.charAt(0).toUpperCase() : 'N' }}</span>
+                </div>
+               <span class="font-bold text-sm text-main dark:text-gray-200 truncate">{{ activeOrganization?.name || 'Neo Start Technology' }}</span>
+             </div>
+             <NuxtLink :to="`/organization/${orgId}/settings`" class="p-2 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-colors shrink-0" title="Paramètres de l'organisation">
+               <Icon name="heroicons:arrows-right-left" class="w-5 h-5 transition-transform group-hover:rotate-180" />
+             </NuxtLink>
            </div>
         </div>
 
@@ -328,12 +366,27 @@ const makeActive = () => {
           <p class="text-secondary dark:text-gray-400 mb-4">
             Êtes-vous sûr de vouloir supprimer cet espace de travail ? Cette action est irréversible et supprimera toutes les données associées.
           </p>
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">
+              Veuillez taper <span class="font-bold text-red-500">{{ currentWorkspace?.name }}</span> pour confirmer :
+            </label>
+            <input 
+              v-model="deleteConfirmationText" 
+              type="text" 
+              class="w-full px-4 py-2 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              placeholder="Nom du workspace"
+            />
+          </div>
         </div>
         <div class="p-6 border-t border-form-border dark:border-gray-800 flex justify-end gap-3 bg-gray-50/50 dark:bg-black/10">
           <button @click="isDeleteModalOpen = false" class="px-5 py-2.5 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="executeDeleteWorkspace" class="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2">
+          <button 
+            @click="executeDeleteWorkspace" 
+            :disabled="deleteConfirmationText !== currentWorkspace?.name"
+            class="px-5 py-2.5 bg-red-600 text-white font-medium rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             Supprimer
           </button>
         </div>

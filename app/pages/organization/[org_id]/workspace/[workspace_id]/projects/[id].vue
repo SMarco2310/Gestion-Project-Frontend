@@ -206,8 +206,9 @@ const saveInstant = async (customTitle?: string, customMessage?: string) => {
         message: customMessage || 'L\'équipe du projet a été mise à jour.', 
         type: 'success' 
       })
-    } catch(e) {
-      addToast({ title: 'Erreur', message: 'Impossible de mettre à jour l\'équipe.', type: 'error' })
+    } catch(err: any) {
+      const errorMsg = err?.response?.data?.message || 'Impossible de mettre à jour l\'équipe.'
+      addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
     }
 }
 
@@ -339,8 +340,9 @@ const saveEdit = async () => {
     isEditing.value = false
     
     addToast({ title: 'Succès', message: 'Projet mis à jour', type: 'success' })
-  } catch (error) {
-    addToast({ title: 'Erreur', message: 'Impossible de mettre à jour le projet', type: 'error' })
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || 'Impossible de mettre à jour le projet'
+    addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
   }
 }
 
@@ -379,8 +381,10 @@ const isOverdue = computed(() => {
 })
 
 const updateStatus = async (status: string) => {
-  if (status === 'terminé' && doneTasks.value === 0 && totalTasks.value > 0) {
-    addToast({ title: 'Attention', message: 'Le projet est terminé bien qu\'aucune tâche ne le soit.', type: 'info' })
+  if (status === 'terminé' && totalTasks.value > 0 && doneTasks.value < totalTasks.value) {
+    addToast({ title: 'Erreur', message: 'Toutes les tâches doivent être terminées avant de clôturer le projet.', type: 'error' })
+    isStatusDropdownOpen.value = false
+    return
   }
 
   projectStatus.value = status
@@ -401,8 +405,9 @@ const updateStatus = async (status: string) => {
       assignedMembers.value.map(m => m.id)
     )
     addToast({ title: 'Statut modifié', message: 'Le statut du projet a été mis à jour.', type: 'success' })
-  } catch (err) {
-    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  } catch (err: any) {
+    const errorMsg = err?.response?.data?.message || 'Impossible de modifier le statut.'
+    addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
   }
 }
 
@@ -421,11 +426,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full flex flex-col bg-transparent dark:bg-transparent items-center -mt-4">
-    <div class="w-full max-w-[1400px] flex flex-col h-full relative">
+  <div class="h-full flex flex-col bg-transparent dark:bg-transparent -mt-4 font-sans pb-12">
+    <div class="w-full flex flex-col h-full relative">
       <!-- Top navigation -->
       <div class="flex gap-2 px-4 md:px-6 lg:px-8 pb-2 shrink-0 z-30 relative bg-transparent dark:bg-transparent">
-        <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+        <button @click="goBack" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
           <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
         </button>
       </div>
@@ -468,7 +473,7 @@ onMounted(async () => {
           <button v-if="!isEditing && canEdit" @click="handleDelete" class="p-2 text-secondary hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
             <Icon name="heroicons:trash" class="w-4 h-4" />
           </button>
-          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 text-white rounded-lg transition-all text-sm font-bold hover:brightness-110"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
+          <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1.5 btn-primary text-white rounded-lg transition-all text-sm font-bold hover:brightness-110"><Icon name="heroicons:check" class="w-3.5 h-3.5" /> Enregistrer</button>
           <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-[#2D2D2F] text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm font-bold"><Icon name="heroicons:x-mark" class="w-3.5 h-3.5" /> Annuler</button>
         </div>
       </header>
@@ -488,7 +493,7 @@ onMounted(async () => {
             <div v-if="isEditing" class="mt-4">
               <p class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider mb-2">Couleur</p>
               <div class="flex gap-2">
-                <button v-for="color in ['purple','blue','green','rose','amber','slate']" :key="color" @click="editColor = color" class="w-6 h-6 rounded-full border-2 transition-transform" :class="[editColor===color?'border-cyan-600 scale-110':'border-transparent hover:scale-105',{'bg-purple-400':color==='purple','bg-blue-400':color==='blue','bg-emerald-400':color==='green','bg-rose-400':color==='rose','bg-amber-400':color==='amber','bg-slate-400':color==='slate'}]"></button>
+                <button v-for="color in ['purple','blue','green','rose','amber','slate']" :key="color" @click="editColor = color" class="w-6 h-6 rounded-full border-2 transition-transform" :class="[editColor===color?'border-primary scale-110':'border-transparent hover:scale-105',{'bg-purple-400':color==='purple','bg-blue-400':color==='blue','bg-emerald-400':color==='green','bg-rose-400':color==='rose','bg-amber-400':color==='amber','bg-slate-400':color==='slate'}]"></button>
               </div>
             </div>
             <!-- Progress -->
@@ -507,12 +512,12 @@ onMounted(async () => {
           <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-bold text-main dark:text-gray-200">Tâches du projet</h3>
-              <NuxtLink :to="`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/tasks`" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> AJOUTER</NuxtLink>
+              <NuxtLink :to="`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/tasks`" class="text-xs font-bold text-primary dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> AJOUTER</NuxtLink>
             </div>
             <div v-if="projectTasks.length > 0" class="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
               <NuxtLink v-for="task in projectTasks" :key="task.id" :to="`/organization/${route.params.org_id}/workspace/${route.params.workspace_id}/tasks/${task.id}`" class="flex items-center justify-between py-3 group cursor-pointer">
                 <div class="flex items-center gap-3 overflow-hidden">
-                  <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="{'bg-emerald-500':task.status==='done'||task.status==='terminé','bg-orange-400':task.status==='à faire'||task.status==='not done','bg-primary':task.status!=='à faire'&&task.status!=='terminé'&&task.status!=='done'&&task.status!=='not done'}"></div>
+                  <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="{'bg-emerald-500':task.status==='done'||task.status==='terminé','bg-orange-400':task.status==='à faire'||task.status==='not done','btn-primary':task.status!=='à faire'&&task.status!=='terminé'&&task.status!=='done'&&task.status!=='not done'}"></div>
                   <span class="text-sm text-main dark:text-gray-300 truncate font-medium" :class="{'line-through text-secondary dark:text-gray-500':task.status==='done'||task.status==='terminé'}">{{ task.title }}</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -531,7 +536,7 @@ onMounted(async () => {
           <div class="bg-white dark:bg-[#222224] rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5 shadow-sm">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-bold text-main dark:text-gray-200">Pièces jointes</h3>
-              <button @click="triggerFileInput" :disabled="isUploading" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline">
+              <button @click="triggerFileInput" :disabled="isUploading" class="text-xs font-bold text-primary dark:text-blue-400 flex items-center gap-1 hover:underline">
                 <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
                 <Icon v-else name="heroicons:plus" class="w-3 h-3" />
                 {{ isUploading ? 'Ajout...' : 'AJOUTER' }}
@@ -569,7 +574,7 @@ onMounted(async () => {
             <div class="flex items-center justify-between mb-4">
               <p class="text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipe du projet</p>
               <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter</button>
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-primary dark:text-blue-400 flex items-center gap-1 hover:underline"><Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter</button>
                 <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
                 <div v-if="isAddDropdownOpen" class="absolute right-0 top-6 mt-1 w-56 bg-white dark:bg-[#252525] rounded-lg shadow-xl border border-form-border dark:border-gray-800 z-50 flex flex-col max-h-[280px] overflow-hidden">
                   <div class="p-2 border-b border-gray-100 dark:border-gray-800 shrink-0">
@@ -604,7 +609,7 @@ onMounted(async () => {
             <div class="flex flex-col gap-2">
               <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
                 <div class="flex items-center gap-3 cursor-pointer flex-1 overflow-hidden" @click="navigateTo(`/profile/${member.id}`)">
-                  <div :class="['w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden shrink-0 border-2 border-white dark:border-gray-800',!member.profile_picture?['bg-orange-500','bg-teal-500','bg-primary','bg-rose-500','bg-emerald-500','bg-purple-500'][idx%6]:'bg-gray-200']">
+                  <div :class="['w-9 h-9 rounded-full text-white flex items-center justify-center font-bold text-xs shadow-sm overflow-hidden shrink-0 border-2 border-white dark:border-gray-800',!member.profile_picture?['bg-orange-500','bg-teal-500','btn-primary','bg-rose-500','bg-emerald-500','bg-purple-500'][idx%6]:'bg-gray-200']">
                     <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http')?member.profile_picture:`http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                     <span v-else>{{ (member?.last_name||'U').charAt(0).toUpperCase()+(member?.first_name||'').charAt(0).toUpperCase() }}</span>
                   </div>

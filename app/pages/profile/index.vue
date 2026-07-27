@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 const {user,updateProfile,logout,uploadProfilePicture}=useAuth();
+const { restartTour } = useTour();
 const colorMode = useColorMode()
+
 
 const router = useRouter();
 const route = useRoute();
@@ -11,13 +13,7 @@ const apiBase = config.public.apiBase as string;
 
 const isFromOrg = route.query.source === 'org';
 
-definePageMeta({
-    layout: false,
-});
-
-if (!isFromOrg) {
-    setPageLayout('custom');
-}
+setPageLayout(isFromOrg ? false as any : 'custom');
 
 const firstName = ref(user.value?.first_name ?? '');
 const lastName = ref(user.value?.last_name ?? '');
@@ -130,7 +126,7 @@ const formatDate = (dateString?: string) => {
             </div>
             <div class="flex gap-4 w-full md:w-auto justify-end">
                 <button  @click="handleCancel" class="px-5 py-2 bg-form-border dark:bg-[#2D2D2F] hover:bg-gray-300 dark:hover:bg-gray-600 text-main dark:text-gray-300 rounded-md text-sm font-medium transition-colors">Annuler</button>
-                <button @click="HandleProfileUpdate" class="px-5 py-2 bg-cyan-600 text-white rounded-md text-sm font-medium transition-all neo-emboss active:neo-inset hover:brightness-110">Enregistrer</button>
+                <button @click="HandleProfileUpdate" class="px-5 py-2 btn-primary text-white rounded-md text-sm font-medium transition-all neo-emboss active:neo-inset hover:brightness-110">Enregistrer</button>
             </div>
         </header>
 
@@ -185,7 +181,27 @@ const formatDate = (dateString?: string) => {
                 </button>
             </div>
 
+            <!-- Tour Card -->
+            <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-2 mb-4 px-1">
+                    <Icon name="heroicons:play-circle" class="w-5 h-5 text-secondary dark:text-gray-300" />
+                    <h3 class="font-bold text-main dark:text-gray-200">Guide interactif</h3>
+                </div>
+                <p class="text-xs text-secondary dark:text-gray-400 mb-4 px-1 leading-relaxed">
+                    Relancez le tutoriel de prise en main pour redécouvrir les fonctionnalités essentielles de la plateforme.
+                </p>
+                <button
+                    id="profile-restart-tour-btn"
+                    @click="restartTour"
+                    class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border border-form-border dark:border-gray-700/80 rounded-lg px-3 py-3 transition-colors group"
+                >
+                    <span class="text-main dark:text-gray-300 text-sm font-medium text-left whitespace-nowrap truncate mr-2">Relancer le guide</span>
+                    <Icon name="heroicons:play" class="w-4 h-4 text-primary shrink-0" />
+                </button>
+            </div>
+
             <!-- Appearance Card -->
+
             <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 shadow-sm">
                 <div class="flex items-center gap-2 mb-4 px-1">
                     <Icon name="heroicons:paint-brush" class="w-5 h-5 text-secondary dark:text-gray-300" />
@@ -193,7 +209,7 @@ const formatDate = (dateString?: string) => {
                 </div>
                 
                 <div class="space-y-2">
-                    <button @click="colorMode.preference = 'light'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'light' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'light'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'light' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:sun" class="w-5 h-5 text-amber-500" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Mode clair</span>
@@ -201,7 +217,7 @@ const formatDate = (dateString?: string) => {
                         <Icon v-if="colorMode.preference === 'light'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
                     </button>
                     
-                    <button @click="colorMode.preference = 'dark'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'dark' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'dark'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'dark' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:moon" class="w-5 h-5 text-indigo-400" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Mode sombre</span>
@@ -209,7 +225,7 @@ const formatDate = (dateString?: string) => {
                         <Icon v-if="colorMode.preference === 'dark'" name="heroicons:check-circle-solid" class="w-5 h-5 text-primary" />
                     </button>
                     
-                    <button @click="colorMode.preference = 'system'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'system' ? 'border-cyan-600 ring-1 ring-cyan-600/30' : 'border-form-border dark:border-gray-700/80'">
+                    <button @click="colorMode.preference = 'system'" class="w-full flex items-center justify-between bg-canvas dark:bg-[#262626] hover:bg-[#F7F9FA] dark:hover:bg-[#2D2D2D] border rounded-lg px-3 py-3 transition-colors" :class="colorMode.preference === 'system' ? 'border-primary ring-1 ring-primary/30' : 'border-form-border dark:border-gray-700/80'">
                         <span class="flex items-center gap-3">
                             <Icon name="heroicons:computer-desktop" class="w-5 h-5 text-secondary dark:text-gray-400" />
                             <span class="text-main dark:text-gray-300 text-sm font-medium">Système</span>

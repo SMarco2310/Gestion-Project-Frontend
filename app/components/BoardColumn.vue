@@ -48,7 +48,31 @@ const items = defineModel<Task[]>('items', { default: () => [] })
 
 const itemCount = computed(() => items.value.length)
 
-const activeDropdownId = ref<string | null>(null)
+const activeDropdownId = ref<string | number | null>(null)
+const taskDropdownStyle = ref({ top: '0px', left: '0px' })
+
+const toggleTaskDropdown = (event: MouseEvent, taskId: string | number) => {
+  if (activeDropdownId.value === taskId) {
+    activeDropdownId.value = null
+    return
+  }
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const dropdownWidth = 144
+  const dropdownHeight = 85
+
+  let top = rect.bottom + 4
+  let left = rect.right - dropdownWidth
+
+  if (top + dropdownHeight > window.innerHeight) {
+    top = Math.max(10, rect.top - dropdownHeight - 4)
+  }
+
+  taskDropdownStyle.value = {
+    top: `${top}px`,
+    left: `${Math.max(10, left)}px`
+  }
+  activeDropdownId.value = taskId
+}
 const emit = defineEmits(['editTask', 'deleteTask', 'taskClick', 'createTask', 'taskMoved', 'rename', 'deleteColumn', 'toggleStatus', 'updateColor'])
 
 const isCollapsed = ref(false)
@@ -110,7 +134,7 @@ const toggleColorPicker = (event: MouseEvent) => {
 const { $api } = useNuxtApp()
 const { activeOrganization } = useOrganizations()
 
-const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-indigo-500', 'bg-teal-500']
 const orgMembers = ref<any[]>([])
 
 const fetchOrgMembers = async () => {
@@ -122,6 +146,7 @@ const fetchOrgMembers = async () => {
       id: m.id,
       first_name: m.first_name,
       last_name: m.last_name,
+      name: ((m.last_name || '') + ' ' + (m.first_name || '')).trim(),
       initials: (m.last_name || '?').charAt(0).toUpperCase() + (m.first_name || '').charAt(0).toUpperCase(),
       color: avatarColors[i % avatarColors.length],
       profile_picture: m.profile_picture || null
@@ -172,6 +197,7 @@ const submitNewTask = async () => {
       board_column: props.title,
       priority: 'moyen',
       due_date: newTaskDueDate.value || getTodayDate(),
+      assignee_id: newTaskAssignee.value ? newTaskAssignee.value.id : null,
     })
     
     const project = availableProjects.value.find((p) => String(p.id) === String(newTaskProject.value))
@@ -354,7 +380,7 @@ const isItemOverdue = (item: any) => {
             </div>
           </div>
           
-          <button @click="submitNewTask" class="p-1 text-secondary dark:text-gray-600 hover:text-cyan-600 dark:hover:text-cyan-600 border border-form-border dark:border-gray-700 hover:border-cyan-600 dark:hover:border-cyan-600 rounded transition-colors flex items-center justify-center">
+          <button @click="submitNewTask" class="p-1 text-secondary dark:text-gray-600 hover:text-primary dark:hover:text-primary border border-form-border dark:border-gray-700 hover:border-primary dark:hover:border-primary rounded transition-colors flex items-center justify-center">
             <Icon name="heroicons:paper-airplane" class="w-3.5 h-3.5" />
           </button>
         </div>
@@ -394,19 +420,9 @@ const isItemOverdue = (item: any) => {
               
               <!-- Actions Dropdown -->
               <div class="relative">
-                  <div @click.stop="activeDropdownId = activeDropdownId === item.id ? null : item.id" class="cursor-pointer p-0.5 -mt-1 -mr-1 hover:bg-canvas dark:hover:bg-gray-700 rounded-md transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0">
+                  <button @click.stop="toggleTaskDropdown($event, item.id)" class="cursor-pointer p-0.5 -mt-1 -mr-1 hover:bg-canvas dark:hover:bg-gray-700 rounded-md transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0">
                       <Icon name="heroicons:ellipsis-horizontal" class="w-5 h-5 text-secondary dark:text-gray-400" />
-                  </div>
-                  
-                  <!-- Dropdown Menu -->
-                  <div v-if="activeDropdownId === item.id" @click.stop class="absolute right-0 mt-1 w-36 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden">
-                      <button @click.stop="activeDropdownId = null; emit('editTask', item.id)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2">
-                          <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
-                      </button>
-                      <button @click.stop="activeDropdownId = null; emit('deleteTask', item.id)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
-                          <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
-                      </button>
-                  </div>
+                  </button>
               </div>
             </div>
 
@@ -427,7 +443,7 @@ const isItemOverdue = (item: any) => {
                  </div>
                  <div class="flex items-center gap-1.5 text-secondary dark:text-gray-400 text-xs font-medium">
                     <div @click.stop="emit('toggleStatus', item.id)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors">
-                      <div v-if="item.status === 'done'" class="w-2 h-2 bg-primary dark:bg-primary rounded-full"></div>
+                      <div v-if="item.status === 'done'" class="w-2 h-2 btn-primary dark:btn-primary rounded-full"></div>
                     </div>
                     <Icon :name="item.issueTypeIcon || 'ph:bookmark-simple-fill'" :class="['text-sm shrink-0', item.issueTypeColorClass || 'text-emerald-600']" />
                     <span class="truncate" :class="{ 'line-through text-form-placeholder dark:text-gray-500': item.status === 'done' }">{{ item.reference }}</span>
@@ -520,6 +536,22 @@ const isItemOverdue = (item: any) => {
             />
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Task Actions Teleported Dropdown -->
+    <div v-if="activeDropdownId !== null" class="fixed inset-0 z-[300]" @click="activeDropdownId = null">
+      <div 
+        class="fixed w-36 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-2xl border border-form-border dark:border-gray-800 z-[301] overflow-hidden"
+        :style="taskDropdownStyle"
+        @click.stop
+      >
+        <button @click.stop="() => { const id = activeDropdownId; activeDropdownId = null; emit('editTask', id); }" class="w-full text-left px-4 py-2.5 text-sm font-medium text-secondary dark:text-gray-300 hover:bg-canvas dark:hover:bg-gray-800 hover:text-main dark:hover:text-white transition-colors flex items-center gap-2 cursor-pointer">
+            <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
+        </button>
+        <button @click.stop="() => { const id = activeDropdownId; activeDropdownId = null; emit('deleteTask', id); }" class="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2 cursor-pointer">
+            <Icon name="heroicons:trash" class="w-4 h-4" /> Supprimer
+        </button>
       </div>
     </div>
   </Teleport>

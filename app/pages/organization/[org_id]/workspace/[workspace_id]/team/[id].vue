@@ -322,7 +322,7 @@ const confirmDeleteTeamClick = () => {
   <div class="w-full px-4 md:px-6 lg:px-8 pb-12">
     <!-- Header Controls -->
     <div class="flex items-center gap-4 mb-6">
-      <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+      <button @click="goBack" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
         <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
       </button>
     </div>
@@ -402,7 +402,7 @@ const confirmDeleteTeamClick = () => {
         <div class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-3xl p-8 border border-gray-200 dark:border-gray-800 shadow-sm">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-[11px] font-mono tracking-widest text-secondary dark:text-gray-500 uppercase">Membres</h3>
-            <button @click="isAddMemberModalOpen = true" class="text-[11px] font-bold text-cyan-600 flex items-center gap-1 hover:brightness-110">
+            <button @click="isAddMemberModalOpen = true" class="text-[11px] font-bold text-primary flex items-center gap-1 hover:brightness-110">
               <Icon name="heroicons:plus" class="w-3 h-3" /> AJOUTER
             </button>
           </div>
@@ -471,7 +471,7 @@ const confirmDeleteTeamClick = () => {
           <button @click="isEditModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleEditTeam" class="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
+          <button @click="handleEditTeam" class="px-4 py-2 btn-primary text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg text-sm">
             Enregistrer
           </button>
         </div>
@@ -521,14 +521,14 @@ const confirmDeleteTeamClick = () => {
                     <span class="text-xs text-gray-500">{{ member.email }}</span>
                   </div>
                 </div>
-                <button class="text-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity">Ajouter</button>
+                <button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">Ajouter</button>
               </li>
               
               <!-- Empty state / Invite state -->
               <li v-if="filteredMembers.length === 0" class="px-4 py-4 text-center">
                 <div v-if="isEmailQuery" class="flex flex-col items-center gap-2">
                   <span class="text-sm text-gray-500">Aucun membre trouvé avec cet email.</span>
-                  <button @click="handleInviteNew" class="px-4 py-2 bg-cyan-600/10 text-cyan-600 hover:bg-cyan-600/20 transition-colors rounded-lg font-medium text-sm flex items-center gap-2">
+                  <button @click="handleInviteNew" class="px-4 py-2 btn-primary/10 text-primary hover:btn-primary/20 transition-colors rounded-lg font-medium text-sm flex items-center gap-2">
                     <Icon name="heroicons:envelope" class="w-4 h-4" />
                     Inviter {{ searchQuery }}
                   </button>
@@ -572,7 +572,7 @@ const confirmDeleteTeamClick = () => {
           <button @click="isEditRoleModalOpen = false" class="px-4 py-2 text-sm font-medium text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-xl transition-colors">
             Annuler
           </button>
-          <button @click="updateMemberRole" class="px-4 py-2 text-sm font-medium bg-cyan-600 text-white rounded-xl hover:bg-cyan-600 transition-colors shadow-sm">
+          <button @click="updateMemberRole" class="px-4 py-2 text-sm font-medium btn-primary text-white rounded-xl hover:btn-primary transition-colors shadow-sm">
             Sauvegarder
           </button>
         </div>

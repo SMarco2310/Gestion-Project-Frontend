@@ -12,6 +12,7 @@ import CreateProjectModal from '~/components/CreateProjectModal.vue'
 import ProjectSideSheet from '~/components/ProjectSideSheet.vue'
 import TaskModal from '~/components/TaskModal.vue'
 import { stringify } from 'node:querystring'
+import { useTour } from '~/composables/useTour'
 
 definePageMeta({
   layout: 'custom',
@@ -24,6 +25,7 @@ const { activeOrganization } = useOrganizations()
 
 const calendarRef = ref<any>(null)
 let draggableInstance: any = null
+const { continueTourIfPending } = useTour()
 
 const currentTitle = ref('')
 const activeFilter = ref('All')
@@ -207,6 +209,9 @@ onMounted(async () => {
   }
   
   await Promise.all([getTasks(), getProjets()])
+
+  // Resume the onboarding tour if it was navigated here during Phase 2
+  continueTourIfPending('calendar')
 })
 
 onUnmounted(() => {
@@ -336,7 +341,7 @@ const calendarOptions = computed(() => ({
 
 <template>
   <div class="h-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-40px)] flex flex-col pb-12 md:pb-4 max-w-full mx-auto w-full">
-    <header class="pb-4 flex justify-between items-center">
+    <header id="tour-calendar-header" class="pb-4 flex justify-between items-center">
       <div class="pb-5">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Planning</h1>
       </div>
@@ -353,7 +358,7 @@ const calendarOptions = computed(() => ({
             <div class="relative flex items-center bg-gray-50 dark:bg-black/20 p-1 rounded-full border border-gray-100 dark:border-gray-800 w-max isolate">
               <!-- Bouncy Slider Background -->
               <div 
-                class="absolute top-1 bottom-1 rounded-full bg-[#0891b2] neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
+                class="absolute top-1 bottom-1 rounded-full btn-primary neo-emboss transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
                 :class="{
                   'left-1 w-[64px]': activeFilter === 'All',
                   'left-[68px] w-[96px]': activeFilter === 'Projects',
@@ -424,19 +429,21 @@ const calendarOptions = computed(() => ({
                 <button class="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-gray-700 rounded-full text-sm font-bold text-main dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors pointer-events-none">
                   <Icon name="heroicons:adjustments-horizontal" class="w-4 h-4" />
                   Filtrer
-                  <span v-if="activeFilterCount > 0" class="w-5 h-5 bg-[#0891b2] neo-emboss text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
+                  <span v-if="activeFilterCount > 0" class="w-5 h-5 btn-primary neo-emboss text-white rounded-full flex items-center justify-center text-[10px]">{{ activeFilterCount }}</span>
                 </button>
               </template>
             </FilterDropdown>
             
             <div class="relative z-30 add-event-dropdown">
               <button 
+                id="tour-calendar-add-btn"
                 @click="isAddEventDropdownOpen = !isAddEventDropdownOpen"
-                class="flex items-center gap-2 px-5 py-2 bg-[#0891b2] neo-emboss text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all"
+                class="flex items-center gap-2 px-5 py-2 btn-primary neo-emboss text-white rounded-full text-sm font-bold hover:scale-[1.02] active:scale-95 transition-all"
               >
                 <Icon name="heroicons:plus" class="w-4 h-4 drop-shadow-md" />
                 <span class="tracking-wide drop-shadow-sm">Ajouter</span>
               </button>
+
               
               <transition name="fade">
                 <div v-if="isAddEventDropdownOpen" class="absolute top-full mt-2 right-0 w-48 bg-white dark:bg-[#252525] border border-gray-100 dark:border-gray-800 rounded-xl shadow-xl overflow-hidden py-1">
@@ -465,7 +472,7 @@ const calendarOptions = computed(() => ({
             <div class="flex items-center justify-center py-1 md:py-2 overflow-hidden w-full">
               <div 
                 v-if="arg.isToday"
-                class="bg-[#0891b2] neo-emboss shadow-md text-white px-1.5 md:px-5 py-1 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[20px] md:min-w-0"
+                class="btn-primary neo-emboss shadow-md text-white px-1.5 md:px-5 py-1 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-wide flex items-center justify-center min-w-[20px] md:min-w-0"
               >
                 <span class="md:hidden uppercase">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'narrow' }) : arg.date.getDate() }}</span>
                 <span class="hidden md:inline">{{ arg.view.type === 'dayGridMonth' ? arg.date.toLocaleDateString('fr-FR', { weekday: 'long' }) : arg.date.getDate() + ' - ' + arg.date.toLocaleDateString('fr-FR', { weekday: 'short' }) }}</span>
@@ -488,16 +495,16 @@ const calendarOptions = computed(() => ({
 
           <template v-slot:eventContent="arg">
             <!-- Project Event -->
-            <div v-if="arg.event.extendedProps.type === 'project'" class="w-full h-full min-h-[22px] px-1.5 py-0.5 flex items-center rounded-md overflow-hidden shadow-sm" :class="[arg.event.extendedProps.colorClass, 'text-gray-900 dark:text-gray-100']" :style="{ borderLeft: '3px solid ' + arg.event.borderColor }">
+            <div v-if="arg.event.extendedProps.type === 'project'" class="w-full h-full min-h-[30px] px-2 py-1.5 flex items-center rounded-md overflow-hidden shadow-sm" :class="[arg.event.extendedProps.colorClass, 'text-gray-900 dark:text-gray-100']" :style="{ borderLeft: '3px solid ' + arg.event.borderColor }">
               <template v-if="arg.isStart || arg.view.type === 'dayGridMonth'">
-                <Icon name="heroicons:briefcase" class="w-3.5 h-3.5 mr-1.5 opacity-90 shrink-0" />
-                <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
+                <Icon name="heroicons:briefcase" class="w-4 h-4 mr-1.5 opacity-90 shrink-0" />
+                <span class="text-xs font-bold truncate leading-none mt-0.5">{{ arg.event.title }}</span>
               </template>
             </div>
 
             <!-- Month View Task Event -->
             <div v-else-if="arg.view.type === 'dayGridMonth'"
-                 class="flex items-center gap-1.5 w-full px-1.5 py-1 rounded-md overflow-hidden shadow-sm border border-black/5 dark:border-white/5"
+                 class="flex items-center gap-2 w-full min-h-[30px] px-2 py-1.5 rounded-md overflow-hidden shadow-sm border border-black/5 dark:border-white/5"
                  :class="{
                    'bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300': arg.event.backgroundColor === '#3b82f6',
                    'bg-red-50 dark:bg-red-900/40 text-red-700 dark:text-red-300': arg.event.backgroundColor === '#ef4444',
@@ -505,10 +512,10 @@ const calendarOptions = computed(() => ({
                    'bg-gray-100 dark:bg-gray-800/40 text-gray-900 dark:text-gray-100': arg.event.backgroundColor === 'rgba(59, 130, 246, 0.1)'
                  }"
             >
-              <div v-if="arg.event.extendedProps.status === 'done'" class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></div>
-              <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></div>
-              <div v-else class="w-1.5 h-1.5 rounded-full bg-gray-400 shrink-0 border border-gray-500"></div>
-              <span class="text-[10px] font-bold truncate leading-none">{{ arg.event.title }}</span>
+              <div v-if="arg.event.extendedProps.status === 'done'" class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></div>
+              <div v-else-if="arg.event.extendedProps.status === 'en cours'" class="w-2 h-2 rounded-full btn-primary shrink-0"></div>
+              <div v-else class="w-2 h-2 rounded-full bg-gray-400 shrink-0 border border-gray-500"></div>
+              <span class="text-xs font-bold truncate leading-none mt-0.5">{{ arg.event.title }}</span>
             </div>
 
             <!-- TimeGrid Event (Week/Day) -->

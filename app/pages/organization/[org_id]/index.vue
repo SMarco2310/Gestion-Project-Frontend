@@ -5,6 +5,7 @@ const { $api } = useNuxtApp()
 const route = useRoute()
 const orgId = route.params.org_id
 const isLoading = ref(true)
+const isCreateWorkspaceModalOpen = useState('isCreateWorkspaceModalOpen', () => false)
 
 const fetchWorkspaces = async () => {
   try {
@@ -35,13 +36,21 @@ onMounted(() => {
     </div>
     
     <div v-else class="text-center p-8 max-w-md">
-      <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-6">
+      <div class="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-primary dark:text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
         <Icon name="heroicons:briefcase" class="w-8 h-8" />
       </div>
       <h2 class="text-2xl font-bold text-main dark:text-white mb-4">Aucun espace de travail</h2>
       <p class="text-secondary dark:text-gray-400 mb-8">
-        Cette organisation ne possède aucun espace de travail. Veuillez utiliser le menu en haut à gauche pour en créer un.
+        Cette organisation ne possède aucun espace de travail. Vous pouvez en créer un directement ci-dessous.
       </p>
+
+      <button 
+        @click="isCreateWorkspaceModalOpen = true" 
+        class="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary hover:bg-cyan-700 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 cursor-pointer"
+      >
+        <Icon name="heroicons:plus" class="w-5 h-5" />
+        Créer un espace de travail
+      </button>
     </div>
   </div>
 </template>

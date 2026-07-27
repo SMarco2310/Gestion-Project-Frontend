@@ -4,12 +4,13 @@ definePageMeta({
   // middleware: 'auth',
 })
 
-
 import useTasks from '~/composables/useTasks'
+import { useTour } from '~/composables/useTour'
 
 const { isOwner } = useAuth()
 const { projets, getProjets, createProjet, deleteProjet, archiveProjet } = useProjets()
 const { tasks, getTasks } = useTasks()
+const { continueTourIfPending } = useTour()
 
 const isArchivedSectionOpen = ref(false)
 
@@ -17,6 +18,9 @@ await Promise.all([
   getProjets(),
   getTasks()
 ])
+
+// Resume the onboarding tour on this page if it was navigated here during Phase 2
+onMounted(() => { continueTourIfPending('projects') })
 
 const getProjectMetrics = (projectId: number | string) => {
   const projectTasks = tasks.value.filter(t => String(t.projet_id) === String(projectId))
@@ -202,7 +206,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
 
 <template>
   <div>
-    <header>
+    <header id="tour-projects-header">
       <div class="pb-5">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Projets Overview</h1>
         <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer et suivre l'avancement de tous vos projets.</p>
@@ -225,7 +229,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
             @update:filters="handleFilterUpdate"
             class="shrink-0" 
           />
-          <button @click="isCreateModalOpen = true" class="shrink-0 bg-cyan-600 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+          <button id="tour-create-project-btn" @click="isCreateModalOpen = true" class="shrink-0 btn-primary text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
             <Icon name="heroicons:plus" class="w-5 h-5" />
             <span class="px-2 font-medium hidden md:inline">Ajouter un projet</span>
           </button>
@@ -315,7 +319,7 @@ const archivedProjects = computed(() => filteredProjets.value.filter((p: any) =>
         <p class="text-secondary dark:text-gray-400 mb-8 max-w-sm px-4 leading-relaxed">
           Vous n'avez pas encore de projet dans cet espace de travail. Créez votre premier projet pour commencer à collaborer.
         </p>
-        <button @click="isCreateModalOpen = true" class="bg-cyan-600 text-white font-bold py-3.5 px-8 rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+        <button @click="isCreateModalOpen = true" class="btn-primary text-white font-bold py-3.5 px-8 rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-6 h-6" />
           Créer un nouveau projet
         </button>

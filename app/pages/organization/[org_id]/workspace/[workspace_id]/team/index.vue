@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useToast } from '~/composables/useToast'
 import useWorkspaces from '~/composables/useWorkspaces'
 import useOrganizations from '~/composables/useOrganizations'
+import { useTour } from '~/composables/useTour'
 
 definePageMeta({
   layout: 'custom'
@@ -14,6 +15,7 @@ const { $api } = useNuxtApp()
 const { addToast } = useToast()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase
+const { continueTourIfPending } = useTour()
 
 const route = useRoute()
 const workspaceId = computed(() => route.params.workspace_id as string)
@@ -37,6 +39,7 @@ const fetchTeams = async () => {
 
 onMounted(() => {
   fetchTeams();
+  continueTourIfPending('team')
 })
 
 const isCreateModalOpen = ref(false)
@@ -149,7 +152,7 @@ const getAvatarStyle = (name: string) => {
 <template>
   <div @click="activeDropdownId = null">
     <!-- Header Section -->
-    <section class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <section id="tour-team-header" class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div class="flex flex-col gap-2">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Équipes</h1>
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez les équipes au sein de votre organisation.</p>
@@ -159,7 +162,7 @@ const getAvatarStyle = (name: string) => {
           <Icon name="heroicons:link" class="w-5 h-5" />
           Associer une équipe
         </button>
-        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+        <button id="tour-create-team-btn" @click="isCreateModalOpen = true" class="px-4 py-2 btn-primary text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-5 h-5" />
           Nouvelle Équipe
         </button>
@@ -168,13 +171,13 @@ const getAvatarStyle = (name: string) => {
 
     <!-- Loading State -->
     <div v-if="isLoading" class="flex items-center justify-center py-20">
-      <Icon name="eos-icons:loading" class="w-10 h-10 text-cyan-600 animate-spin" />
+      <Icon name="eos-icons:loading" class="w-10 h-10 text-primary animate-spin" />
     </div>
 
     <!-- Teams Grid -->
     <div v-else-if="teams.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-12">
       
-      <div v-for="(team, index) in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-cyan-600/30 dark:hover:border-cyan-600/30 hover:shadow-sm transition-all group flex flex-col min-h-[280px] h-full cursor-pointer shadow-sm" :class="activeDropdownId === team.id ? 'relative z-50' : 'relative z-10'">
+      <div v-for="(team, index) in teams" :key="team.id" @click="navigateTo(`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/team/${team.id}`)" class="bg-[#ffffff] dark:bg-[#1A1A1D] rounded-2xl p-6 border border-gray-200 dark:border-gray-800 hover:border-primary/30 dark:hover:border-primary/30 hover:shadow-sm transition-all group flex flex-col min-h-[280px] h-full cursor-pointer shadow-sm" :class="activeDropdownId === team.id ? 'relative z-50' : 'relative z-10'">
         
         <!-- Top bar -->
         <div class="flex justify-between items-start mb-4">
@@ -198,9 +201,9 @@ const getAvatarStyle = (name: string) => {
         
         <!-- Icon and Status -->
         <div class="flex flex-col mb-4 gap-2.5">
-          <Icon name="heroicons:user-group" class="w-10 h-10 text-cyan-600 drop-shadow-sm dark:text-cyan-500/50 mb-2" />
+          <Icon name="heroicons:user-group" class="w-10 h-10 text-primary drop-shadow-sm dark:text-primary/50 mb-2" />
           <div class="flex items-center gap-2">
-            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'bg-cyan-600' : 'bg-red-500'"></div>
+            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'btn-primary' : 'bg-red-500'"></div>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono tracking-wide">Actif &middot; {{ team.members_count || 0 }} membres</span>
           </div>
         </div>
@@ -234,12 +237,12 @@ const getAvatarStyle = (name: string) => {
     </div>
     <!-- Empty State -->
     <div v-else class="flex flex-col items-center justify-center py-20 px-4">
-      <div class="w-16 h-16 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-2xl flex items-center justify-center mb-4">
+      <div class="w-16 h-16 btn-primary-subtle dark:btn-primary/30 text-primary dark:text-primary rounded-2xl flex items-center justify-center mb-4">
         <Icon name="heroicons:user-group" class="w-8 h-8" />
       </div>
       <h3 class="text-xl font-bold text-main dark:text-white mb-2">Aucune équipe</h3>
       <p class="text-secondary dark:text-gray-400 text-center max-w-sm mb-6">Vous n'avez pas encore créé d'équipe. Créez-en une pour organiser vos membres.</p>
-      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 bg-cyan-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 btn-primary text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
         <Icon name="heroicons:plus" class="w-6 h-6" />
         Créer une équipe
       </button>
@@ -278,7 +281,7 @@ const getAvatarStyle = (name: string) => {
           <button @click="isCreateModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleCreateTeam" :disabled="!newTeamName.trim()" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          <button @click="handleCreateTeam" :disabled="!newTeamName.trim()" class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             <Icon name="heroicons:plus" class="w-4 h-4" />
             Créer
           </button>
@@ -344,7 +347,7 @@ const getAvatarStyle = (name: string) => {
           <button @click="isAttachModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleAttachTeam" :disabled="!selectedOrgTeam" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          <button @click="handleAttachTeam" :disabled="!selectedOrgTeam" class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             <Icon name="heroicons:link" class="w-4 h-4" />
             Associer
           </button>

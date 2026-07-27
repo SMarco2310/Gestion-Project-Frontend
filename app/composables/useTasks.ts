@@ -50,30 +50,50 @@ export default function useTasks() {
   const config = useRuntimeConfig()
   const apiBase = config.public.apiBase
 
-  const normalizeTask = (task: any): Tache => ({
-    id: task.id ?? task._id ?? '',
-    title: task.title ?? task.name ?? 'Sans titre',
-    reference_code: task.reference_code ?? '',
-    description: task.description ?? '',
-    status: task.status ?? TaskStatus.NOT_DONE,
-    board_column: task.board_column ?? null,
-    priority: task.priority ?? TaskPriority.MEDIUM,
-    tag_ids: task.tags ? task.tags.map((t: any) => t.id) : (task.tag_ids ?? []),
-    tags: task.tags ?? [],
-    projet_id: task.projet_id ?? null,
-    projet: task.projet ?? null,
-    parent_task_id: task.parent_task_id ?? null,
-    sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
-    commentaires_count: task.commentaires_count ?? 0,
-    due_date: task.due_date ?? '',
-    created_at: task.created_at ?? new Date().toISOString(),
-    updated_at: task.updated_at ?? '',
-    banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
-    assignee_id: task.assignee_id ?? null,
-    assignee: task.assignee ?? null,
-    checklists: task.checklists ?? [],
-    attachments: task.attachments ?? [],
-  })
+  const normalizeTask = (task: any): Tache => {
+    let projet = task.projet ?? null
+    if (!projet && task.projet_id) {
+      try {
+        const { projets } = useProjets()
+        const found = projets.value?.find((p: any) => String(p.id) === String(task.projet_id))
+        if (found) {
+          projet = {
+            id: found.id,
+            reference_code: found.reference_code || found.name,
+            name: found.name,
+            end_date: found.end_date
+          }
+        }
+      } catch (e) {
+        // ignore fallback
+      }
+    }
+
+    return {
+      id: task.id ?? task._id ?? '',
+      title: task.title ?? task.name ?? 'Sans titre',
+      reference_code: task.reference_code ?? '',
+      description: task.description ?? '',
+      status: task.status ?? TaskStatus.NOT_DONE,
+      board_column: task.board_column ?? null,
+      priority: task.priority ?? TaskPriority.MEDIUM,
+      tag_ids: task.tags ? task.tags.map((t: any) => t.id) : (task.tag_ids ?? []),
+      tags: task.tags ?? [],
+      projet_id: task.projet_id ?? null,
+      projet: projet,
+      parent_task_id: task.parent_task_id ?? null,
+      sub_tasks: task.sub_tasks ?? task.sub_tasks ?? task.subTasks ?? [],
+      commentaires_count: task.commentaires_count ?? 0,
+      due_date: task.due_date ?? '',
+      created_at: task.created_at ?? new Date().toISOString(),
+      updated_at: task.updated_at ?? '',
+      banner_image: task.banner_image ? (task.banner_image.startsWith('http') ? task.banner_image : `http://localhost:8000${task.banner_image}`) : '',
+      assignee_id: task.assignee_id ?? null,
+      assignee: task.assignee ?? null,
+      checklists: task.checklists ?? [],
+      attachments: task.attachments ?? [],
+    }
+  }
 
   const getTasks = async (projectId?: number | string) => {
     isLoading.value = true
@@ -153,6 +173,9 @@ export default function useTasks() {
       if (activeWorkspace.value?.id) {
          payload = { ...payload, workspace_id: activeWorkspace.value.id } as any
       }
+      if ((payload as any).tag_id && (!payload.tag_ids || payload.tag_ids.length === 0)) {
+        payload.tag_ids = [(payload as any).tag_id]
+      }
       const data = await $api<Tache | any>('/taches', {
         method: 'POST',
         body: payload,
@@ -170,6 +193,9 @@ export default function useTasks() {
 
   const updateTask = async (id: number | string, payload: Partial<TaskPayload>) => {
     try {
+      if ((payload as any).tag_id && (!payload.tag_ids || payload.tag_ids.length === 0)) {
+        payload.tag_ids = [(payload as any).tag_id]
+      }
       const data = await $api<any>(`/taches/${id}`, {
         method: 'PUT',
         body: payload,
@@ -179,6 +205,16 @@ export default function useTasks() {
       const updatedTask = normalizeTask(rawTask)
       const index = tasks.value.findIndex((item) => String(item.id) === String(id))
       if (index !== -1) {
+        const existingTask = tasks.value[index]
+        if (!updatedTask.projet && existingTask?.projet) {
+          updatedTask.projet = existingTask.projet
+        }
+        if (!updatedTask.assignee && existingTask?.assignee) {
+          updatedTask.assignee = existingTask.assignee
+        }
+        if ((!updatedTask.tags || updatedTask.tags.length === 0) && existingTask?.tags && existingTask.tags.length > 0) {
+          updatedTask.tags = existingTask.tags
+        }
         tasks.value[index] = updatedTask
       }
 

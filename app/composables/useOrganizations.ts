@@ -3,6 +3,7 @@ export interface Organization {
   name: string;
   description?: string;
   logo?: string;
+  primary_color?: string;
   owner_id?: number | string;
   reminder_days_before_start?: number;
   reminder_days_before_end?: number;
@@ -157,6 +158,32 @@ export default function useOrganizations() {
     }
   };
 
+  const removeMember = async (orgId: number | string, userId: number | string) => {
+    try {
+      const { $api } = useNuxtApp();
+      await $api(`/organizations/${orgId}/members/${userId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
+  const updateMemberRole = async (orgId: number | string, userId: number | string, role: string) => {
+    try {
+      const { $api } = useNuxtApp();
+      const data = await $api(`/organizations/${orgId}/members/${userId}`, {
+        method: 'PUT',
+        body: { role }
+      });
+      return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+
   return {
     organizations,
     activeOrganization,
@@ -168,6 +195,8 @@ export default function useOrganizations() {
     setActiveOrganization,
     uploadLogo,
     getMembers,
+    removeMember,
+    updateMemberRole,
     updateKanbanColumns
   };
 }

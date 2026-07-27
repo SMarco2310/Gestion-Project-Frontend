@@ -8,6 +8,7 @@ import useTasks from '~/composables/useTasks'
 import useProjets from '~/composables/useProjets'
 import useCommentaire from '~/composables/useCommentaire'
 import useWorkspaces from '~/composables/useWorkspaces'
+import { useTour } from '~/composables/useTour'
 
 definePageMeta({
   layout: 'custom',
@@ -21,6 +22,7 @@ const { projets, getProjets, createProjet } = useProjets()
 const { commentaires, getCommentaires } = useCommentaire()
 const { activeOrganization, getOrganization, setActiveOrganization } = useOrganizations()
 const { activeWorkspace, getWorkspace, setActiveWorkspace } = useWorkspaces()
+const { continueTourIfPending } = useTour()
 
 const kanbanColumns = computed<string[]>(() => {
   return activeWorkspace.value?.kanban_columns !== undefined && activeWorkspace.value?.kanban_columns !== null
@@ -60,7 +62,7 @@ const handleCreateProjectSubmit = async (payload: any) => {
   }
 }
 
-const userName = computed(() => (user.value?.first_name ?? '') + ' ' + (user.value?.last_name ?? 'Utilisateur'))
+const userName = computed(() => ((user.value?.last_name ?? '') + ' ' + (user.value?.first_name ?? '')).trim() || 'Utilisateur')
 
 const doneCount = computed(() => tasks.value.filter((task) => isDone(task.status)).length)
 const createdCount = computed(() => tasks.value.length)
@@ -253,7 +255,7 @@ const recentCommentsData = computed(() => {
     .map(c => ({
       id: c.id,
       content: c.content,
-      author: c.user?.first_name + ' ' + c.user?.last_name,
+      author: (c.user?.last_name ? c.user.last_name + ' ' : '') + (c.user?.first_name || ''),
       time: new Date(c.created_at as string).toLocaleDateString('fr-FR'),
       taskId: c.tache_id
     }))
@@ -316,6 +318,9 @@ onMounted(async () => {
     getProjets().catch(() => null),
     getCommentaires().catch(() => null),
   ])
+
+  // Resume the onboarding tour if it was navigated here during Phase 2
+  continueTourIfPending('dashboard')
 })
 </script>
 
@@ -326,13 +331,13 @@ onMounted(async () => {
             <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-200">Dashboard</h1>
             <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Bienvenue sur votre tableau de bord, {{ userName }}</p>
           </div>
-          <button @click="isCreateProjectModalOpen = true" class="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
+          <button id="tour-dashboard-create-project" @click="isCreateProjectModalOpen = true" class="px-4 py-2 btn-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
             <Icon name="heroicons:plus" class="w-4 h-4" />
             Créer un projet
           </button>
         </section>
     <br>
-    <section>
+    <section id="tour-dashboard-stats">
         <!-- Stats Cards with only numbers -->
         <CardDashboard :cards="cards" />
     </section>
@@ -366,7 +371,7 @@ onMounted(async () => {
     <section v-if="topProjects.length > 0">
         <div class="flex items-center justify-between mb-4 mt-2">
             <h2 class="text-xl font-bold text-main dark:text-gray-200">Projets récents</h2>
-            <NuxtLink :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects`" class="text-[10px] font-bold text-[#0891b2] uppercase tracking-widest hover:underline">
+            <NuxtLink :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects`" class="text-[10px] font-bold text-[#0B0E11] uppercase tracking-widest hover:underline">
                 Tous les projets
             </NuxtLink>
         </div>

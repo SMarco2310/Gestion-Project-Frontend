@@ -109,7 +109,7 @@ const getStatusBadge = (status: string) => {
     <div class="w-full pt-4 pb-12 px-4 md:px-6 lg:px-8">
         <!-- Header -->
         <header class="mb-6">
-            <button @click="goBack()" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+            <button @click="goBack()" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
                 <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
             </button>
         </header>

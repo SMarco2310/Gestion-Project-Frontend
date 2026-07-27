@@ -6,7 +6,11 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: '#0891b2',
+        primary: {
+          DEFAULT: 'rgb(var(--color-primary-rgb) / <alpha-value>)',
+          hover: 'var(--color-primary-hover)',
+          subtle: 'var(--color-primary-subtle)',
+        },
         main: '#0B0E11',
         secondary: '#5B6168',
         'form-placeholder': '#A1A5A9',

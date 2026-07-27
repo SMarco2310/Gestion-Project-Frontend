@@ -18,7 +18,7 @@ const isAssigneeDropdownOpen = ref(false)
 const { $api } = useNuxtApp()
 const { activeOrganization } = useOrganizations()
 
-const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-indigo-500', 'bg-teal-500']
 const orgMembers = ref<any[]>([])
 
 const fetchOrgMembers = async () => {
@@ -143,7 +143,7 @@ const onChange = (evt: any) => {
       </div>
 
       <!-- Inline Create Form -->
-      <div v-if="isCreating" ref="createFormRef" class="bg-[#24334E] rounded-lg p-3 mb-2 border border-cyan-600 shadow-sm flex flex-col gap-2 shrink-0">
+      <div v-if="isCreating" ref="createFormRef" class="bg-[#24334E] rounded-lg p-3 mb-2 border border-primary shadow-sm flex flex-col gap-2 shrink-0">
         <textarea 
           v-model="newTaskTitle"
           class="w-full bg-transparent text-gray-200 text-[15px] placeholder-gray-400 focus:outline-none resize-none"
@@ -160,13 +160,13 @@ const onChange = (evt: any) => {
               v-model="newTaskProject"
               :options="availableProjects.map(p => ({ value: p.id, label: p.name }))"
               placeholder="Projet"
-              buttonClass="text-[11px] font-medium text-gray-300 bg-[#16233B] border border-white/10 rounded px-1.5 py-1 focus:outline-none focus:border-cyan-600 cursor-pointer w-24 flex justify-between items-center"
+              buttonClass="text-[11px] font-medium text-gray-300 bg-[#16233B] border border-white/10 rounded px-1.5 py-1 focus:outline-none focus:border-primary cursor-pointer w-24 flex justify-between items-center"
               dropdownClass="w-32 mt-1 bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-800 z-50 absolute left-0 top-full"
             />
             
             <!-- Calendar Date Picker -->
             <div class="relative flex items-center">
-              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-gray-300 bg-[#16233B] border border-white/10 rounded px-1.5 py-1 focus:outline-none focus:border-cyan-600 cursor-pointer" />
+              <input type="date" :min="minDate" v-model="newTaskDueDate" class="text-xs text-gray-300 bg-[#16233B] border border-white/10 rounded px-1.5 py-1 focus:outline-none focus:border-primary cursor-pointer" />
             </div>
             
             <!-- User -->
@@ -206,7 +206,7 @@ const onChange = (evt: any) => {
             </div>
           </div>
           
-          <button @click="handleAddCard" class="p-1 text-gray-400 hover:text-cyan-600 border border-white/10 hover:border-cyan-600 rounded transition-colors flex items-center justify-center">
+          <button @click="handleAddCard" class="p-1 text-gray-400 hover:text-primary border border-white/10 hover:border-primary rounded transition-colors flex items-center justify-center">
             <Icon name="heroicons:paper-airplane" class="w-3.5 h-3.5" />
           </button>
         </div>

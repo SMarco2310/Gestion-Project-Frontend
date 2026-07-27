@@ -72,16 +72,16 @@ const handleActionClick = () => {
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
-      <div class="py-2 flex items-center gap-4">
-        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="p-2 bg-card dark:bg-[#1D1D1D] rounded-lg border border-form-border dark:border-gray-800 hover:bg-canvas dark:hover:bg-gray-800 transition-colors text-secondary dark:text-gray-400">
-          <Icon name="heroicons:arrow-left" class="w-6 h-6" />
-        </button>
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Détails de la notification</h1>
-        </div>
-      </div>
-    </header>
+    <!-- Header Controls -->
+    <div class="flex items-center gap-4 mb-6 shrink-0">
+      <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
+        <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
+      </button>
+    </div>
+
+    <div class="mb-4 shrink-0 px-1">
+      <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-100">Détails de la notification</h1>
+    </div>
 
     <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar pb-8 mt-6">
       <div v-if="loading" class="flex justify-center items-center h-32">
@@ -92,7 +92,7 @@ const handleActionClick = () => {
         <Icon name="heroicons:exclamation-triangle" class="w-16 h-16 mb-4 opacity-50 text-yellow-500" />
         <p class="text-lg font-medium">Notification introuvable</p>
         <p class="text-sm mt-1 opacity-75">Elle a peut-être été supprimée.</p>
-        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="mt-6 text-cyan-600 hover:underline">
+        <button @click="router.push(`/organization/${route.params.org_id}/notifications`)" class="mt-6 text-primary hover:underline">
           Retour aux notifications
         </button>
       </div>
@@ -129,7 +129,7 @@ const handleActionClick = () => {
             <button 
               v-if="notification.data.task_id || notification.data.projet_id"
               @click="handleActionClick" 
-              class="bg-cyan-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
+              class="btn-primary text-white px-6 py-2.5 rounded-lg font-medium transition-all hover:brightness-110 flex items-center gap-2 shadow-sm"
             >
               <Icon :name="notification.data.task_id ? 'heroicons:clipboard-document-list' : 'heroicons:folder'" class="w-5 h-5" />
               <span>Voir {{ notification.data.task_id ? 'la tâche' : 'le projet' }}</span>

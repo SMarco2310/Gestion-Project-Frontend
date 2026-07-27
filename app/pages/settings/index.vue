@@ -26,7 +26,7 @@ const handleCreateTag = async () => {
   }
 }
 
-const handleDeleteTag = async (id: number) => {
+const handleDeleteTag = async (id: any) => {
   if (confirm('Voulez-vous vraiment supprimer cette étiquette ?')) {
     await deleteTag(id)
   }
@@ -73,7 +73,7 @@ const handleDeleteTag = async (id: number) => {
               <button 
                 @click="handleCreateTag"
                 :disabled="!newTagName.trim() || isLoading"
-                class="shrink-0 bg-cyan-600 text-white transition-all cursor-pointer flex items-center justify-center px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none"
+                class="shrink-0 btn-primary text-white transition-all cursor-pointer flex items-center justify-center px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110 disabled:opacity-50 disabled:pointer-events-none"
               >
                 <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-5 h-5 animate-spin" />
                 <Icon v-else name="heroicons:plus" class="w-5 h-5" />

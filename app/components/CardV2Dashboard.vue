@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const route = useRoute()
 const orgId = computed(() => route.params.org_id)
@@ -49,12 +49,30 @@ const priorityData = computed(() => {
   }))
 })
 
-const priorityCategories = {
+const primaryColor = ref('#0891b2')
+
+onMounted(() => {
+  if (import.meta.client) {
+    const updateColor = () => {
+      const style = getComputedStyle(document.documentElement)
+      const rgb = style.getPropertyValue('--color-primary-rgb').trim()
+      if (rgb) {
+        primaryColor.value = `rgb(${rgb})`
+      }
+    }
+    updateColor()
+    
+    const observer = new MutationObserver(updateColor)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class'] })
+  }
+})
+
+const priorityCategories = computed(() => ({
   Tâches: {
     name: 'Tâches',
-    color: '#0891b2'
+    color: primaryColor.value
   }
-}
+}))
 
 const xFormatterPriority = (i: number) => priorityData.value[i]?.name || ''
 
@@ -76,8 +94,8 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
   <div class="flex flex-col gap-6">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
       <!-- Project Tasks Overview -->
-      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
-        <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-2">Tâches par Projet</h3>
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px] shadow-md transition-colors">
+        <h3 class="text-sm font-semibold text-main dark:text-gray-100 mb-2">Tâches par Projet</h3>
         
         <div class="flex-1 w-full relative">
           <ClientOnly>
@@ -100,8 +118,8 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
       </div>
 
       <!-- Priority Breakdown -->
-      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
-        <h3 class="text-sm font-semibold text-main dark:text-gray-200 mb-2">Priority Breakdown</h3>
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px] shadow-md transition-colors">
+        <h3 class="text-sm font-semibold text-main dark:text-gray-100 mb-2">Priority Breakdown</h3>
         
         <div class="flex-1 w-full relative">
           <ClientOnly>
@@ -120,9 +138,9 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
       </div>
 
       <!-- Epic Progress -->
-      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px] shadow-md transition-colors">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-sm font-semibold text-main dark:text-gray-200">Epic Progress</h3>
+          <h3 class="text-sm font-semibold text-main dark:text-gray-100">Epic Progress</h3>
         </div>
 
         <div class="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
@@ -130,7 +148,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
             v-for="epic in epics" 
             :key="epic.reference_code"
             :to="`/organization/${orgId}/workspace/${route.params.workspace_id}/project/${epic.id}`"
-            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5 hover:border-primary/50 transition-colors cursor-pointer group block"
+            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 flex flex-col gap-3 border border-black/5 dark:border-white/5 hover:border-primary/50 transition-colors cursor-pointer group"
           >
             <div class="flex items-center gap-3">
               <span :class="['text-[10px] font-bold px-2 py-0.5 rounded', epic.badgeBg, epic.badgeText]">
@@ -156,12 +174,12 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
     </div>
 
     <!-- Second Row -->
-    <div class="w-full max-w-[65%]">
+    <div class="w-full lg:max-w-[65%]">
       <!-- Upcoming Deadlines -->
-      <div class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-6 flex flex-col h-[300px] shadow-md">
+      <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-6 flex flex-col h-[300px] shadow-md transition-colors">
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-sm font-semibold text-main dark:text-gray-200 flex items-center gap-2">
-            <Icon name="ph:calendar-blank" class="w-4 h-4 text-orange-400" />
+          <h3 class="text-sm font-semibold text-main dark:text-gray-100 flex items-center gap-2">
+            <Icon name="ph:calendar-blank" class="w-4 h-4" />
             Échéances proches (7 jours)
           </h3>
         </div>
@@ -170,7 +188,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
           <div 
             v-for="task in upcomingTasks" 
             :key="task.id"
-            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer hover:border-orange-400/50 transition-colors"
+            class="bg-white dark:bg-[#323235] shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)] rounded-lg p-4 border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer hover:border-primary/50 transition-colors"
             @click="emit('taskClick', String(task.id))"
           >
             <div class="flex items-center gap-3">
@@ -182,7 +200,7 @@ const xFormatterProject = (i: number) => props.projectTaskStats?.[i]?.name || ''
                 <span class="text-sm font-semibold text-main dark:text-gray-200 truncate max-w-[200px] sm:max-w-[300px]">{{ task.title }}</span>
               </div>
             </div>
-            <div class="text-xs font-bold text-orange-500 shrink-0">
+            <div class="text-xs font-bold text-primary shrink-0">
               {{ new Date(task.due_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }}
             </div>
           </div>

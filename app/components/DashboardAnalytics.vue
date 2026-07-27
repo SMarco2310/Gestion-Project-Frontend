@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -41,12 +41,61 @@ const chartData = computed(() => {
   }))
 })
 
-const categories = {
-  tasks: {
-    name: 'Tâches Créées',
-    color: '#0891b2'
+const primaryColor = ref('#0891b2')
+
+onMounted(() => {
+  if (import.meta.client) {
+    const updateColor = () => {
+      const style = getComputedStyle(document.documentElement)
+      const rgb = style.getPropertyValue('--color-primary-rgb').trim()
+      if (rgb) {
+        primaryColor.value = `rgb(${rgb})`
+      }
+    }
+    updateColor()
+    
+    const observer = new MutationObserver(updateColor)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'class'] })
   }
+})
+
+const colorMode = useColorMode()
+
+const getLighterColor = (color: string, factor: number) => {
+  if (color.startsWith('rgb')) {
+    const match = color.match(/\d+/g)
+    if (match && match.length >= 3) {
+      const r = Number(match[0])
+      const g = Number(match[1])
+      const b = Number(match[2])
+      return `rgb(${Math.round(r + (255 - r) * factor)}, ${Math.round(g + (255 - g) * factor)}, ${Math.round(b + (255 - b) * factor)})`
+    }
+  } else if (color.startsWith('#')) {
+    let hex = color.replace('#', '')
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('')
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16)
+      const g = parseInt(hex.substring(2, 4), 16)
+      const b = parseInt(hex.substring(4, 6), 16)
+      return `rgb(${Math.round(r + (255 - r) * factor)}, ${Math.round(g + (255 - g) * factor)}, ${Math.round(b + (255 - b) * factor)})`
+    }
+  }
+  return color
 }
+
+const categories = computed(() => {
+  let chartColor = primaryColor.value
+  if (colorMode.value === 'dark') {
+    chartColor = getLighterColor(chartColor, 0.4) // Lighten by 40%
+  }
+  
+  return {
+    tasks: {
+      name: 'Tâches Créées',
+      color: chartColor
+    }
+  }
+})
 
 const xFormatter = (i: number) => chartData.value[i]?.month || ''
 
@@ -137,7 +186,7 @@ const recentTasks = computed(() => {
       <div 
         v-for="(stat, index) in topStats" 
         :key="index"
-        class="bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-md"
+        class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-md"
       >
         <h3 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-3">{{ stat.title }}</h3>
         <div class="text-3xl font-medium text-main dark:text-white tracking-tight">{{ stat.value }}</div>
@@ -150,7 +199,7 @@ const recentTasks = computed(() => {
       <!-- Monthly Line Chart Card -->
       <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors">
         <div class="flex items-center justify-between mb-8">
-          <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ MENSUELLE</h3>
+          <h3 class="text-[12px] font-bold text-main dark:text-gray-100 uppercase tracking-widest">ACTIVITÉ MENSUELLE</h3>
           <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">{{ currentYear }}</span>
         </div>
         
@@ -170,7 +219,7 @@ const recentTasks = computed(() => {
       <!-- Daily Line Chart Card -->
       <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-md">
         <div class="flex items-center justify-between mb-8">
-          <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">ACTIVITÉ QUOTIDIENNE</h3>
+          <h3 class="text-[12px] font-bold text-main dark:text-gray-100 uppercase tracking-widest">ACTIVITÉ QUOTIDIENNE</h3>
           <span class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs px-3 py-1 rounded-full font-medium border border-gray-100 dark:border-gray-700">14 Jours</span>
         </div>
         
@@ -191,7 +240,7 @@ const recentTasks = computed(() => {
     <!-- Bottom Row: Recent Tasks -->
     <div class="neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-sm">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-[12px] font-bold text-main dark:text-gray-300 uppercase tracking-widest">TÂCHES RÉCENTES</h3>
+        <h3 class="text-[12px] font-bold text-main dark:text-gray-100 uppercase tracking-widest">TÂCHES RÉCENTES</h3>
         <div class="flex items-center">
           <div class="flex -space-x-2 mr-3">
              <div v-for="(task, idx) in recentTasks" :key="idx" :class="['w-7 h-7 rounded-full text-[9px] font-bold text-white flex items-center justify-center border-2 border-white dark:border-[#2A2A2D] overflow-hidden shrink-0', task.userBg]">
@@ -206,11 +255,11 @@ const recentTasks = computed(() => {
         <div 
           v-for="(task, idx) in recentTasks" 
           :key="task.id"
-          class="flex items-center justify-between p-4 mb-3 cursor-pointer rounded-xl border border-form-border dark:border-gray-700 hover:border-cyan-500/50 bg-white dark:bg-[#252525] shadow-sm transition-colors"
+          class="flex items-center justify-between p-4 mb-3 cursor-pointer rounded-xl border border-form-border dark:border-gray-700 hover:border-primary/50 bg-white dark:bg-[#252525] shadow-sm transition-colors"
           @click="emit('taskClick', String(task.id))"
         >
           <div class="flex items-center gap-4">
-            <div class="w-5 h-5 rounded-full border-2 border-gray-100 dark:border-gray-700"></div>
+            <Icon name="ph:circle" class="w-5 h-5 text-primary" />
             <span class="text-[13px] font-medium text-main dark:text-gray-200 font-mono tracking-tight truncate max-w-[200px] sm:max-w-none">{{ task.title }}</span>
           </div>
           <div class="flex items-center gap-4">

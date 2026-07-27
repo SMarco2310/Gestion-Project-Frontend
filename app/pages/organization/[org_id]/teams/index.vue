@@ -149,7 +149,7 @@ const getAvatarStyle = (name: string) => {
         <p class="text-secondary dark:text-gray-500 text-sm md:text-md pt-1">Gérez toutes les équipes au sein de votre organisation.</p>
       </div>
       <div>
-        <button @click="isCreateModalOpen = true" class="px-4 py-2 bg-cyan-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+        <button @click="isCreateModalOpen = true" class="px-4 py-2 btn-primary text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
           <Icon name="heroicons:plus" class="w-5 h-5" />
           Nouvelle Équipe
         </button>
@@ -187,7 +187,7 @@ const getAvatarStyle = (name: string) => {
         <div class="flex flex-col mb-4 gap-2.5">
           <Icon name="heroicons:user-group" class="w-10 h-10 text-white drop-shadow-md dark:text-gray-600/50 mb-2" />
           <div class="flex items-center gap-2">
-            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'bg-primary' : 'bg-red-500'"></div>
+            <div class="w-1.5 h-1.5 rounded-full" :class="team.members_count > 0 ? 'btn-primary' : 'bg-red-500'"></div>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 font-mono tracking-wide">Actif &middot; {{ team.members_count || 0 }} membres</span>
           </div>
         </div>
@@ -226,7 +226,7 @@ const getAvatarStyle = (name: string) => {
       </div>
       <h3 class="text-xl font-bold text-main dark:text-white mb-2">Aucune équipe</h3>
       <p class="text-secondary dark:text-gray-400 text-center max-w-sm mb-6">Vous n'avez pas encore créé d'équipe. Créez-en une pour organiser vos membres.</p>
-      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 bg-cyan-600 text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
+      <button @click="isCreateModalOpen = true" class="px-8 py-3.5 btn-primary text-white font-bold rounded-xl neo-emboss active:neo-inset hover:brightness-110 flex items-center gap-2 transition-all shadow-lg">
         <Icon name="heroicons:plus" class="w-6 h-6" />
         Créer une équipe
       </button>
@@ -265,7 +265,7 @@ const getAvatarStyle = (name: string) => {
           <button @click="isCreateModalOpen = false" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleCreateTeam" :disabled="!newTeamName.trim()" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+          <button @click="handleCreateTeam" :disabled="!newTeamName.trim()" class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             <Icon name="heroicons:plus" class="w-4 h-4" />
             Créer
           </button>

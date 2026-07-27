@@ -165,7 +165,7 @@ const handleRemoveMember = async (memberId: number) => {
     <div class="bg-white dark:bg-[#1D1D1D] rounded-2xl border border-form-border dark:border-gray-800 shadow-sm overflow-hidden">
       <div class="p-6 border-b border-form-border dark:border-gray-800 flex justify-between items-center">
         <h3 class="text-xl font-bold text-main dark:text-white">Membres</h3>
-        <button v-if="canManageMembers" @click="isInviteModalOpen = true" class="px-4 py-2 bg-cyan-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
+        <button v-if="canManageMembers" @click="isInviteModalOpen = true" class="px-4 py-2 btn-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss">
           <Icon name="heroicons:user-plus" class="w-4 h-4" />
           Ajouter un membre
         </button>
@@ -207,7 +207,7 @@ const handleRemoveMember = async (memberId: number) => {
               </td>
               <td class="px-6 py-4 text-right">
                 <div v-if="canManageMembers" class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button v-if="canEditRole(member)" class="p-2 text-gray-400 hover:text-cyan-600 dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier le rôle" @click.stop="openEditRoleModal(member)">
+                  <button v-if="canEditRole(member)" class="p-2 text-gray-400 hover:text-primary dark:hover:text-blue-400 transition-colors rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20" title="Modifier le rôle" @click.stop="openEditRoleModal(member)">
                     <Icon name="heroicons:pencil" class="w-5 h-5" />
                   </button>
                   <button v-if="canEditRole(member)" class="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20" title="Retirer de l'espace" @click.stop="handleRemoveMember(member.id)">
@@ -264,7 +264,7 @@ const handleRemoveMember = async (memberId: number) => {
           <button @click="isInviteModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button v-if="availableOrgMembers.length > 0" @click="handleAddMember" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="!selectedUserId">
+          <button v-if="availableOrgMembers.length > 0" @click="handleAddMember" class="px-4 py-2 btn-primary text-white rounded-lg text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2 self-end sm:self-auto neo-emboss" :disabled="!selectedUserId">
             Ajouter le membre
           </button>
         </div>
@@ -302,7 +302,7 @@ const handleRemoveMember = async (memberId: number) => {
           <button @click="isEditRoleModalOpen = false" class="px-4 py-2 font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-white transition-colors">
             Annuler
           </button>
-          <button @click="handleEditRole" class="px-4 py-2 bg-cyan-600 text-white font-medium rounded-xl hover:bg-cyan-600 transition-colors">
+          <button @click="handleEditRole" class="px-4 py-2 btn-primary text-white font-medium rounded-xl hover:btn-primary transition-colors">
             Enregistrer
           </button>
         </div>

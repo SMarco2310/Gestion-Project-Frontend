@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full relative flex items-center justify-center bg-[#F8FAFC] font-sans selection:bg-primary selection:text-white p-6">
+  <div class="min-h-screen w-full relative flex items-center justify-center bg-[#F8FAFC] font-sans selection:btn-primary selection:text-white p-6">
     <div class="relative z-10 w-full max-w-md mx-auto">
       <div class="bg-white border border-slate-100 rounded-3xl p-8 shadow-2xl shadow-slate-200/50">
         
@@ -26,7 +26,7 @@
             <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Email vérifié !</h2>
             <p class="text-slate-500 text-sm leading-relaxed">{{ message }}</p>
           </div>
-          <NuxtLink to="/organizations" class="w-full py-3.5 px-4 bg-cyan-600 text-white font-semibold text-base rounded-full shadow-lg shadow-primary/20 hover:bg-cyan-600 hover:-translate-y-0.5 transition-all flex items-center justify-center mt-6">
+          <NuxtLink to="/organizations" class="w-full py-3.5 px-4 btn-primary text-white font-semibold text-base rounded-full shadow-lg shadow-primary/20 hover:btn-primary hover:-translate-y-0.5 transition-all flex items-center justify-center mt-6">
             Continuer vers l'application
           </NuxtLink>
         </div>

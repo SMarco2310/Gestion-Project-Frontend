@@ -233,7 +233,7 @@ const submit = async () => {
                 <div class="flex items-center justify-between mb-3">
                   <span class="block text-[10px] font-bold text-secondary dark:text-gray-500 uppercase tracking-wider">Équipe du projet</span>
                   <div class="relative">
-                    <button @click.prevent="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 flex items-center gap-1 hover:underline">
+                    <button @click.prevent="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
                       <Icon name="heroicons:plus" class="w-3 h-3" /> Ajouter
                     </button>
                     <div v-if="isAddDropdownOpen" @click="isAddDropdownOpen = false" class="fixed inset-0 z-40"></div>
@@ -272,7 +272,7 @@ const submit = async () => {
                   <div v-if="assignedMembers.length > 0" class="flex flex-col gap-2 mt-1">
                     <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group bg-white dark:bg-[#222224] p-1.5 pr-2 rounded-lg border border-gray-100 dark:border-gray-800 shadow-sm">
                       <div class="flex items-center gap-2.5 flex-1 overflow-hidden">
-                        <div :class="['w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-[10px] shadow-sm overflow-hidden shrink-0',!member.profile_picture?['bg-orange-500','bg-teal-500','bg-primary','bg-rose-500','bg-emerald-500','bg-purple-500'][idx%6]:'bg-canvas dark:bg-gray-800']">
+                        <div :class="['w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-[10px] shadow-sm overflow-hidden shrink-0',!member.profile_picture?['bg-orange-500','bg-teal-500','btn-primary','bg-rose-500','bg-emerald-500','bg-purple-500'][idx%6]:'bg-canvas dark:bg-gray-800']">
                           <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http')?member.profile_picture:`http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                           <span v-else>{{ (member?.last_name||'U').charAt(0).toUpperCase()+(member?.first_name||'').charAt(0).toUpperCase() }}</span>
                         </div>
@@ -300,7 +300,7 @@ const submit = async () => {
                     @click="form.color = color"
                     class="w-8 h-8 rounded-full border-2 transition-transform"
                     :class="[
-                      form.color === color ? 'border-cyan-600 dark:border-cyan-600 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                      form.color === color ? 'border-primary dark:border-primary scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
                       {
                         'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
                         'bg-blue-100 dark:bg-blue-900/40': color === 'blue',
@@ -335,7 +335,7 @@ const submit = async () => {
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
+            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
               <Icon name="heroicons:plus" class="w-4 h-4" />
               Créer le projet
             </button>

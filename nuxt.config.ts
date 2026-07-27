@@ -43,7 +43,7 @@ export default defineNuxtConfig({
   
 
   routeRules:{
-
+    '/storage/**': { proxy: 'http://localhost:8000/storage/**' },
     '/auth/**':{
     },
   }

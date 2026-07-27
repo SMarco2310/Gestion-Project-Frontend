@@ -196,7 +196,7 @@ const submit = async () => {
             <button 
               @click="submit" 
               :disabled="loading"
-              class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:bg-cyan-700 dark:bg-cyan-600 dark:hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:bg-cyan-700 dark:btn-primary dark:hover:bg-cyan-700 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon v-if="loading" name="heroicons:arrow-path" class="w-4 h-4 animate-spin" />
               <Icon v-else name="heroicons:check" class="w-4 h-4" />

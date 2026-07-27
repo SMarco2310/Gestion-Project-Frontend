@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useTour } from '~/composables/useTour'
 
 definePageMeta({
     layout: 'custom',
@@ -14,12 +15,26 @@ const {
   deleteNotification
 } = useNotification()
 
+const { continueTourIfPending } = useTour()
+
 onMounted(() => {
   fetchNotifications()
+  // Resume the onboarding tour if it was navigated here during Phase 2
+  continueTourIfPending('notifications')
 })
 
 const filterText = ref('')
 const filterStatus = ref<'all' | 'unread' | 'read'>('all')
+
+const pillStyle = computed(() => {
+  if (filterStatus.value === 'all') {
+    return { left: '4px', width: '80px' }
+  }
+  if (filterStatus.value === 'unread') {
+    return { left: '85px', width: '95px' }
+  }
+  return { left: '181px', width: '75px' }
+})
 
 const filteredNotifications = computed(() => {
   let result = notifications.value || []
@@ -106,36 +121,39 @@ const handleNotificationClick = (notif: any) => {
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
+    <header id="tour-notifications-header" class="flex flex-col md:flex-row md:justify-between w-full flex-shrink-0">
       <div class="py-2">
         <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Notifications</h1>
         <p class="text-secondary dark:text-gray-400 py-3 text-sm md:text-base">Consultez et gérez toutes vos alertes.</p>
       </div>
-      <div class="py-4 md:py-10 flex flex-col md:flex-row justify-between md:justify-end items-center gap-4 w-full">
+      <div class="py-4 md:py-10 flex flex-row justify-between md:justify-end items-center gap-2 md:gap-4 w-full overflow-x-auto pb-1 sm:pb-0">
         <!-- Filter Status (Segmented Control) -->
         <div class="relative flex items-center bg-[#EFEFEF] dark:bg-black/20 p-1 rounded-full shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)] border border-gray-200/50 dark:border-gray-800 w-max isolate shrink-0">
           <div 
             class="absolute top-1 bottom-1 rounded-full bg-white dark:bg-[#2A2A2D] shadow-[0_2px_5px_rgba(0,0,0,0.08)] ring-1 ring-black/5 dark:ring-white/5 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] -z-10"
-            :class="{
-              'left-1 w-[80px]': filterStatus === 'all',
-              'left-[81px] w-[95px]': filterStatus === 'unread'
-            }"
+            :style="pillStyle"
           ></div>
           
           <button 
             @click="filterStatus = 'all'"
-            :class="filterStatus === 'all' ? 'text-[#001D35] dark:text-white' : 'text-[#4B6B8A] hover:text-[#001D35] dark:text-gray-400 dark:hover:text-gray-200'"
-            class="py-1.5 rounded-full text-[15px] font-medium transition-colors duration-300 w-[80px]"
+            :class="filterStatus === 'all' ? 'text-[#001D35] dark:text-white font-bold' : 'text-[#4B6B8A] hover:text-[#001D35] dark:text-gray-400 dark:hover:text-gray-200'"
+            class="py-1.5 rounded-full text-[15px] font-medium transition-colors duration-300 w-[80px] text-center"
           >Toutes</button>
           
           <button 
             @click="filterStatus = 'unread'"
-            :class="filterStatus === 'unread' ? 'text-[#001D35] dark:text-white' : 'text-[#4B6B8A] hover:text-[#001D35] dark:text-gray-400 dark:hover:text-gray-200'"
-            class="py-1.5 rounded-full text-[15px] font-medium transition-colors duration-300 w-[95px]"
+            :class="filterStatus === 'unread' ? 'text-[#001D35] dark:text-white font-bold' : 'text-[#4B6B8A] hover:text-[#001D35] dark:text-gray-400 dark:hover:text-gray-200'"
+            class="py-1.5 rounded-full text-[15px] font-medium transition-colors duration-300 w-[95px] text-center"
           >Non lues</button>
+
+          <button 
+            @click="filterStatus = 'read'"
+            :class="filterStatus === 'read' ? 'text-[#001D35] dark:text-white font-bold' : 'text-[#4B6B8A] hover:text-[#001D35] dark:text-gray-400 dark:hover:text-gray-200'"
+            class="py-1.5 rounded-full text-[15px] font-medium transition-colors duration-300 w-[75px] text-center"
+          >Lues</button>
         </div>
 
-        <button @click="markAllAsRead" class="shrink-0 bg-transparent text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 transition-all cursor-pointer flex items-center justify-center px-4 py-2 rounded-xl whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 w-full md:w-auto text-sm font-medium">
+        <button @click="markAllAsRead" class="shrink-0 bg-transparent text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-xl whitespace-nowrap hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium">
           <Icon name="heroicons:check" class="w-4 h-4 mr-2" />
           <span>Tout marquer lu</span>
         </button>
@@ -178,11 +196,11 @@ const handleNotificationClick = (notif: any) => {
           </div>
           
           <div v-if="!notif.read_at" class="absolute right-5 top-1/2 -translate-y-1/2">
-            <span class="block w-2.5 h-2.5 rounded-full bg-primary"></span>
+            <span class="block w-2.5 h-2.5 rounded-full btn-primary"></span>
           </div>
           
           <div class="flex items-center gap-2 mt-4 sm:mt-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity ml-14 sm:ml-4">
-            <button v-if="!notif.read_at" @click.stop="markAsRead(notif.id)" class="p-2 text-cyan-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors tooltip" title="Marquer lu">
+            <button v-if="!notif.read_at" @click.stop="markAsRead(notif.id)" class="p-2 text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors tooltip" title="Marquer lu">
               <Icon name="heroicons:check" class="w-5 h-5" />
             </button>
             <button @click.stop="deleteNotification(notif.id)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors tooltip" title="Supprimer">

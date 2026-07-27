@@ -63,7 +63,7 @@ const taskBannerImage = ref('')
 const isAssigneeDropdownOpen = ref(false)
 const taskAssignee = ref<any>(null)
 const orgMembers = ref<any[]>([])
-const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-indigo-500', 'bg-teal-500']
 
 const fetchOrgMembers = async () => {
   if (!activeOrganization.value) return
@@ -120,7 +120,7 @@ const setTask = async (id: string | number | null) => {
         taskAssignee.value = null
       }
       taskProjetId.value = task.projet_id || ''
-      taskProjetReference.value = task.projet?.reference_code || " "
+      taskProjetReference.value = task.projet?.reference_code || task.projet?.name || (task.projet_id ? `PROJ-${task.projet_id}` : '')
 
       if (task.projet?.end_date) {
         projectEndDate.value = String(task.projet.end_date).split('T')[0] || ''
@@ -329,7 +329,7 @@ const renderCommentContent = (content: string) => {
   
   for (const member of sortedMembers) {
     const regex = new RegExp(`@${member.last_name + ' ' + member.first_name}\\b`, 'gi')
-    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.last_name + ' ' + member.first_name}</span>`)
+    html = html.replace(regex, `<span class="text-primary font-bold btn-primary/10 px-1 rounded cursor-pointer">@${member.last_name + ' ' + member.first_name}</span>`)
   }
   
   return html
@@ -830,9 +830,9 @@ watch(() => props.isOpen, (newIsOpen) => {
           <!-- Header -->
           <header class="flex items-center justify-between px-6 py-4 shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] shrink-0 z-10 relative">
             <div class="flex items-center gap-3 text-secondary dark:text-gray-400 font-medium text-sm">
-              <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
-              <NuxtLink v-if="taskProjetId" :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects/${taskProjetId}`" @click="close" class="hover:underline cursor-pointer">{{ taskProjetReference }}</NuxtLink>
-              <span v-if="taskProjetId">/</span>
+              <Icon v-if="taskProjetId && taskProjetReference.trim()" name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
+              <NuxtLink v-if="taskProjetId && taskProjetReference.trim()" :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/projects/${taskProjetId}`" @click="close" class="hover:underline cursor-pointer">{{ taskProjetReference }}</NuxtLink>
+              <span v-if="taskProjetId && taskProjetReference.trim()">/</span>
               <Icon name="ph:bookmark-simple-fill" class="text-emerald-500 w-4 h-4" />
               <NuxtLink :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/tasks/${taskId}`" @click="close" class="hover:underline cursor-pointer">{{ taskReference }}</NuxtLink>
             </div>
@@ -843,7 +843,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               <NuxtLink v-if="taskId && !$route.path.includes('/tasks/' + taskId)" :to="`/organization/${$route.params.org_id}/workspace/${$route.params.workspace_id}/tasks/${taskId}`" @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors" title="Agrandir">
                 <Icon name="heroicons:arrows-pointing-out" class="w-5 h-5" />
               </NuxtLink>
-              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-cyan-600 text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
+              <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 btn-primary text-white neo-emboss rounded transition-all text-xs sm:text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> <span class="hidden sm:inline">Enregistrer</span></button>
               <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-xs sm:text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> <span class="hidden sm:inline">Annuler</span></button>
               <div class="hidden sm:block w-px h-6 bg-black/10 dark:bg-white/10 mx-1"></div>
               <button @click="close" class="p-1.5 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors"><Icon name="heroicons:x-mark" class="w-6 h-6" /></button>
@@ -912,7 +912,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       <div v-if="taskAssignee.profile_picture" class="w-4 h-4 rounded-full overflow-hidden">
                         <img :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : backendBaseUrl + taskAssignee.profile_picture" class="w-full h-full object-cover" />
                       </div>
-                      <div v-else class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm">
+                      <div v-else class="w-4 h-4 rounded-full btn-primary flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm">
                         {{ (taskAssignee.last_name || '').charAt(0).toUpperCase() }}{{ (taskAssignee.first_name || '').charAt(0).toUpperCase() || 'U' }}
                       </div>
                       <span class="truncate max-w-[100px]">{{ taskAssignee.last_name + ' ' + taskAssignee.first_name }}</span>
@@ -926,7 +926,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-56 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
                     <div class="p-2 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
                       <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
-                      <button class="text-cyan-600 dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
+                      <button class="text-primary dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
                     </div>
                     <ul class="p-1 max-h-48 overflow-y-auto custom-scrollbar">
                       <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(null)">
@@ -939,7 +939,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                         <div v-if="member?.profile_picture" class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                           <img :src="member.profile_picture.startsWith('http') ? member.profile_picture : backendBaseUrl + member.profile_picture" alt="Avatar" class="w-full h-full object-cover" />
                         </div> 
-                        <div v-else class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-transparent">
+                        <div v-else class="w-6 h-6 rounded-full btn-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-transparent">
                           {{ (member?.last_name || '').charAt(0).toUpperCase() }}{{ (member?.first_name || '').charAt(0).toUpperCase() || 'U' }}
                         </div>
                         {{ member.last_name + ' ' + member.first_name }}
@@ -1003,7 +1003,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       </div>
                       <div class="flex gap-2 mt-2">
                         <button @click="isCreatingLabel = false" class="flex-1 py-1.5 rounded bg-gray-200 dark:bg-gray-800 text-main dark:text-gray-300 text-xs font-bold transition-colors">Annuler</button>
-                        <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-cyan-600 text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
+                        <button @click="saveLabelForm" class="flex-1 py-1.5 rounded btn-primary text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
                       </div>
                     </div>
                   </div>
@@ -1072,7 +1072,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <input v-model="newChecklistTitle" type="text" placeholder="Titre de la checklist..." class="w-full bg-white dark:bg-[#222224] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:border-primary" @keydown.enter="handleAddChecklist" />
                   <div class="flex gap-2 justify-end">
                     <button @click="isAddingChecklist = false" class="px-3 py-1.5 rounded text-secondary dark:text-gray-400 text-xs font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Annuler</button>
-                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded bg-cyan-600 text-white text-xs font-bold shadow-sm hover:bg-cyan-600 transition-colors">Enregistrer</button>
+                    <button @click="handleAddChecklist" class="px-3 py-1.5 rounded btn-primary text-white text-xs font-bold shadow-sm hover:btn-primary transition-colors">Enregistrer</button>
                   </div>
                 </div>
 
@@ -1089,7 +1089,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                     <div v-if="checklist.items && checklist.items.length > 0" class="flex items-center gap-3 mb-2">
                       <span class="text-[10px] font-bold text-secondary">{{ Math.round((checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100) }}%</span>
                       <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
+                        <div class="h-full btn-primary transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
                       </div>
                     </div>
 
@@ -1160,7 +1160,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                 <div v-if="taskSubtasks.length > 0" class="flex items-center gap-3 mb-4">
                   <span class="text-xs font-bold text-secondary">{{ Math.round((taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100) }}%</span>
                   <div class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
-                    <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
+                    <div class="h-full btn-primary transition-all duration-300" :style="{ width: `${(taskSubtasks.filter(s => s.status === 'done').length / taskSubtasks.length) * 100}%` }"></div>
                   </div>
                 </div>
 
@@ -1168,7 +1168,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   <div v-for="sub in taskSubtasks" :key="sub.id" class="flex items-center justify-between p-3 bg-white dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-primary transition-colors group cursor-pointer shadow-sm">
                     <div class="flex items-center gap-3 overflow-hidden">
                       <div @click.stop="toggleSubtaskStatus(sub)" class="w-4 h-4 rounded-full border-2 border-secondary dark:border-gray-500 shrink-0 flex items-center justify-center cursor-pointer hover:border-primary dark:hover:border-primary transition-colors">
-                        <div v-if="sub.status === 'done'" class="w-2 h-2 bg-primary dark:bg-primary rounded-full"></div>
+                        <div v-if="sub.status === 'done'" class="w-2 h-2 btn-primary dark:btn-primary rounded-full"></div>
                       </div>
                       <span class="text-sm text-main dark:text-gray-300 truncate font-medium group-hover:text-primary dark:group-hover:text-blue-400 transition-colors" :class="{'line-through text-secondary dark:text-gray-500': sub.status === 'done'}">{{ sub.title }}</span>
                     </div>
@@ -1218,7 +1218,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                   </div>
                 </div>
                 <div class="flex justify-end">
-                  <button @click="sendComment" class="px-4 py-1.5 rounded bg-cyan-600 text-white hover:bg-cyan-600 transition-colors text-sm font-semibold shadow-sm">
+                  <button @click="sendComment" class="px-4 py-1.5 rounded btn-primary text-white hover:btn-primary transition-colors text-sm font-semibold shadow-sm">
                     Envoyer
                   </button>
                 </div>
@@ -1227,7 +1227,7 @@ watch(() => props.isOpen, (newIsOpen) => {
               <!-- Comments List -->
               <div v-if="commentaires && commentaires.length > 0" class="flex flex-col gap-5">
                 <div v-for="comment in commentaires" :key="comment.id" class="flex gap-3">
-                  <div class="w-8 h-8 rounded-full bg-primary shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm mt-0.5">
+                  <div class="w-8 h-8 rounded-full btn-primary shrink-0 flex items-center justify-center text-xs font-bold text-white shadow-sm mt-0.5">
                     {{ ((comment as any).user?.last_name || 'U').charAt(0).toUpperCase() + ((comment as any).user?.first_name || '').charAt(0).toUpperCase() }}
                   </div>
                   <div class="flex-1 min-w-0">
@@ -1238,7 +1238,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                     
                     <div class="bg-white dark:bg-[#222224] border border-form-border dark:border-gray-800 rounded-lg p-3 shadow-sm relative group">
                       <div v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id)" class="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-cyan-600 dark:hover:text-blue-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors rounded shadow-sm" title="Modifier">
+                        <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-primary dark:hover:text-blue-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors rounded shadow-sm" title="Modifier">
                           <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
                         </button>
                         <button @click="handleDeleteComment(comment.id)" class="p-1.5 text-secondary hover:text-red-500 dark:hover:text-red-400 bg-gray-50 dark:bg-[#1A1A1D] hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors rounded shadow-sm" title="Supprimer">
@@ -1249,7 +1249,7 @@ watch(() => props.isOpen, (newIsOpen) => {
                       <div v-if="editingCommentId === comment.id">
                         <textarea v-model="editingCommentText" class="w-full bg-canvas dark:bg-[#1A1A1D] border border-form-border dark:border-gray-700 rounded p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-primary resize-none" rows="2"></textarea>
                         <div class="flex items-center gap-2 mt-2">
-                          <button @click="saveEditComment" class="px-3 py-1 bg-cyan-600 hover:bg-cyan-600 text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
+                          <button @click="saveEditComment" class="px-3 py-1 btn-primary hover:btn-primary text-white text-xs font-medium rounded transition-colors shadow-sm">Enregistrer</button>
                           <button @click="cancelEditComment" class="px-3 py-1 text-xs font-medium text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors">Annuler</button>
                         </div>
                       </div>

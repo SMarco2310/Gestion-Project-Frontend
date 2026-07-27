@@ -8,10 +8,12 @@ definePageMeta({
 })
 
 import { useToast } from '~/composables/useToast'
+import { useTour } from '~/composables/useTour'
 
 const { tasks, getTasks, deleteTask, updateTask, createTask } = useTasks()
 const { activeWorkspace, updateKanbanColumns, getWorkspace, setActiveWorkspace } = useWorkspaces()
 const { addToast } = useToast()
+const { continueTourIfPending } = useTour()
 const route = useRoute()
 
 const kanbanColumns = computed(() => {
@@ -439,12 +441,15 @@ onMounted(async () => {
 
   await Promise.all(promises)
   syncBoardItems()
+
+  // Resume the onboarding tour on this page if it was navigated here during Phase 2
+  continueTourIfPending('tasks')
 })
 </script>
 
 <template>
   <div class="flex flex-col h-full w-full max-h-full">
-    <header class="flex flex-col lg:flex-row lg:justify-between lg:items-start w-full flex-shrink-0">
+    <header id="tour-tasks-header" class="flex flex-col lg:flex-row lg:justify-between lg:items-start w-full flex-shrink-0">
     <div class="pb-5">
       <h1 class="text-3xl md:text-4xl font-bold text-main dark:text-gray-300">Tasks Overview</h1>
       <p class="text-secondary dark:text-gray-400 pt-3 text-sm md:text-base">Gérer et suivre l'avancement de toutes vos tâches.</p>
@@ -464,7 +469,7 @@ onMounted(async () => {
               @update:filters="handleFilterUpdate"
               class="shrink-0" 
             />
-            <button @click="isCreateTaskModalOpen = true" class="shrink-0 bg-cyan-600 text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
+            <button id="tour-create-task-btn" @click="isCreateTaskModalOpen = true" class="shrink-0 btn-primary text-white transition-all cursor-pointer flex items-center justify-center px-3 md:px-4 py-2 rounded-md whitespace-nowrap neo-emboss active:neo-inset hover:brightness-110">
               <Icon name="heroicons:plus" class="w-5 h-5" />
               <span class="px-2 font-medium hidden md:inline">Ajouter une tâche</span>
             </button>
@@ -475,6 +480,7 @@ onMounted(async () => {
 
       <!-- Kanban Board Columns -->
       <draggable 
+        id="tour-kanban-board"
         v-model="localColumns"
         @end="handleColumnReorder"
         item-key="name"

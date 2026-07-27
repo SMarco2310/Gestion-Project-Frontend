@@ -171,8 +171,9 @@ const saveInstant = async () => {
         assignedMembers.value.map(m => m.id)
       )
       addToast({ title: 'Équipe modifiée', message: 'L\'équipe du projet a été mise à jour.', type: 'success' })
-    } catch(e) {
-      addToast({ title: 'Erreur', message: 'Impossible de mettre à jour l\'équipe.', type: 'error' })
+    } catch(err: any) {
+      const errorMsg = err?.response?.data?.message || 'Impossible de mettre à jour l\'équipe.'
+      addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
     }
 }
 
@@ -291,8 +292,9 @@ const saveEdit = async () => {
     projectColor.value = editColor.value
     isEditing.value = false
     addToast({ title: 'Projet modifié', message: 'Les modifications ont été enregistrées.', type: 'success' })
-  } catch (error) {
-    addToast({ title: 'Erreur', message: 'Impossible d’enregistrer le projet.', type: 'error' })
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || 'Impossible d’enregistrer le projet.'
+    addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
   }
 }
 
@@ -398,8 +400,10 @@ const getTodayDate = () => {
 }
 
 const updateStatus = async (status: string) => {
-  if (status === 'terminé' && doneTasks.value === 0 && totalTasks.value > 0) {
-    addToast({ title: 'Attention', message: 'Le projet est terminé bien qu\'aucune tâche ne le soit.', type: 'info' })
+  if (status === 'terminé' && totalTasks.value > 0 && doneTasks.value < totalTasks.value) {
+    addToast({ title: 'Erreur', message: 'Toutes les tâches doivent être terminées avant de clôturer le projet.', type: 'error' })
+    isStatusDropdownOpen.value = false
+    return
   }
 
   projectStatus.value = status
@@ -420,8 +424,9 @@ const updateStatus = async (status: string) => {
       assignedMembers.value.map(m => m.id)
     )
     addToast({ title: 'Statut modifié', message: 'Le statut du projet a été mis à jour.', type: 'success' })
-  } catch (err) {
-    addToast({ title: 'Erreur', message: 'Impossible de modifier le statut.', type: 'error' })
+  } catch (err: any) {
+    const errorMsg = err?.response?.data?.message || 'Impossible de modifier le statut.'
+    addToast({ title: 'Erreur', message: errorMsg, type: 'error' })
   }
 }
 </script>
@@ -489,7 +494,7 @@ const updateStatus = async (status: string) => {
               <Icon name="heroicons:trash" class="w-5 h-5" />
             </button>
             <!-- Save/Cancel when editing -->
-            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 bg-cyan-600 text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
+            <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-1.5 px-3 py-1 btn-primary text-white neo-emboss rounded transition-all text-sm font-medium hover:brightness-110 active:neo-inset"><Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer</button>
             <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-1.5 px-3 py-1 bg-canvas dark:bg-gray-800 text-main dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors text-sm font-medium"><Icon name="heroicons:x-mark" class="w-4 h-4" /> Annuler</button>
             <!-- Close -->
             <button @click="close" class="p-2 text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 hover:bg-canvas dark:hover:bg-gray-800 rounded transition-colors">
@@ -534,7 +539,7 @@ const updateStatus = async (status: string) => {
                 @click="editColor = color"
                 class="w-8 h-8 rounded-full border-2 transition-transform"
                 :class="[
-                  editColor === color ? 'border-cyan-600 dark:border-cyan-600 scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
+                  editColor === color ? 'border-primary dark:border-primary scale-110 shadow-sm' : 'border-transparent scale-100 hover:scale-105',
                   {
                     'bg-[#F2F0F9] dark:bg-[#2A2938]': color === 'purple',
                     'bg-blue-400 dark:bg-blue-900/40': color === 'blue',
@@ -573,7 +578,7 @@ const updateStatus = async (status: string) => {
                 v-for="task in projectTasks" :key="task.id"
                 :to="`/organization/${route.params.org_id || activeOrganization?.id}/workspace/${route.params.workspace_id}/tasks/${task.id}`"
                 @click="close"
-                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-cyan-600 dark:hover:border-cyan-600 transition-colors group cursor-pointer"
+                class="flex items-center justify-between p-3 bg-canvas dark:bg-[#1A1A1D] rounded-lg border border-form-border dark:border-gray-800 hover:border-primary dark:hover:border-primary transition-colors group cursor-pointer"
               >
                 <div class="flex items-center gap-3 overflow-hidden">
                   <div
@@ -616,7 +621,7 @@ const updateStatus = async (status: string) => {
           <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Pièces jointes</h3>
-              <button @click="triggerFileInput" class="text-xs font-bold text-cyan-600 dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
+              <button @click="triggerFileInput" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1" :disabled="isUploading">
                 <Icon v-if="isUploading" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
                 <Icon v-else name="heroicons:plus" class="w-3 h-3" /> 
                 {{ isUploading ? 'Ajout...' : 'Ajouter' }}
@@ -650,7 +655,7 @@ const updateStatus = async (status: string) => {
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-sm font-bold text-main dark:text-gray-200">Équipe du projet</h3>
               <div class="relative">
-                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-cyan-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                <button @click="isAddDropdownOpen = !isAddDropdownOpen" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1">
                   <Icon name="heroicons:plus" class="w-4 h-4" />
                   Ajouter
                 </button>
@@ -705,7 +710,7 @@ const updateStatus = async (status: string) => {
               <!-- Assigned Members -->
               <div v-for="(member, idx) in assignedMembers" :key="'m-'+member.id" class="flex items-center justify-between group">
                 <div class="flex items-center gap-3 cursor-pointer" @click="navigateTo(`/profile/${member.id}`)">
-                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'bg-primary', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
+                    <div :class="['w-10 h-10 rounded-full text-white flex items-center justify-center font-bold shadow-sm overflow-hidden shrink-0', !member.profile_picture ? ['bg-orange-500', 'bg-teal-500', 'btn-primary', 'bg-rose-500', 'bg-emerald-500', 'bg-purple-500'][idx % 6] : 'bg-canvas dark:bg-gray-800']">
                       <img v-if="member.profile_picture" :src="member.profile_picture.startsWith('http') ? member.profile_picture : `http://localhost:8000${member.profile_picture}`" class="w-full h-full object-cover" />
                       <span v-else>{{ (member?.last_name || 'U').charAt(0).toUpperCase() + (member?.first_name || '').charAt(0).toUpperCase() }}</span>
                     </div>

@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import AppHeader from '~/components/AppHeader.vue';
 import AppFooter from '~/components/AppFooter.vue';
-import { ref } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const { user, resendVerificationEmail } = useAuth();
+const { startPhase2Tour } = useTour();
 const isSidebarCollapsed = useState('sidebarCollapsed', () => false)
+
+onMounted(() => {
+  // Auto-start Phase 2 tour when entering an org for the first time
+  // Only fires if phase1 was completed but phase2 has not yet been shown
+  const phase2Done = process.client && localStorage.getItem('tour_phase2_done') === 'true'
+  const isInsideOrg = route.path.includes('/organization/')
+  if (isInsideOrg && !phase2Done) {
+    localStorage.setItem('tour_phase2_done', 'true')
+    setTimeout(() => startPhase2Tour(), 900)
+  }
+})
 
 const isResending = ref(false);
 const resendSuccess = ref(false);
@@ -23,13 +35,26 @@ const handleResend = async () => {
     isResending.value = false;
   }
 };
+
+const route = useRoute();
+const shouldShowEmailVerificationBanner = computed(() => {
+  const path = route.path;
+  const routeName = String(route.name || '');
+  
+  if (path.startsWith('/profile')) return true;
+  if (path === '/' || path === '/organizations') return true;
+  if (routeName === 'organization-org_id-workspace-workspace_id' || routeName === 'organization-org_id' || routeName === 'organization-org_id-workspaces') {
+    return true;
+  }
+  return false;
+});
 </script>
 
 <template>
   <div class="h-[100dvh] w-screen bg-canvas dark:bg-[#1D1D1D] pt-20 overflow-hidden flex flex-col text-main dark:text-gray-200 transition-all duration-300 ease-in-out" :class="isSidebarCollapsed ? 'md:pl-20' : 'md:pl-80'">
     <AppHeader />
     <main class="px-4 md:px-8 pt-4 pb-8 flex-1 overflow-y-auto custom-scrollbar flex flex-col relative">
-      <div v-if="user && !user.email_verified_at" class="bg-yellow-500/10 border border-yellow-500/50 text-yellow-700 dark:text-yellow-400 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div v-if="user && !user.email_verified_at && shouldShowEmailVerificationBanner" class="bg-yellow-500/10 border border-yellow-500/50 text-yellow-700 dark:text-yellow-400 p-4 rounded-xl mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-start sm:items-center gap-3">
           <Icon name="heroicons:exclamation-triangle" class="w-6 h-6 shrink-0 mt-0.5 sm:mt-0" />
           <div class="flex flex-col gap-1">

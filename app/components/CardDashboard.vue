@@ -18,7 +18,7 @@ const props = defineProps<{ cards: DashboardCard[] }>()
     <div 
       v-for="(card, index) in cards" 
       :key="index"
-      class="relative bg-card dark:bg-[#1D1D1D] border border-form-border dark:border-gray-700 rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-md"
+      class="relative neo-card bg-gradient-to-b from-white to-gray-50 dark:from-[#2A2A2D] dark:to-[#222224] rounded-xl p-5 flex flex-col gap-3 overflow-hidden transition-colors shadow-md"
     >
 
       <!-- Header: Title and Icon -->

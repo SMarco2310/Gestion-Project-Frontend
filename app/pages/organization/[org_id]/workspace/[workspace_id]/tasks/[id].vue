@@ -42,7 +42,7 @@ const activeTab = ref('comments')
 const isAssigneeDropdownOpen = ref(false)
 const taskAssignee = ref<any>(null)
 const orgMembers = ref<any[]>([])
-const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-indigo-500', 'bg-teal-500']
 
 const fetchOrgMembers = async () => {
   if (!activeOrganization.value) return
@@ -437,7 +437,7 @@ const renderCommentContent = (content: string) => {
   
   for (const member of sortedMembers) {
     const regex = new RegExp(`@${member.last_name + ' ' + member.first_name}\\b`, 'gi')
-    html = html.replace(regex, `<span class="text-primary font-bold bg-primary/10 px-1 rounded cursor-pointer">@${member.last_name + ' ' + member.first_name}</span>`)
+    html = html.replace(regex, `<span class="text-primary font-bold btn-primary/10 px-1 rounded cursor-pointer">@${member.last_name + ' ' + member.first_name}</span>`)
   }
   
   return html
@@ -848,7 +848,7 @@ watch(() => activeOrganization.value, (newOrg) => {
   <div class="flex flex-col w-full px-4 md:px-6 lg:px-8 font-sans pb-12">
     <!-- Top navigation -->
     <div class="flex gap-2 mb-6 shrink-0">
-      <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+      <button @click="goBack" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
         <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
       </button>
     </div>
@@ -876,7 +876,7 @@ watch(() => activeOrganization.value, (newOrg) => {
     <!-- Task Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 shrink-0">
       <div>
-        <div class="text-primary dark:text-[#0891b2] text-xs font-bold tracking-widest mb-2 flex items-center gap-2 uppercase">
+        <div class="text-primary dark:text-[#0B0E11] text-xs font-bold tracking-widest mb-2 flex items-center gap-2 uppercase">
           <NuxtLink v-if="taskProjetId" :to="`/organization/${route.params.org_id || activeOrganization?.id}/workspace/${route.params.workspace_id || activeWorkspace?.id}/projects/${taskProjetId}`" class="hover:underline cursor-pointer">{{ taskProjetReference }}</NuxtLink>
           <span v-if="taskProjetId">/</span>
           <span>{{ taskReference }}</span>
@@ -893,7 +893,7 @@ watch(() => activeOrganization.value, (newOrg) => {
         <button v-if="!isEditing" @click="startEditing" class="flex items-center gap-2 px-4 py-2 rounded-full border border-form-border dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
           <Icon name="heroicons:pencil" class="w-4 h-4" /> Modifier
         </button>
-        <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-2 px-4 py-2 rounded-full border border-transparent bg-cyan-600 text-white text-sm font-bold shadow-sm hover:brightness-110 transition-colors">
+        <button v-if="isEditing" @click="saveEdit" class="flex items-center gap-2 px-4 py-2 rounded-full border border-transparent btn-primary text-white text-sm font-bold shadow-sm hover:brightness-110 transition-colors">
           <Icon name="heroicons:check" class="w-4 h-4" /> Enregistrer
         </button>
         <button v-if="isEditing" @click="cancelEdit" class="flex items-center gap-2 px-4 py-2 rounded-full border border-form-border dark:border-gray-700 text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
@@ -936,7 +936,7 @@ watch(() => activeOrganization.value, (newOrg) => {
             <div v-if="taskAssignee.profile_picture" class="w-4 h-4 rounded-full overflow-hidden">
               <img :src="taskAssignee.profile_picture.startsWith('http') ? taskAssignee.profile_picture : backendBaseUrl + taskAssignee.profile_picture" class="w-full h-full object-cover" />
             </div>
-            <div v-else class="w-4 h-4 rounded-full bg-primary flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm">
+            <div v-else class="w-4 h-4 rounded-full btn-primary flex items-center justify-center text-[8px] font-bold text-white shrink-0 shadow-sm">
               {{ (taskAssignee.last_name || '').charAt(0).toUpperCase() }}{{ (taskAssignee.first_name || '').charAt(0).toUpperCase() || 'U' }}
             </div>
             <span class="truncate max-w-[100px]">{{ taskAssignee.last_name + ' ' + taskAssignee.first_name }}</span>
@@ -950,7 +950,7 @@ watch(() => activeOrganization.value, (newOrg) => {
         <div v-if="isAssigneeDropdownOpen" class="absolute left-0 top-full mt-1 w-56 bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 z-50 overflow-hidden flex flex-col">
           <div class="p-2 border-b border-form-border dark:border-gray-800 flex items-center justify-between">
             <p class="text-xs text-secondary font-medium px-2">Assigner à</p>
-            <button class="text-cyan-600 dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
+            <button class="text-primary dark:text-blue-400 hover:underline text-xs pr-2" @click.stop="updateAssignee(orgMembers.find(m => m.id === user?.id))">M'assigner</button>
           </div>
           <ul class="p-1 max-h-48 overflow-y-auto custom-scrollbar">
             <li class="px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg cursor-pointer flex items-center gap-3 text-sm text-main dark:text-white transition-colors" @click.stop="updateAssignee(null)">
@@ -963,7 +963,7 @@ watch(() => activeOrganization.value, (newOrg) => {
               <div v-if="member?.profile_picture" class="w-6 h-6 rounded-full overflow-hidden shrink-0 shadow-sm border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                 <img :src="member.profile_picture.startsWith('http') ? member.profile_picture : backendBaseUrl + member.profile_picture" alt="Avatar" class="w-full h-full object-cover" />
               </div> 
-              <div v-else class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-transparent">
+              <div v-else class="w-6 h-6 rounded-full btn-primary flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-sm border border-transparent">
                 {{ (member?.last_name || '').charAt(0).toUpperCase() }}{{ (member?.first_name || '').charAt(0).toUpperCase() || 'U' }}
               </div>
               {{ member.last_name + ' ' + member.first_name }}
@@ -1027,7 +1027,7 @@ watch(() => activeOrganization.value, (newOrg) => {
             </div>
             <div class="flex gap-2 mt-2">
               <button @click="isCreatingLabel = false" class="flex-1 py-1.5 rounded bg-gray-200 dark:bg-gray-800 text-main dark:text-gray-300 text-xs font-bold transition-colors">Annuler</button>
-              <button @click="saveLabelForm" class="flex-1 py-1.5 rounded bg-cyan-600 text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
+              <button @click="saveLabelForm" class="flex-1 py-1.5 rounded btn-primary text-white text-xs font-bold transition-colors shadow-sm">Enregistrer</button>
             </div>
           </div>
         </div>
@@ -1085,7 +1085,7 @@ watch(() => activeOrganization.value, (newOrg) => {
         <div class="border border-black/5 dark:border-white/5 rounded-2xl p-6 bg-white dark:bg-[#222224] shadow-sm">
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Sous-tâches</h3>
-            <button @click="isCreateSubtaskModalOpen = true" class="text-cyan-600 dark:text-[#0891b2] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
+            <button @click="isCreateSubtaskModalOpen = true" class="text-primary dark:text-[#0B0E11] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
               <Icon name="heroicons:plus" class="w-3.5 h-3.5" /> Ajouter
             </button>
           </div>
@@ -1115,7 +1115,7 @@ watch(() => activeOrganization.value, (newOrg) => {
           <input type="file" ref="attachmentInput" class="hidden" @change="handleAttachmentUploadForm" />
           <div class="flex justify-between items-center mb-6">
             <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Pièces jointes</h3>
-            <button @click="triggerAttachmentUpload" class="text-cyan-600 dark:text-[#0891b2] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
+            <button @click="triggerAttachmentUpload" class="text-primary dark:text-[#0B0E11] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
               <Icon name="heroicons:plus" class="w-3.5 h-3.5" /> Ajouter
             </button>
           </div>
@@ -1144,7 +1144,7 @@ watch(() => activeOrganization.value, (newOrg) => {
         <div class="border border-black/5 dark:border-white/5 rounded-2xl p-6 bg-white dark:bg-[#222224] shadow-sm">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Checklists</h3>
-            <button v-if="!isAddingChecklist" @click="isAddingChecklist = true" class="text-cyan-600 dark:text-[#0891b2] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
+            <button v-if="!isAddingChecklist" @click="isAddingChecklist = true" class="text-primary dark:text-[#0B0E11] text-[11px] font-bold flex items-center gap-1 hover:opacity-80 transition-opacity tracking-wider uppercase">
               <Icon name="heroicons:plus" class="w-3.5 h-3.5" /> Ajouter
             </button>
           </div>
@@ -1153,7 +1153,7 @@ watch(() => activeOrganization.value, (newOrg) => {
             <input v-model="newChecklistTitle" type="text" placeholder="Titre de la checklist..." class="w-full bg-transparent border-b border-form-border dark:border-gray-700 p-2 text-sm text-main dark:text-gray-200 focus:outline-none focus:border-primary" @keydown.enter="handleAddChecklist" />
             <div class="flex gap-2 justify-end">
               <button @click="isAddingChecklist = false" class="px-4 py-1.5 rounded-full text-secondary dark:text-gray-400 text-xs font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors">Annuler</button>
-              <button @click="handleAddChecklist" class="px-4 py-1.5 rounded-full bg-cyan-600 text-white text-xs font-bold shadow-sm hover:brightness-110 transition-colors">Enregistrer</button>
+              <button @click="handleAddChecklist" class="px-4 py-1.5 rounded-full btn-primary text-white text-xs font-bold shadow-sm hover:brightness-110 transition-colors">Enregistrer</button>
             </div>
           </div>
 
@@ -1170,7 +1170,7 @@ watch(() => activeOrganization.value, (newOrg) => {
               <div v-if="checklist.items && checklist.items.length > 0" class="flex items-center gap-3 mb-1">
                 <span class="text-[10px] font-bold text-secondary">{{ Math.round((checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100) }}%</span>
                 <div class="flex-1 h-1.5 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                  <div class="h-full bg-primary transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
+                  <div class="h-full btn-primary transition-all duration-300" :style="{ width: `${(checklist.items.filter((i: any) => i.is_done).length / checklist.items.length) * 100}%` }"></div>
                 </div>
               </div>
 
@@ -1209,7 +1209,7 @@ watch(() => activeOrganization.value, (newOrg) => {
           
           <!-- Input -->
           <div class="mb-8">
-            <textarea v-model="commentText" @input="handleCommentInput" placeholder="Écrivez un commentaire..." class="w-full bg-transparent border border-[#e4e1db] dark:border-gray-700 rounded-xl p-3 text-sm focus:outline-none focus:border-primary dark:focus:border-[#0891b2] resize-none text-main dark:text-gray-200" rows="3"></textarea>
+            <textarea v-model="commentText" @input="handleCommentInput" placeholder="Écrivez un commentaire..." class="w-full bg-transparent border border-[#e4e1db] dark:border-gray-700 rounded-xl p-3 text-sm focus:outline-none focus:border-primary dark:focus:border-[#0B0E11] resize-none text-main dark:text-gray-200" rows="3"></textarea>
             
             <!-- Mention Dropdown -->
             <div v-if="showMentionDropdown" class="w-full bg-card dark:bg-[#1D1D1D] rounded-lg shadow-lg border border-form-border dark:border-gray-800 overflow-hidden flex flex-col max-h-48 mt-1">
@@ -1224,7 +1224,7 @@ watch(() => activeOrganization.value, (newOrg) => {
             </div>
 
             <div class="flex justify-end mt-3">
-              <button @click="sendComment" class="px-5 py-2 bg-cyan-600 text-white rounded-xl text-sm font-bold hover:brightness-110 transition-colors shadow-sm">Envoyer</button>
+              <button @click="sendComment" class="px-5 py-2 btn-primary text-white rounded-xl text-sm font-bold hover:brightness-110 transition-colors shadow-sm">Envoyer</button>
             </div>
           </div>
           
@@ -1235,7 +1235,7 @@ watch(() => activeOrganization.value, (newOrg) => {
                  <div v-if="(comment as any).user?.profile_picture" class="w-8 h-8 rounded-full border-2 border-primary overflow-hidden shrink-0">
                    <img :src="(comment as any).user.profile_picture.startsWith('http') ? (comment as any).user.profile_picture : apiBase.replace('/api', '') + (comment as any).user.profile_picture" alt="Avatar" class="w-full h-full object-cover" />
                  </div>
-                 <div v-else class="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center text-[11px] font-bold text-primary dark:text-[#0891b2] bg-white dark:bg-[#222224] shrink-0 overflow-hidden">
+                 <div v-else class="w-8 h-8 rounded-full border-2 border-primary flex items-center justify-center text-[11px] font-bold text-primary dark:text-[#0B0E11] bg-white dark:bg-[#222224] shrink-0 overflow-hidden">
                    {{ ((comment as any).user?.last_name || 'U').charAt(0).toUpperCase() + ((comment as any).user?.first_name || '').charAt(0).toUpperCase() }}
                  </div>
                  <div class="flex items-baseline gap-2">
@@ -1248,7 +1248,7 @@ watch(() => activeOrganization.value, (newOrg) => {
                  <div v-if="editingCommentId === comment.id">
                     <textarea v-model="editingCommentText" class="w-full bg-transparent border border-primary rounded-xl p-3 text-sm focus:outline-none resize-none text-main dark:text-gray-200 mb-2" rows="2"></textarea>
                     <div class="flex items-center gap-2">
-                      <button @click="saveEditComment" class="px-3 py-1 bg-cyan-600 hover:brightness-110 text-white text-xs font-bold rounded-lg transition-colors">Enregistrer</button>
+                      <button @click="saveEditComment" class="px-3 py-1 btn-primary hover:brightness-110 text-white text-xs font-bold rounded-lg transition-colors">Enregistrer</button>
                       <button @click="cancelEditComment" class="px-3 py-1 text-xs font-bold text-secondary hover:text-main dark:text-gray-400 dark:hover:text-gray-200 transition-colors">Annuler</button>
                     </div>
                  </div>
@@ -1257,7 +1257,7 @@ watch(() => activeOrganization.value, (newOrg) => {
 
                <!-- Comment Actions -->
                <div v-if="user?.id && (comment.user_id === user.id || (comment as any).user?.id === user.id) && editingCommentId !== comment.id" class="absolute top-0 right-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                 <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-cyan-600 bg-white dark:bg-[#222224] hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg" title="Modifier">
+                 <button @click="startEditComment(comment)" class="p-1.5 text-secondary hover:text-primary bg-white dark:bg-[#222224] hover:bg-black/5 dark:hover:bg-white/5 transition-colors rounded-lg" title="Modifier">
                    <Icon name="heroicons:pencil" class="w-3.5 h-3.5" />
                  </button>
                  <button @click="handleDeleteComment(comment.id)" class="p-1.5 text-secondary hover:text-red-500 bg-white dark:bg-[#222224] hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg" title="Supprimer">

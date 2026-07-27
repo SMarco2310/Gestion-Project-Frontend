@@ -62,7 +62,7 @@ const confirm = () => {
             
             <div class="mb-2">
               <label class="block text-sm font-medium text-main dark:text-gray-300 mb-2">
-                Veuillez taper <span class="font-bold font-mono bg-[#E5E7EB] dark:bg-[#1A1A1D] px-1.5 py-0.5 rounded text-main dark:text-white border border-gray-300 dark:border-gray-700 select-all">{{ projectName }}</span> pour confirmer.
+                Veuillez taper <span class="font-bold font-mono bg-[#E5E7EB] dark:bg-[#1A1A1D] px-1.5 py-0.5 rounded text-red-500 border border-gray-300 dark:border-gray-700 select-all">{{ projectName }}</span> pour confirmer.
               </label>
               <input 
                 v-model="confirmationInput" 

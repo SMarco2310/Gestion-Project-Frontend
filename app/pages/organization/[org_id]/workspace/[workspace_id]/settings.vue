@@ -70,8 +70,8 @@ onMounted(() => {
 })
 
 const getIconColor = (name: string) => {
-  if (!name) return '#0891b2';
-  const colors = ['#0891b2', '#8B5CF6', '#F97316', '#3B82F6', '#10B981', '#EC4899'];
+  if (!name) return '#0B0E11';
+  const colors = ['#0B0E11', '#8B5CF6', '#F97316', '#3B82F6', '#10B981', '#EC4899'];
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -175,7 +175,7 @@ const makeActive = () => {
     
     <!-- Top Nav / Back button -->
     <div class="flex items-center gap-4 mb-8">
-      <button @click="goBack" class="w-10 h-10 rounded-full border-[3px] border-white dark:border-[#2A2A2D] flex items-center justify-center bg-[#1D1D1D] text-white shadow-md hover:scale-105 transition-all" title="Retour">
+      <button @click="goBack" class="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-[#2A2A2D] flex items-center justify-center bg-white dark:bg-[#1D1D1D] text-main dark:text-white shadow-md hover:scale-105 hover:shadow-lg transition-all" title="Retour">
         <Icon name="heroicons:chevron-left" class="w-5 h-5 font-bold" />
       </button>
     </div>
@@ -193,7 +193,7 @@ const makeActive = () => {
       <button 
         @click="makeActive" 
         class="px-6 py-3 font-bold rounded-xl transition-colors shadow-md shrink-0 w-full md:w-auto text-white flex items-center justify-center"
-        :class="isActiveWorkspace ? 'bg-[#0891b2]/80 cursor-default shadow-[#0891b2]/10' : 'bg-[#0891b2] hover:bg-[#26b0ac] shadow-[#0891b2]/20'"
+        :class="isActiveWorkspace ? 'btn-primary/80 cursor-default shadow-[#0B0E11]/10' : 'btn-primary hover:bg-[#26b0ac] shadow-[#0B0E11]/20'"
         :disabled="isActiveWorkspace"
       >
         <span v-if="isActiveWorkspace">Workspace actif</span>
@@ -214,12 +214,12 @@ const makeActive = () => {
           <form @submit.prevent="handleSave" class="space-y-6">
             <div>
               <label class="block text-[10px] font-mono font-bold tracking-widest text-secondary dark:text-gray-500 uppercase mb-2">Nom du Workspace</label>
-              <input v-model="form.name" type="text" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0891b2]/50 transition-shadow shadow-sm" />
+              <input v-model="form.name" type="text" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0B0E11]/50 transition-shadow shadow-sm" />
             </div>
 
             <div>
               <label class="block text-[10px] font-mono font-bold tracking-widest text-secondary dark:text-gray-500 uppercase mb-2">Description</label>
-              <textarea v-model="form.description" rows="3" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0891b2]/50 transition-shadow shadow-sm"></textarea>
+              <textarea v-model="form.description" rows="3" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-[#151515] border border-gray-200 dark:border-gray-800 text-main dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0B0E11]/50 transition-shadow shadow-sm"></textarea>
             </div>
 
             <div class="pt-2">
@@ -235,7 +235,7 @@ const makeActive = () => {
               <NuxtLink :to="`/organization/${orgId}/workspaces`" class="w-full sm:w-auto px-5 py-2.5 font-bold text-sm text-center text-secondary dark:text-gray-400 hover:text-main dark:hover:text-white transition-colors">
                 Annuler
               </NuxtLink>
-              <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-cyan-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-cyan-600 hover:brightness-90 transition-colors flex items-center justify-center gap-2" :disabled="isLoading">
+              <button type="submit" class="w-full sm:w-auto px-6 py-2.5 btn-primary text-white rounded-xl font-bold text-sm shadow-md hover:btn-primary hover:brightness-90 transition-colors flex items-center justify-center gap-2" :disabled="isLoading">
                 <Icon v-if="isLoading" name="heroicons:arrow-path" class="w-4 h-4 animate-spin" />
                 Enregistrer
               </button>
@@ -284,7 +284,7 @@ const makeActive = () => {
                    <span class="text-[11px] font-mono text-gray-500">{{ team.members_count || 0 }} membres</span>
                  </div>
                </div>
-               <NuxtLink :to="`/organization/${orgId}/workspace/${workspaceId}/team/${team.id}`" class="px-3 py-1.5 text-[11px] font-bold text-[#0891b2] hover:bg-[#0891b2]/10 rounded-lg transition-colors">
+               <NuxtLink :to="`/organization/${orgId}/workspace/${workspaceId}/team/${team.id}`" class="px-3 py-1.5 text-[11px] font-bold text-[#0B0E11] hover:btn-primary/10 rounded-lg transition-colors">
                  Gérer
                </NuxtLink>
              </div>
@@ -324,13 +324,13 @@ const makeActive = () => {
            
            <div class="bg-white dark:bg-[#252525] rounded-xl p-3 flex items-center justify-between gap-3 border border-gray-100 dark:border-gray-700 shadow-sm group">
              <div class="flex items-center gap-3 overflow-hidden">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden" :class="!activeOrganization?.logo ? 'bg-cyan-50 text-primary dark:bg-cyan-900/30 dark:text-cyan-400' : 'bg-transparent'">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden" :class="!activeOrganization?.logo ? 'btn-primary-subtle text-primary dark:btn-primary/30 dark:text-primary' : 'bg-transparent'">
                   <img v-if="activeOrganization?.logo" :src="activeOrganization.logo.startsWith('http') ? activeOrganization.logo : `http://localhost:8000${activeOrganization.logo}`" alt="Org Logo" class="w-full h-full object-cover">
                   <span v-else>{{ activeOrganization?.name ? activeOrganization.name.charAt(0).toUpperCase() : 'N' }}</span>
                 </div>
                <span class="font-bold text-sm text-main dark:text-gray-200 truncate">{{ activeOrganization?.name || 'Neo Start Technology' }}</span>
              </div>
-             <NuxtLink :to="`/organization/${orgId}/settings`" class="p-2 text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 rounded-lg transition-colors shrink-0" title="Paramètres de l'organisation">
+             <NuxtLink :to="`/organization/${orgId}/settings`" class="p-2 text-primary hover:btn-primary-subtle dark:hover:bg-cyan-900/20 rounded-lg transition-colors shrink-0" title="Paramètres de l'organisation">
                <Icon name="heroicons:arrows-right-left" class="w-5 h-5 transition-transform group-hover:rotate-180" />
              </NuxtLink>
            </div>

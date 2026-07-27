@@ -38,7 +38,7 @@ const { $api } = useNuxtApp()
 const isAssigneeDropdownOpen = ref(false)
 const isStatusDropdownOpen = ref(false)
 const orgMembers = ref<any[]>([])
-const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-cyan-500', 'bg-indigo-500', 'bg-teal-500']
+const avatarColors = ['bg-primary', 'bg-purple-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500', 'bg-primary', 'bg-indigo-500', 'bg-teal-500']
 
 const kanbanColumns = computed(() => {
   return activeOrganization.value?.kanban_columns?.length 
@@ -89,6 +89,7 @@ const fetchOrgMembers = async () => {
       id: m.id,
       first_name: m.first_name,
       last_name: m.last_name,
+      name: ((m.last_name || '') + ' ' + (m.first_name || '')).trim(),
       initials: (m.last_name || '?').charAt(0).toUpperCase() + (m.first_name || '').charAt(0).toUpperCase(),
       color: avatarColors[i % avatarColors.length],
       profile_picture: m.profile_picture || null
@@ -147,6 +148,7 @@ const submit = async () => {
 
   const payload = {
     ...form.value,
+    tag_ids: form.value.tag_id ? [form.value.tag_id] : [],
     parent_task_id: props.parentTaskId ?? null,
     projet_id: props.projetId ?? form.value.projet_id
   }
@@ -302,7 +304,7 @@ const submit = async () => {
                           <img v-if="orgMembers.find(m => m.id === form.assignee_id)?.profile_picture" :src="orgMembers.find(m => m.id === form.assignee_id)?.profile_picture.startsWith('http') ? orgMembers.find(m => m.id === form.assignee_id)?.profile_picture : `http://localhost:8000${orgMembers.find(m => m.id === form.assignee_id)?.profile_picture}`" class="w-full h-full object-cover" />
                           <span v-else>{{ orgMembers.find(m => m.id === form.assignee_id)?.initials }}</span>
                         </div>
-                        <span class="text-sm font-medium truncate">{{ orgMembers.find(m => m.id === form.assignee_id)?.name }}</span>
+                        <span class="text-sm font-medium truncate">{{ orgMembers.find(m => m.id === form.assignee_id)?.name || (orgMembers.find(m => m.id === form.assignee_id)?.last_name + ' ' + orgMembers.find(m => m.id === form.assignee_id)?.first_name) }}</span>
                       </template>
                       <template v-else>
                         <div class="w-5 h-5 flex-shrink-0 rounded-full border border-dashed border-gray-400 flex items-center justify-center text-secondary">
@@ -352,7 +354,7 @@ const submit = async () => {
             <button @click="close" class="px-4 py-2 rounded-lg text-sm font-bold text-secondary dark:text-gray-300 hover:text-main dark:hover:text-white transition-colors">
               Annuler
             </button>
-            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white bg-cyan-600 hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
+            <button @click="submit" class="px-5 py-2 rounded-lg text-sm font-bold text-white btn-primary hover:brightness-110 neo-emboss active:neo-inset transition-all flex items-center gap-2">
               <Icon name="heroicons:plus" class="w-4 h-4" />
               Créer
             </button>

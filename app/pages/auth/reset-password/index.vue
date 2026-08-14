@@ -42,19 +42,19 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
+  <div class="auth-page relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover hidden lg:block" />
     <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-black/20 hidden lg:block"></div>
     <NuxtLink to="/" class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 hidden lg:flex items-center gap-3 hover:opacity-90 transition-opacity">
        <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+       <span class="auth-display text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
     </NuxtLink>
 
     <div class="relative z-10 w-full max-w-[3000px] min-h-[100dvh] lg:min-h-[calc(100vh-4rem)] flex flex-col lg:flex-row items-center justify-between lg:gap-10">
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
         <div class="my-auto">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">Créez un nouveau<br />mot de passe.<br />Restez protégé.</h1>
-          <p class="text-gray-200 text-lg max-w-md">Choisissez un mot de passe solide pour sécuriser l'accès à tous vos projets et tâches.</p>
+          <h1 class="auth-display text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.05] tracking-tight">Créez un nouveau<br />mot de passe.<br />Restez protégé.</h1>
+          <p class="auth-body text-gray-200 text-lg max-w-md">Choisissez un mot de passe solide pour sécuriser l'accès à tous vos projets et tâches.</p>
         </div>
       </div>
 
@@ -66,8 +66,8 @@ const handleSubmit = async () => {
               <div class="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-8 neo-emboss">
                 <Icon name="heroicons:exclamation-triangle" class="w-12 h-12 text-red-600 dark:text-red-400" />
               </div>
-              <h2 class="text-3xl sm:text-4xl font-bold text-black dark:text-white mb-4">Lien invalide</h2>
-              <p class="text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">Ce lien de réinitialisation est invalide ou a expiré. Veuillez faire une nouvelle demande.</p>
+              <h2 class="auth-display text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4 tracking-tight">Lien invalide</h2>
+              <p class="auth-body text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">Ce lien de réinitialisation est invalide ou a expiré. Veuillez faire une nouvelle demande.</p>
               <NuxtLink href="/auth/forget-password" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all flex items-center justify-center gap-2">Nouvelle demande</NuxtLink>
             </div>
 
@@ -80,10 +80,10 @@ const handleSubmit = async () => {
                 <!-- Mobile Logo -->
                 <NuxtLink to="/" class="flex items-center gap-3 mb-8 lg:hidden hover:opacity-90 transition-opacity">
                   <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain" />
-                  <span class="text-black dark:text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+                  <span class="auth-display text-black dark:text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
                 </NuxtLink>
-                <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white mb-3">Nouveau mot de passe</h2>
-                <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Choisissez un nouveau mot de passe sécurisé pour votre compte.</p>
+                <h2 class="auth-display text-4xl sm:text-5xl font-extrabold tracking-tight text-black dark:text-white mb-3">Nouveau mot de passe</h2>
+                <p class="auth-body text-gray-500 dark:text-gray-400 font-semibold text-base">Choisissez un nouveau mot de passe sécurisé pour votre compte.</p>
               </div>
               <div v-if="errorMessage" class="flex items-center justify-center p-3 mb-4 rounded-xl bg-red-50 dark:bg-red-900/20">
                 <span class="text-red-500 dark:text-red-400 text-sm">{{ errorMessage }}</span>
@@ -123,8 +123,8 @@ const handleSubmit = async () => {
               <div class="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-8 neo-emboss">
                 <Icon name="heroicons:check-circle" class="w-12 h-12 text-green-600 dark:text-green-400" />
               </div>
-              <h2 class="text-3xl sm:text-4xl font-bold text-black dark:text-white mb-4">Mot de passe réinitialisé !</h2>
-              <p class="text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+              <h2 class="auth-display text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4 tracking-tight">Mot de passe réinitialisé !</h2>
+              <p class="auth-body text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
               <NuxtLink href="/auth/login" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] transition-all flex items-center justify-center gap-2">Se connecter</NuxtLink>
             </div>
           </Transition>
@@ -133,3 +133,20 @@ const handleSubmit = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-mono {
+  font-family: 'DM Mono', 'Fira Code', ui-monospace, monospace;
+}
+</style>

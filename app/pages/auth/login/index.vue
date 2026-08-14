@@ -79,7 +79,7 @@ const handleOAuth = () => {
 </script>
 
 <template>
-  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
+  <div class="auth-page relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
     <!-- Background Image spanning the entire screen -->
     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover hidden lg:block" />
     
@@ -89,7 +89,7 @@ const handleOAuth = () => {
     <!-- Top Left Branding -->
     <NuxtLink to="/" class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 hidden lg:flex items-center gap-3 hover:opacity-90 transition-opacity">
        <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+       <span class="auth-display text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
     </NuxtLink>
 
     <!-- Main Content Container -->
@@ -99,12 +99,12 @@ const handleOAuth = () => {
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
 
         <div class="my-auto">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 class="auth-display text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.05] tracking-tight">
             Gérez plus intelligemment.<br />
             Collaborez plus vite.<br />
             Réussissez partout.
           </h1>
-          <p class="text-gray-200 text-lg max-w-md">
+          <p class="auth-body text-gray-200 text-lg max-w-md">
             De la planification rapide aux projets complexes, notre outil puissant vous permet de travailler en toute fluidité sur tous vos appareils.
           </p>
         </div>
@@ -120,11 +120,11 @@ const handleOAuth = () => {
             <!-- Mobile Logo -->
             <NuxtLink to="/" class="flex items-center gap-3 mb-8 lg:hidden hover:opacity-90 transition-opacity">
               <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain" />
-              <span class="text-black dark:text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+              <span class="auth-display text-black dark:text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
             </NuxtLink>
-            
-            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Bienvenue!</h2>
-            <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Connectez-vous à votre compte</p>
+
+            <h2 class="auth-display text-4xl sm:text-5xl font-extrabold tracking-tight text-black dark:text-white mb-3">Bienvenue!</h2>
+            <p class="auth-body text-gray-500 dark:text-gray-400 font-semibold text-base">Connectez-vous à votre compte</p>
           </div>
 
           <!-- General Error -->
@@ -158,11 +158,14 @@ const handleOAuth = () => {
             </div>
 
             <div class="flex items-center justify-between text-sm mt-4">
-              <label class="flex items-center gap-3 cursor-pointer group">
-                <input type="checkbox" v-model="rememberMe" class="w-5 h-5 rounded neo-input bg-gray-50 text-black focus:ring-black/50 dark:bg-[#151515] dark:checked:bg-white cursor-pointer" />
+              <label class="flex items-center gap-3 cursor-pointer group select-none">
+                <input type="checkbox" v-model="rememberMe" class="peer sr-only" />
+                <span :class="['w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all peer-focus-visible:ring-2 peer-focus-visible:ring-black/50 dark:peer-focus-visible:ring-white/50 peer-focus-visible:ring-offset-2 dark:peer-focus-visible:ring-offset-[#1D1D1D]', rememberMe ? 'bg-black border-black dark:bg-white dark:border-white' : 'bg-gray-50 dark:bg-[#151515] border-gray-300 dark:border-gray-600']">
+                  <Icon v-if="rememberMe" name="heroicons:check" class="w-3.5 h-3.5 text-white dark:text-black" />
+                </span>
                 <span class="text-gray-600 dark:text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors text-base">Se souvenir de moi</span>
               </label>
-              <NuxtLink href="/auth/forget-password" class="text-gray-500 hover:text-black dark:hover:text-white transition-colors text-base">Mot de passe oublié ?</NuxtLink>
+              <NuxtLink href="/auth/forget-password" class="text-gray-500 hover:text-black dark:hover:text-white transition-colors text-base">Mot de passe oublié&nbsp;?</NuxtLink>
             </div>
 
             <button type="submit" class="w-full py-4 px-4 bg-gradient-to-b from-gray-800 to-black dark:from-white dark:to-gray-200 text-white dark:text-black font-bold text-lg rounded-full neo-emboss border border-gray-700/50 dark:border-white/50 hover:brightness-110 active:neo-inset active:scale-[0.98] mt-8 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" :disabled="loading">
@@ -172,7 +175,7 @@ const handleOAuth = () => {
 
             <div class="relative flex items-center py-6">
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-              <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
+              <span class="auth-mono flex-shrink-0 px-4 text-xs text-gray-400 uppercase tracking-widest font-medium">Ou continuer avec</span>
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
             </div>
 
@@ -193,3 +196,20 @@ const handleOAuth = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-mono {
+  font-family: 'DM Mono', 'Fira Code', ui-monospace, monospace;
+}
+</style>

@@ -41,7 +41,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
+  <div class="auth-page relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8">
     <!-- Background Image spanning the entire screen -->
     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover hidden lg:block" />
     
@@ -51,7 +51,7 @@ const handleSubmit = async () => {
     <!-- Top Left Branding -->
     <NuxtLink to="/" class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 hidden lg:flex items-center gap-3 hover:opacity-90 transition-opacity">
        <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+       <span class="auth-display text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
     </NuxtLink>
 
     <!-- Main Content Container -->
@@ -60,12 +60,12 @@ const handleSubmit = async () => {
       <!-- Left Panel - Text content -->
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
         <div class="my-auto">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 class="auth-display text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.05] tracking-tight">
             Récupérez l'accès<br />
             à vos projets.<br />
             En toute sécurité.
           </h1>
-          <p class="text-gray-200 text-lg max-w-md">
+          <p class="auth-body text-gray-200 text-lg max-w-md">
             Nous comprenons que les oublis arrivent. Réinitialisez votre mot de passe pour reprendre le contrôle de votre travail.
           </p>
         </div>
@@ -89,10 +89,10 @@ const handleSubmit = async () => {
                 <!-- Mobile Logo -->
                 <NuxtLink to="/" class="flex items-center gap-3 mb-8 lg:hidden hover:opacity-90 transition-opacity">
                   <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain" />
-                  <span class="text-black dark:text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+                  <span class="auth-display text-black dark:text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
                 </NuxtLink>
-                <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white mb-3">Mot de passe oublié</h2>
-                <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
+                <h2 class="auth-display text-4xl sm:text-5xl font-extrabold tracking-tight text-black dark:text-white mb-3">Mot de passe oublié</h2>
+                <p class="auth-body text-gray-500 dark:text-gray-400 font-semibold text-base">Entrez votre adresse e-mail pour recevoir un lien de réinitialisation.</p>
               </div>
 
               <!-- Error Message -->
@@ -123,8 +123,8 @@ const handleSubmit = async () => {
                 <Icon name="heroicons:envelope-open" class="w-12 h-12 text-primary dark:text-blue-400" />
               </div>
               
-              <h2 class="text-3xl sm:text-4xl font-bold text-black dark:text-white mb-4">Email envoyé !</h2>
-              <p class="text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">
+              <h2 class="auth-display text-3xl sm:text-4xl font-extrabold text-black dark:text-white mb-4 tracking-tight">Email envoyé !</h2>
+              <p class="auth-body text-gray-500 dark:text-gray-400 font-medium text-lg max-w-sm mb-10">
                 Nous avons envoyé un lien de réinitialisation à <span class="text-black dark:text-white font-bold">{{ email }}</span>. Veuillez vérifier votre boîte de réception.
               </p>
 
@@ -139,3 +139,20 @@ const handleSubmit = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-mono {
+  font-family: 'DM Mono', 'Fira Code', ui-monospace, monospace;
+}
+</style>

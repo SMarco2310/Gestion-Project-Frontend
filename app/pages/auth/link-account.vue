@@ -48,13 +48,13 @@ const handleLinkAccount = async () => {
 
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-[#151515]">
+  <div class="auth-page min-h-screen flex items-center justify-center p-4 bg-gray-50 dark:bg-[#151515]">
     <div class="w-full max-w-md bg-white dark:bg-[#1D1D1D] rounded-xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
       <div class="text-center mb-8">
         <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 flex items-center justify-center mx-auto mb-4">
           <Icon name="heroicons:link" class="w-6 h-6" />
         </div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Associer votre compte</h2>
+        <h2 class="auth-display text-2xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">Associer votre compte</h2>
         <p class="text-gray-500 dark:text-gray-400 text-sm">
           Un compte avec cette adresse e-mail existe déjà. Veuillez entrer votre mot de passe pour confirmer qu'il s'agit bien de vous et lier votre compte.
         </p>
@@ -95,4 +95,17 @@ const handleLinkAccount = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+</style>
 

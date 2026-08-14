@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen w-full relative flex items-center justify-center bg-[#F8FAFC] font-sans selection:btn-primary selection:text-white p-6">
+  <div class="auth-page min-h-screen w-full relative flex items-center justify-center bg-[#F8FAFC] selection:btn-primary selection:text-white p-6">
     <div class="relative z-10 w-full max-w-md mx-auto">
       <div class="bg-white border border-slate-100 rounded-3xl p-8 shadow-2xl shadow-slate-200/50">
         
@@ -10,7 +10,7 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
           <div class="space-y-2">
-            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Vérification en cours...</h2>
+            <h2 class="auth-display text-2xl font-extrabold text-slate-900 tracking-tight">Vérification en cours...</h2>
             <p class="text-slate-500 text-sm leading-relaxed">Veuillez patienter pendant que nous confirmons votre adresse email.</p>
           </div>
         </div>
@@ -23,7 +23,7 @@
             </svg>
           </div>
           <div class="space-y-2">
-            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Email vérifié !</h2>
+            <h2 class="auth-display text-2xl font-extrabold text-slate-900 tracking-tight">Email vérifié !</h2>
             <p class="text-slate-500 text-sm leading-relaxed">{{ message }}</p>
           </div>
           <NuxtLink to="/organizations" class="w-full py-3.5 px-4 btn-primary text-white font-semibold text-base rounded-full shadow-lg shadow-primary/20 hover:btn-primary hover:-translate-y-0.5 transition-all flex items-center justify-center mt-6">
@@ -39,7 +39,7 @@
             </svg>
           </div>
           <div class="space-y-2">
-            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Échec de vérification</h2>
+            <h2 class="auth-display text-2xl font-extrabold text-slate-900 tracking-tight">Échec de vérification</h2>
             <p class="text-slate-500 text-sm leading-relaxed">{{ message || "Le lien de vérification est invalide ou a expiré." }}</p>
           </div>
           <NuxtLink to="/auth/login" class="w-full py-3.5 px-4 bg-white text-slate-700 font-semibold text-base rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center mt-6">
@@ -91,10 +91,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-.font-sans {
+.auth-page {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
 }
 
 .animate-fade-in-up {

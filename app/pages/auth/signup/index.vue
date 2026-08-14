@@ -109,7 +109,7 @@ const handleOAuth = () => {
 </script>
 
 <template>
-  <div class="relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8 overflow-y-auto">
+  <div class="auth-page relative min-h-[100dvh] flex items-center justify-center p-0 lg:p-8 overflow-y-auto">
     <!-- Background Image spanning the entire screen -->
     <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80" alt="Background" class="absolute inset-0 w-full h-full object-cover hidden lg:block" />
     
@@ -119,7 +119,7 @@ const handleOAuth = () => {
     <!-- Top Left Branding -->
     <NuxtLink to="/" class="absolute top-8 left-8 lg:top-12 lg:left-12 z-20 hidden lg:flex items-center gap-3 hover:opacity-90 transition-opacity">
        <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain drop-shadow-none lg:drop-shadow-md" />
-       <span class="text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+       <span class="auth-display text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
     </NuxtLink>
 
     <!-- Main Content Container -->
@@ -129,12 +129,12 @@ const handleOAuth = () => {
       <div class="hidden lg:flex flex-col w-full lg:w-1/2 text-white p-8 lg:p-12 rounded-xl justify-center h-full">
 
         <div class="my-auto">
-          <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+          <h1 class="auth-display text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-[1.05] tracking-tight">
             Gérez plus intelligemment.<br />
             Collaborez plus vite.<br />
             Réussissez partout.
           </h1>
-          <p class="text-gray-200 text-lg max-w-md">
+          <p class="auth-body text-gray-200 text-lg max-w-md">
             De la planification rapide aux projets complexes, notre outil puissant vous permet de travailler en toute fluidité sur tous vos appareils.
           </p>
         </div>
@@ -150,10 +150,10 @@ const handleOAuth = () => {
             <!-- Mobile Logo -->
             <NuxtLink to="/" class="flex items-center gap-3 mb-8 lg:hidden hover:opacity-90 transition-opacity">
               <img src="/assets/logo_app.svg" alt="Logo" class="w-10 h-10 object-contain" />
-              <span class="text-black dark:text-white font-bold text-2xl tracking-wide">Gestion Pro</span>
+              <span class="auth-display text-black dark:text-white font-extrabold text-2xl tracking-tight">Gestion Pro</span>
             </NuxtLink>
-            <h2 class="text-4xl sm:text-5xl font-bold tracking-wider text-black dark:text-white  mb-3">Bienvenue!</h2>
-            <p class="text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
+            <h2 class="auth-display text-4xl sm:text-5xl font-extrabold tracking-tight text-black dark:text-white mb-3">Bienvenue!</h2>
+            <p class="auth-body text-gray-500 dark:text-gray-400 font-semibold text-base">Créer un compte pour commencer</p>
           </div>
 
           <!-- General Error -->
@@ -229,7 +229,7 @@ const handleOAuth = () => {
 
             <div class="relative flex items-center py-6">
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-              <span class="flex-shrink-0 px-4 text-sm text-gray-400 uppercase tracking-wider">Ou continuer avec</span>
+              <span class="auth-mono flex-shrink-0 px-4 text-xs text-gray-400 uppercase tracking-widest font-medium">Ou continuer avec</span>
               <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
             </div>
 
@@ -250,3 +250,20 @@ const handleOAuth = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-page {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-display {
+  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.auth-mono {
+  font-family: 'DM Mono', 'Fira Code', ui-monospace, monospace;
+}
+</style>
